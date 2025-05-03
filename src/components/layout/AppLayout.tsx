@@ -1,11 +1,11 @@
-
 import React from "react";
 import Navbar from "./Navbar";
-import { useAuth, KycStatus } from "../../App";
+import { useAuth } from "../../contexts/AuthContext";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/components/ui/use-toast";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { KycStatus } from "../../App";
 
 interface AppLayoutProps {
   children: React.ReactNode;

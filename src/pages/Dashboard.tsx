@@ -1,8 +1,7 @@
-
 import React from "react";
 import AppLayout from "../components/layout/AppLayout";
 import DashboardOverview from "../components/dashboard/DashboardOverview";
-import { useAuth } from "../App";
+import { useAuth } from "../contexts/AuthContext";
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();

@@ -24,7 +24,8 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { useAuth, User } from "../../App";
+import { useAuth } from "../../contexts/AuthContext";
+import { KycStatus } from "../../App";
 
 // Define schema
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -45,7 +46,7 @@ const kycSchema = z.object({
 type KycFormValues = z.infer<typeof kycSchema>;
 
 interface KycFormProps {
-  user: User;
+  user: any;
   onSubmit?: (data: any) => Promise<void>;
 }
 

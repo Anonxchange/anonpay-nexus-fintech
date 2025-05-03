@@ -1,10 +1,10 @@
-
 import React from "react";
 import AppLayout from "../components/layout/AppLayout";
 import KycForm from "../components/kyc/KycForm";
-import { useAuth, KycStatus } from "../App";
+import { useAuth } from "../contexts/AuthContext";
 import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
+import { KycStatus } from "../App";
 
 const KYC: React.FC = () => {
   const { user } = useAuth();

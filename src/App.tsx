@@ -23,7 +23,7 @@ import { AuthProvider, useAuth } from "./contexts/AuthContext";
 
 // Define user types
 export type UserRole = "user" | "admin";
-export type KycStatus = "pending" | "approved" | "rejected" | "not_submitted";
+export type KycStatus = "pending" | "approved" | "rejected" | "not_submitted" | "admin";
 export type EmailStatus = "verified" | "unverified";
 
 // Protected route component
@@ -108,5 +108,9 @@ const App = () => (
     </TooltipProvider>
   </QueryClientProvider>
 );
+
+// Export auth hook and types to be used throughout the app
+export { useAuth };
+export type { Profile } from './contexts/AuthContext';
 
 export default App;

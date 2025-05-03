@@ -1,9 +1,8 @@
-
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import AppLayout from "../components/layout/AppLayout";
 import ServiceTabs from "../components/services/ServiceTabs";
-import { useAuth } from "../App";
+import { useAuth } from "../contexts/AuthContext";
 
 const Services: React.FC = () => {
   const { user } = useAuth();
