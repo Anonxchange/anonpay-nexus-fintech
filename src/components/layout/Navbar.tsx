@@ -14,7 +14,7 @@ import {
   Phone,
   ShieldCheck,
 } from "lucide-react";
-import { useAuth } from "../../App";
+import { useAuth } from "../../contexts/AuthContext";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 const Navbar: React.FC = () => {
-  const { user, logout } = useAuth();
+  const { user, profile, signOut } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
@@ -54,14 +54,13 @@ const Navbar: React.FC = () => {
   ];
 
   const handleLogout = () => {
-    logout();
-    navigate("/login");
+    signOut();
   };
 
   const getInitials = () => {
-    if (!user?.name) return user?.email?.[0]?.toUpperCase() || "U";
+    if (!profile?.name) return user?.email?.[0]?.toUpperCase() || "U";
     
-    const names = user.name.split(" ");
+    const names = profile.name.split(" ");
     if (names.length >= 2) {
       return `${names[0][0]}${names[1][0]}`.toUpperCase();
     }
@@ -100,7 +99,7 @@ const Navbar: React.FC = () => {
               </Link>
             ))}
             
-            {user?.role === "admin" && adminNavItems.map((item) => (
+            {profile?.kyc_status === "admin" && adminNavItems.map((item) => (
               <Link
                 key={item.path}
                 to={item.path}
@@ -134,7 +133,7 @@ const Navbar: React.FC = () => {
                 <DropdownMenuContent align="end" className="w-56">
                   <DropdownMenuLabel>
                     <div className="font-normal">
-                      <div className="font-medium">{user.name || "User"}</div>
+                      <div className="font-medium">{profile?.name || "User"}</div>
                       <div className="text-xs text-muted-foreground">{user.email}</div>
                     </div>
                   </DropdownMenuLabel>
@@ -202,7 +201,7 @@ const Navbar: React.FC = () => {
               </Link>
             ))}
             
-            {user?.role === "admin" && adminNavItems.map((item) => (
+            {profile?.kyc_status === "admin" && adminNavItems.map((item) => (
               <Link
                 key={item.path}
                 to={item.path}
@@ -228,7 +227,7 @@ const Navbar: React.FC = () => {
                       </AvatarFallback>
                     </Avatar>
                     <div className="ml-3">
-                      <p className="text-sm font-medium">{user.name || "User"}</p>
+                      <p className="text-sm font-medium">{profile?.name || "User"}</p>
                       <p className="text-xs text-gray-500">{user.email}</p>
                     </div>
                   </div>

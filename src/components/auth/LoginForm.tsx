@@ -15,8 +15,8 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { useToast } from "@/components/ui/use-toast";
-import { useAuth } from "../../App";
 import { LogIn } from "lucide-react";
+import { useAuth } from "../../contexts/AuthContext";
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
@@ -26,7 +26,7 @@ const loginSchema = z.object({
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 const LoginForm: React.FC = () => {
-  const { login } = useAuth();
+  const { signIn } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -42,18 +42,18 @@ const LoginForm: React.FC = () => {
   const onSubmit = async (data: LoginFormValues) => {
     try {
       setIsLoading(true);
-      await login(data.email, data.password);
+      await signIn(data.email, data.password);
       toast({
         title: "Login successful",
         description: "Welcome back to AnonPay!",
       });
       navigate("/dashboard");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Login error:", error);
       toast({
         variant: "destructive",
         title: "Login failed",
-        description: "Invalid credentials. Please try again.",
+        description: error.message || "Invalid credentials. Please try again.",
       });
     } finally {
       setIsLoading(false);

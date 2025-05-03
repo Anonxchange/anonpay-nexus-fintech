@@ -16,8 +16,8 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { useToast } from "@/components/ui/use-toast";
-import { useAuth } from "../../App";
 import { UserPlus } from "lucide-react";
+import { useAuth } from "../../contexts/AuthContext";
 
 const signUpSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
@@ -34,7 +34,7 @@ const signUpSchema = z.object({
 type SignUpFormValues = z.infer<typeof signUpSchema>;
 
 const SignUpForm: React.FC = () => {
-  const { signup } = useAuth();
+  const { signUp } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -52,18 +52,18 @@ const SignUpForm: React.FC = () => {
   const onSubmit = async (data: SignUpFormValues) => {
     try {
       setIsLoading(true);
-      await signup(data.email, data.password);
+      await signUp(data.email, data.password);
       toast({
         title: "Account created",
         description: "Please verify your email to continue.",
       });
       navigate("/verify-email");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Signup error:", error);
       toast({
         variant: "destructive",
         title: "Sign up failed",
-        description: "There was an error creating your account. Please try again.",
+        description: error.message || "There was an error creating your account. Please try again.",
       });
     } finally {
       setIsLoading(false);

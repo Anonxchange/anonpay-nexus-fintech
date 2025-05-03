@@ -3,8 +3,8 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { Mail, Loader } from "lucide-react";
-import { useAuth } from "../../App";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../contexts/AuthContext";
 
 const VerifyEmailComponent: React.FC = () => {
   const { user, resendVerificationEmail } = useAuth();
