@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -9,6 +10,12 @@ interface DashboardProps {
 }
 
 const DashboardOverview: React.FC<DashboardProps> = ({ user }) => {
+  // Function to handle fund wallet action
+  const handleFundWallet = () => {
+    console.log("Fund wallet clicked");
+    // Implement wallet funding logic here
+  };
+
   return (
     <Tabs defaultValue="wallet" className="w-full space-y-4">
       <TabsList>
@@ -24,7 +31,10 @@ const DashboardOverview: React.FC<DashboardProps> = ({ user }) => {
             <CardDescription>Your current wallet balance and recent transactions</CardDescription>
           </CardHeader>
           <CardContent>
-            <WalletCard user={user} />
+            <WalletCard 
+              balance={user.wallet_balance || 0} 
+              onFund={handleFundWallet} 
+            />
           </CardContent>
         </Card>
       </TabsContent>

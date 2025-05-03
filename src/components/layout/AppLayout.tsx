@@ -1,3 +1,4 @@
+
 import React from "react";
 import Navbar from "./Navbar";
 import { useAuth } from "../../contexts/AuthContext";
@@ -5,7 +6,6 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/components/ui/use-toast";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { KycStatus } from "../../App";
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -13,13 +13,13 @@ interface AppLayoutProps {
 }
 
 const AppLayout: React.FC<AppLayoutProps> = ({ children, title }) => {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const { toast } = useToast();
 
   const renderKycBanner = () => {
-    if (!user) return null;
+    if (!user || !profile) return null;
     
-    if (user.kycStatus === "not_submitted") {
+    if (profile.kyc_status === "not_submitted") {
       return (
         <Alert className="bg-amber-50 border-amber-200 mb-4">
           <AlertDescription className="flex items-center justify-between">
@@ -30,7 +30,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children, title }) => {
           </AlertDescription>
         </Alert>
       );
-    } else if (user.kycStatus === "pending") {
+    } else if (profile.kyc_status === "pending") {
       return (
         <Alert className="bg-blue-50 border-blue-200 mb-4">
           <AlertDescription>
@@ -38,7 +38,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children, title }) => {
           </AlertDescription>
         </Alert>
       );
-    } else if (user.kycStatus === "rejected") {
+    } else if (profile.kyc_status === "rejected") {
       return (
         <Alert className="bg-red-50 border-red-200 mb-4">
           <AlertDescription className="flex items-center justify-between">
