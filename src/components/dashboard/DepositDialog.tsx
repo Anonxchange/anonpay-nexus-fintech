@@ -1,12 +1,11 @@
-
 import React, { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
-import { Bitcoin, Wallet } from "lucide-react"; // Using Wallet instead of Ethereum
+import { Bitcoin, Wallet } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { getPaymentMethods, PaymentMethod } from "@/services/transactionService";
+import { getPaymentMethods, PaymentMethod } from "@/services/transactions";
 
 interface DepositDialogProps {
   open: boolean;
@@ -70,7 +69,7 @@ const DepositDialog: React.FC<DepositDialogProps> = ({ open, onOpenChange }) => 
               Bitcoin
             </TabsTrigger>
             <TabsTrigger value="eth">
-              <Wallet className="mr-2 h-4 w-4" /> {/* Using Wallet icon instead */}
+              <Wallet className="mr-2 h-4 w-4" />
               Ethereum
             </TabsTrigger>
           </TabsList>

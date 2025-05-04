@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { getUserTransactions, Transaction } from "@/services/transactionService";
+import { getUserTransactions, Transaction } from "@/services/transactions";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 
