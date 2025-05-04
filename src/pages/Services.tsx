@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import AppLayout from "../components/layout/AppLayout";
@@ -15,11 +16,12 @@ const Services: React.FC = () => {
     <AppLayout title="Services">
       <div className="max-w-5xl mx-auto">
         <Routes>
-          <Route index element={<ServiceTabs user={user} />} />
+          <Route index element={<Navigate to="/services/crypto" replace />} />
           <Route path="crypto" element={<ServiceTabs user={user} />} />
           <Route path="gift-cards" element={<ServiceTabs user={user} />} />
           <Route path="vtu" element={<ServiceTabs user={user} />} />
-          <Route path="*" element={<Navigate to="/services" replace />} />
+          <Route path="rate-checker" element={<ServiceTabs user={user} />} />
+          <Route path="*" element={<Navigate to="/services/crypto" replace />} />
         </Routes>
       </div>
     </AppLayout>

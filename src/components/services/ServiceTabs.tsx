@@ -1,9 +1,13 @@
-import React from "react";
+
+import React, { useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useLocation, useNavigate } from "react-router-dom";
-import { Wallet, Gift, Phone } from "lucide-react";
-import { Profile } from "../../contexts/AuthContext";
+import { Gift, Bitcoin, Phone, Search } from "lucide-react";
+import CryptoService from "./crypto/CryptoService";
+import GiftCardService from "./giftcards/GiftCardService";
+import VtuService from "./vtu/VtuService";
+import RateCheckerService from "./ratechecker/RateCheckerService";
 
 interface ServiceTabsProps {
   user: any;
@@ -13,17 +17,24 @@ const ServiceTabs: React.FC<ServiceTabsProps> = ({ user }) => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const activeTab = location.pathname.split("/").pop();
+  const path = location.pathname.split("/").pop() || "";
+  const activeTab = ["crypto", "gift-cards", "vtu", "rate-checker"].includes(path) ? path : "crypto";
+
+  useEffect(() => {
+    if (path === "services" || !path) {
+      navigate("/services/crypto", { replace: true });
+    }
+  }, [path, navigate]);
 
   const handleTabChange = (tab: string) => {
     navigate(`/services/${tab}`);
   };
 
   return (
-    <Tabs defaultValue={activeTab} className="w-full">
-      <TabsList>
+    <Tabs value={activeTab} className="w-full">
+      <TabsList className="grid grid-cols-4 mb-4">
         <TabsTrigger value="crypto" onClick={() => handleTabChange("crypto")}>
-          <Wallet className="mr-2 h-4 w-4" />
+          <Bitcoin className="mr-2 h-4 w-4" />
           Crypto
         </TabsTrigger>
         <TabsTrigger value="gift-cards" onClick={() => handleTabChange("gift-cards")}>
@@ -34,39 +45,26 @@ const ServiceTabs: React.FC<ServiceTabsProps> = ({ user }) => {
           <Phone className="mr-2 h-4 w-4" />
           VTU
         </TabsTrigger>
+        <TabsTrigger value="rate-checker" onClick={() => handleTabChange("rate-checker")}>
+          <Search className="mr-2 h-4 w-4" />
+          Rate Checker
+        </TabsTrigger>
       </TabsList>
+      
       <TabsContent value="crypto">
-        <Card>
-          <CardHeader>
-            <CardTitle>Cryptocurrency Services</CardTitle>
-            <CardDescription>Buy, sell, and manage your cryptocurrencies.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p>Coming soon...</p>
-          </CardContent>
-        </Card>
+        <CryptoService user={user} />
       </TabsContent>
+      
       <TabsContent value="gift-cards">
-        <Card>
-          <CardHeader>
-            <CardTitle>Gift Card Services</CardTitle>
-            <CardDescription>Trade your gift cards for cash or other assets.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p>Coming soon...</p>
-          </CardContent>
-        </Card>
+        <GiftCardService user={user} />
       </TabsContent>
+      
       <TabsContent value="vtu">
-        <Card>
-          <CardHeader>
-            <CardTitle>VTU Services</CardTitle>
-            <CardDescription>Purchase airtime, data, and other virtual top-up services.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p>Coming soon...</p>
-          </CardContent>
-        </Card>
+        <VtuService user={user} />
+      </TabsContent>
+      
+      <TabsContent value="rate-checker">
+        <RateCheckerService user={user} />
       </TabsContent>
     </Tabs>
   );
