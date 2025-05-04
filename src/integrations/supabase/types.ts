@@ -9,6 +9,30 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      payment_methods: {
+        Row: {
+          address: string
+          currency: string
+          id: string
+          is_active: boolean
+          method_type: string
+        }
+        Insert: {
+          address: string
+          currency: string
+          id?: string
+          is_active?: boolean
+          method_type: string
+        }
+        Update: {
+          address?: string
+          currency?: string
+          id?: string
+          is_active?: boolean
+          method_type?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -42,12 +66,53 @@ export type Database = {
         }
         Relationships: []
       }
+      transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          reference: string | null
+          status: string
+          type: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          reference?: string | null
+          status: string
+          type: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          reference?: string | null
+          status?: string
+          type?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      update_wallet_balance: {
+        Args: {
+          user_id: string
+          amount: number
+          transaction_type: string
+          reference: string
+        }
+        Returns: Json
+      }
     }
     Enums: {
       [_ in never]: never
