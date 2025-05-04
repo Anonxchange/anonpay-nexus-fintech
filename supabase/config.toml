@@ -1,5 +1,5 @@
 
 project_id = "evtzcardsedazhxugntw"
 
-[functions.send-verification-email]
+[functions.process-deposit]
 verify_jwt = true
