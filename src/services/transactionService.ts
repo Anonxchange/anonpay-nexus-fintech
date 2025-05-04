@@ -30,17 +30,22 @@ export interface PaymentMethod {
 }
 
 // Fetch all payment methods
-export const getPaymentMethods = async () => {
-  const { data, error } = await supabase
-    .from("payment_methods")
-    .select("*")
-    .eq("is_active", true);
-  
-  if (error) {
-    throw new Error(`Error fetching payment methods: ${error.message}`);
+export const getPaymentMethods = async (): Promise<PaymentMethod[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('payment_methods')
+      .select('*')
+      .eq('is_active', true);
+    
+    if (error) {
+      throw new Error(`Error fetching payment methods: ${error.message}`);
+    }
+    
+    return (data || []) as PaymentMethod[];
+  } catch (error) {
+    console.error('Error in getPaymentMethods:', error);
+    return [];
   }
-  
-  return data as PaymentMethod[];
 };
 
 // Get crypto price in USD
@@ -68,18 +73,23 @@ export const convertUsdToNaira = (usdAmount: number) => {
 };
 
 // Get user transactions
-export const getUserTransactions = async (userId: string) => {
-  const { data, error } = await supabase
-    .from("transactions")
-    .select("*")
-    .eq("user_id", userId)
-    .order("created_at", { ascending: false });
-  
-  if (error) {
-    throw new Error(`Error fetching transactions: ${error.message}`);
+export const getUserTransactions = async (userId: string): Promise<Transaction[]> => {
+  try {
+    const { data, error } = await supabase
+      .from('transactions')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+    
+    if (error) {
+      throw new Error(`Error fetching transactions: ${error.message}`);
+    }
+    
+    return (data || []) as Transaction[];
+  } catch (error) {
+    console.error('Error in getUserTransactions:', error);
+    return [];
   }
-  
-  return data as Transaction[];
 };
 
 // Process deposit
@@ -88,21 +98,26 @@ export const processDeposit = async (
   amount: number,
   reference: string
 ) => {
-  const { data, error } = await supabase.rpc(
-    "update_wallet_balance",
-    {
-      user_id: userId,
-      amount: amount,
-      transaction_type: "deposit",
-      reference: reference
+  try {
+    const { data, error } = await supabase.rpc(
+      "update_wallet_balance",
+      {
+        user_id: userId,
+        amount: amount,
+        transaction_type: "deposit",
+        reference: reference
+      }
+    );
+    
+    if (error) {
+      throw new Error(`Failed to process deposit: ${error.message}`);
     }
-  );
-  
-  if (error) {
-    throw new Error(`Failed to process deposit: ${error.message}`);
+    
+    return data;
+  } catch (error) {
+    console.error('Error in processDeposit:', error);
+    throw error;
   }
-  
-  return data;
 };
 
 // Process withdrawal
@@ -112,96 +127,101 @@ export const processWithdrawal = async (
   bank_name: string,
   account_number: string
 ) => {
-  // First create a pending withdrawal transaction
-  const { data: transaction, error: transactionError } = await supabase
-    .from("transactions")
-    .insert({
-      user_id: userId,
-      amount: -amount, // Negative for withdrawals
-      type: "withdrawal",
-      reference: `${bank_name}:${account_number}`,
-      status: "pending"
-    })
-    .select()
-    .single();
-
-  if (transactionError) {
-    throw new Error(`Failed to create withdrawal: ${transactionError.message}`);
-  }
-
-  // Attempt to make the Flutterwave API call
   try {
-    const response = await fetch("https://api.flutterwave.com/v3/transfers", {
-      method: "POST",
-      headers: {
-        "Authorization": "Bearer FLWSECK_TEST-d29b587a35bc20e4540be68e8c6dfa52-X",
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        account_bank: bank_name,
-        account_number: account_number,
-        amount: amount,
-        currency: "NGN",
-        reference: `anonpay_withdrawal_${transaction.id}`,
-        narration: "AnonPay Withdrawal"
+    // First create a pending withdrawal transaction
+    const { data: transaction, error: transactionError } = await supabase
+      .from('transactions')
+      .insert({
+        user_id: userId,
+        amount: -amount, // Negative for withdrawals
+        type: "withdrawal",
+        reference: `${bank_name}:${account_number}`,
+        status: "pending"
       })
-    });
+      .select()
+      .single();
 
-    // Update withdrawal status based on response
-    if (response.ok) {
-      const flwResponse = await response.json();
-      
-      const { error: updateError } = await supabase
-        .from("transactions")
-        .update({
-          status: "completed",
-          reference: `${transaction.reference}:${flwResponse.data?.id || "unknown"}`
+    if (transactionError) {
+      throw new Error(`Failed to create withdrawal: ${transactionError.message}`);
+    }
+
+    // Attempt to make the Flutterwave API call
+    try {
+      const response = await fetch("https://api.flutterwave.com/v3/transfers", {
+        method: "POST",
+        headers: {
+          "Authorization": "Bearer FLWSECK_TEST-d29b587a35bc20e4540be68e8c6dfa52-X",
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          account_bank: bank_name,
+          account_number: account_number,
+          amount: amount,
+          currency: "NGN",
+          reference: `anonpay_withdrawal_${transaction.id}`,
+          narration: "AnonPay Withdrawal"
         })
-        .eq("id", transaction.id);
+      });
 
-      if (updateError) {
-        console.error("Failed to update transaction status:", updateError);
-      }
+      // Update withdrawal status based on response
+      if (response.ok) {
+        const flwResponse = await response.json();
+        
+        const { error: updateError } = await supabase
+          .from('transactions')
+          .update({
+            status: "completed",
+            reference: `${transaction.reference}:${flwResponse.data?.id || "unknown"}`
+          })
+          .eq("id", transaction.id);
 
-      // Also update the wallet balance
-      const { error: balanceError } = await supabase.rpc(
-        "update_wallet_balance",
-        {
-          user_id: userId,
-          amount: -amount, // Negative for withdrawals
-          transaction_type: "withdrawal",
-          reference: transaction.reference
+        if (updateError) {
+          console.error("Failed to update transaction status:", updateError);
         }
-      );
 
-      if (balanceError) {
-        console.error("Failed to update wallet balance:", balanceError);
+        // Also update the wallet balance using the RPC function
+        const { error: balanceError } = await supabase.rpc(
+          "update_wallet_balance",
+          {
+            user_id: userId,
+            amount: -amount, // Negative for withdrawals
+            transaction_type: "withdrawal",
+            reference: transaction.reference
+          }
+        );
+
+        if (balanceError) {
+          console.error("Failed to update wallet balance:", balanceError);
+        }
+
+        return { success: true, data: transaction };
+      } else {
+        // Update transaction to failed
+        const { error: updateError } = await supabase
+          .from('transactions')
+          .update({ status: "failed" })
+          .eq("id", transaction.id);
+
+        if (updateError) {
+          console.error("Failed to update transaction status:", updateError);
+        }
+
+        const errorText = await response.text();
+        throw new Error(`Flutterwave API error: ${response.status} - ${errorText}`);
       }
-
-      return { success: true, data: transaction };
-    } else {
-      // Update transaction to failed
-      const { error: updateError } = await supabase
-        .from("transactions")
+    } catch (error) {
+      console.error("Withdrawal processing error:", error);
+      
+      // Make sure we update the transaction status to failed
+      await supabase
+        .from('transactions')
         .update({ status: "failed" })
         .eq("id", transaction.id);
-
-      if (updateError) {
-        console.error("Failed to update transaction status:", updateError);
-      }
-
-      const errorText = await response.text();
-      throw new Error(`Flutterwave API error: ${response.status} - ${errorText}`);
+        
+      throw error;
     }
   } catch (error) {
-    console.error("Withdrawal processing error:", error);
-    
-    // Make sure we update the transaction status to failed
-    await supabase
-      .from("transactions")
-      .update({ status: "failed" })
-      .eq("id", transaction.id);
-      
+    console.error('Error in processWithdrawal:', error);
     throw error;
   }
 };
