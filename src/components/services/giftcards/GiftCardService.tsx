@@ -6,8 +6,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { getGiftCards, buyGiftCard, sellGiftCard, GiftCard } from "@/services/products/types";
-import { getGiftCards as fetchGiftCards } from "@/services/products/giftcardService";
+import { GiftCard } from "@/services/products/types";
+import { getGiftCards, buyGiftCard, sellGiftCard } from "@/services/products/giftcardService";
 import { Upload, Tag, ArrowDownToLine, ArrowUpFromLine } from "lucide-react";
 
 interface GiftCardServiceProps {
@@ -27,7 +27,7 @@ const GiftCardService: React.FC<GiftCardServiceProps> = ({ user }) => {
     const loadGiftCards = async () => {
       setLoading(true);
       try {
-        const data = await fetchGiftCards();
+        const data = await getGiftCards();
         setGiftCards(data);
       } catch (error) {
         console.error("Failed to load gift cards:", error);
