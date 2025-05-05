@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -20,6 +19,7 @@ import ResetPassword from "./pages/ResetPassword";
 
 // Context
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import type { Profile } from './types/auth';
 
 // Define user types
 export type UserRole = "user" | "admin";
@@ -111,6 +111,6 @@ const App = () => (
 
 // Export auth hook and types to be used throughout the app
 export { useAuth };
-export type { Profile } from './contexts/AuthContext';
+export type { Profile };
 
 export default App;
