@@ -3,9 +3,9 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
-import { Profile, AuthContextType } from '../types/auth';
-import { useAuthOperations } from '../hooks/useAuthOperations';
-import { useProfileFetch } from '../hooks/useProfileFetch';
+import { Profile, AuthContextType } from '../../types/auth';
+import { useAuthOperations } from './useAuthOperations';
+import { useProfileFetch } from './useProfileFetch';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -104,4 +104,4 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   );
 };
 
-export type { Profile } from '../types/auth';
+export type { Profile } from '../../types/auth';
