@@ -64,8 +64,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } else {
         // Ensure the data conforms to the Profile type
         const profileData: Profile = {
-          ...data,
-          kyc_status: data.kyc_status as KycStatus
+          id: data.id,
+          name: data.name,
+          avatar_url: data.avatar_url,
+          phone_number: data.phone_number,
+          kyc_status: data.kyc_status as KycStatus,
+          wallet_balance: data.wallet_balance,
+          created_at: data.created_at,
+          updated_at: data.updated_at
         };
         setProfile(profileData);
       }

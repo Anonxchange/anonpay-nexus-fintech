@@ -149,13 +149,6 @@ const VtuService: React.FC<VtuServiceProps> = ({ user }) => {
                 className={`cursor-pointer transition-all ${selectedProduct?.id === product.id ? 'ring-2 ring-primary' : ''}`}
                 onClick={() => setSelectedProduct(product)}
               >
-                <div className="aspect-video overflow-hidden">
-                  <img 
-                    src={product.imageUrl} 
-                    alt={product.name}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
                 <CardHeader className="py-3">
                   <CardTitle className="text-lg">{product.name}</CardTitle>
                   <CardDescription>{product.description}</CardDescription>

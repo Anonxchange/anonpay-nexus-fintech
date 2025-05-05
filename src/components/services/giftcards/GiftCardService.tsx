@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { GiftCard } from "@/services/products/types";
 import { getGiftCards, buyGiftCard, sellGiftCard } from "@/services/products/giftcardService";
-import { Upload, Tag, ArrowDownToLine, ArrowUpFromLine } from "lucide-react";
+import { ArrowDownToLine, ArrowUpFromLine } from "lucide-react";
 
 interface GiftCardServiceProps {
   user: any;
@@ -20,7 +20,6 @@ const GiftCardService: React.FC<GiftCardServiceProps> = ({ user }) => {
   const [selectedCard, setSelectedCard] = useState<GiftCard | null>(null);
   const [amount, setAmount] = useState("");
   const [cardCode, setCardCode] = useState("");
-  const [file, setFile] = useState<File | null>(null);
   const { toast } = useToast();
   
   useEffect(() => {
@@ -117,19 +116,7 @@ const GiftCardService: React.FC<GiftCardServiceProps> = ({ user }) => {
       return;
     }
     
-    if (!file) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Please upload a screenshot of the gift card"
-      });
-      return;
-    }
-    
     try {
-      // In a real app, we would upload the image file here
-      // For now, just show success message
-      
       const nairaAmount = sellAmount * selectedCard.sellRate;
       const success = await sellGiftCard(user.id, selectedCard.id, nairaAmount, cardCode);
       
@@ -140,7 +127,6 @@ const GiftCardService: React.FC<GiftCardServiceProps> = ({ user }) => {
         });
         setAmount("");
         setCardCode("");
-        setFile(null);
         setSelectedCard(null);
       } else {
         throw new Error("Transaction failed");
@@ -182,13 +168,6 @@ const GiftCardService: React.FC<GiftCardServiceProps> = ({ user }) => {
                 className={`cursor-pointer transition-all ${selectedCard?.id === card.id ? 'ring-2 ring-primary' : ''}`}
                 onClick={() => setSelectedCard(card)}
               >
-                <div className="aspect-square overflow-hidden">
-                  <img 
-                    src={card.imageUrl} 
-                    alt={card.name}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
                 <CardHeader className="py-3">
                   <CardTitle className="text-lg">{card.name}</CardTitle>
                   <CardDescription>{card.description}</CardDescription>
@@ -271,13 +250,6 @@ const GiftCardService: React.FC<GiftCardServiceProps> = ({ user }) => {
                 className={`cursor-pointer transition-all ${selectedCard?.id === card.id ? 'ring-2 ring-primary' : ''}`}
                 onClick={() => setSelectedCard(card)}
               >
-                <div className="aspect-square overflow-hidden">
-                  <img 
-                    src={card.imageUrl} 
-                    alt={card.name}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
                 <CardHeader className="py-3">
                   <CardTitle className="text-lg">{card.name}</CardTitle>
                   <CardDescription>{card.description}</CardDescription>
@@ -334,36 +306,6 @@ const GiftCardService: React.FC<GiftCardServiceProps> = ({ user }) => {
                     />
                   </div>
                   
-                  <div className="space-y-2">
-                    <Label htmlFor="card-image">Upload Screenshot</Label>
-                    <div className="border-2 border-dashed rounded-md p-6 flex flex-col items-center justify-center">
-                      <Upload className="h-8 w-8 text-gray-400 mb-2" />
-                      <p className="text-sm text-gray-600">Click to upload or drag and drop</p>
-                      <p className="text-xs text-gray-500 mt-1">PNG, JPG up to 10MB</p>
-                      <input
-                        id="card-image"
-                        type="file"
-                        className="hidden"
-                        accept="image/*"
-                        onChange={(e) => setFile(e.target.files ? e.target.files[0] : null)}
-                      />
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="mt-4"
-                        onClick={() => document.getElementById('card-image')?.click()}
-                      >
-                        Select File
-                      </Button>
-                      {file && (
-                        <p className="text-sm text-green-600 mt-2 flex items-center">
-                          <Tag className="h-4 w-4 mr-1" />
-                          {file.name}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                  
                   {amount && !isNaN(parseFloat(amount)) && parseFloat(amount) > 0 && (
                     <div className="bg-gray-50 p-3 rounded-md">
                       <div className="flex justify-between">
@@ -384,7 +326,7 @@ const GiftCardService: React.FC<GiftCardServiceProps> = ({ user }) => {
                   <Button 
                     className="w-full" 
                     onClick={handleSell}
-                    disabled={!amount || !cardCode || !file}
+                    disabled={!amount || !cardCode}
                   >
                     Sell Gift Card
                   </Button>
