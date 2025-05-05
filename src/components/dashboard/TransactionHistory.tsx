@@ -5,6 +5,11 @@ import { getUserTransactions, Transaction } from "@/services/transactions";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 
+interface TransactionHistoryProps {
+  limit?: number;
+  showViewAll?: boolean;
+}
+
 const formatDate = (dateString: string) => {
   const date = new Date(dateString);
   return new Intl.DateTimeFormat('en-NG', {
@@ -16,7 +21,7 @@ const formatDate = (dateString: string) => {
   }).format(date);
 };
 
-const TransactionHistory: React.FC = () => {
+const TransactionHistory: React.FC<TransactionHistoryProps> = ({ limit, showViewAll = true }) => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
@@ -29,7 +34,7 @@ const TransactionHistory: React.FC = () => {
       try {
         setLoading(true);
         const data = await getUserTransactions(user.id);
-        setTransactions(data);
+        setTransactions(limit ? data.slice(0, limit) : data);
       } catch (error: any) {
         console.error("Failed to fetch transactions:", error);
         toast({
@@ -43,7 +48,7 @@ const TransactionHistory: React.FC = () => {
     };
     
     fetchTransactions();
-  }, [user, toast]);
+  }, [user, toast, limit]);
 
   const getStatusBadgeClass = (status: string) => {
     switch (status) {
@@ -101,6 +106,18 @@ const TransactionHistory: React.FC = () => {
             ))}
           </TableBody>
         </Table>
+      )}
+      {showViewAll && transactions.length > 0 && (
+        <div className="flex justify-center p-2 border-t">
+          <button 
+            className="text-sm text-primary hover:underline"
+            onClick={() => document.querySelector('[value="history"]')?.dispatchEvent(
+              new MouseEvent('click', { bubbles: true })
+            )}
+          >
+            View All Transactions
+          </button>
+        </div>
       )}
     </div>
   );

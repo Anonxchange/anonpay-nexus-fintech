@@ -1,7 +1,6 @@
 
-import React, { useEffect } from "react";
+import React from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Gift, Bitcoin, Phone, Search } from "lucide-react";
 import CryptoService from "./crypto/CryptoService";
@@ -11,27 +10,22 @@ import RateCheckerService from "./ratechecker/RateCheckerService";
 
 interface ServiceTabsProps {
   user: any;
+  activeTab?: string;
 }
 
-const ServiceTabs: React.FC<ServiceTabsProps> = ({ user }) => {
+const ServiceTabs: React.FC<ServiceTabsProps> = ({ user, activeTab }) => {
   const location = useLocation();
   const navigate = useNavigate();
 
   const path = location.pathname.split("/").pop() || "";
-  const activeTab = ["crypto", "gift-cards", "vtu", "rate-checker"].includes(path) ? path : "crypto";
-
-  useEffect(() => {
-    if (path === "services" || !path) {
-      navigate("/services/crypto", { replace: true });
-    }
-  }, [path, navigate]);
+  const currentActiveTab = activeTab || (["crypto", "gift-cards", "vtu", "rate-checker"].includes(path) ? path : "crypto");
 
   const handleTabChange = (tab: string) => {
     navigate(`/services/${tab}`);
   };
 
   return (
-    <Tabs value={activeTab} className="w-full">
+    <Tabs value={currentActiveTab} className="w-full">
       <TabsList className="grid grid-cols-4 mb-4">
         <TabsTrigger value="crypto" onClick={() => handleTabChange("crypto")}>
           <Bitcoin className="mr-2 h-4 w-4" />

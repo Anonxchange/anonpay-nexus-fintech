@@ -105,13 +105,15 @@ export type Database = {
     }
     Functions: {
       update_wallet_balance: {
-        Args: {
-          user_id: string
-          amount: number
-          transaction_type: string
-          reference: string
-        }
-        Returns: Json
+        Args:
+          | Record<PropertyKey, never>
+          | {
+              user_id: string
+              amount: number
+              transaction_type: string
+              reference: string
+            }
+        Returns: undefined
       }
     }
     Enums: {

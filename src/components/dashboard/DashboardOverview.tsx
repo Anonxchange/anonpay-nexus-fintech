@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { Link } from "react-router-dom";
 import { Bitcoin, Gift, Phone, Search } from "lucide-react";
+import SettingsPage from "../settings/SettingsPage";
 
 interface DashboardProps {
   user: any;
@@ -126,21 +127,13 @@ const DashboardOverview: React.FC<DashboardProps> = ({ user }) => {
               <CardDescription>A history of all your transactions</CardDescription>
             </CardHeader>
             <CardContent>
-              <TransactionHistory />
+              <TransactionHistory showViewAll={false} />
             </CardContent>
           </Card>
         </TabsContent>
         
         <TabsContent value="settings">
-          <Card>
-            <CardHeader>
-              <CardTitle>Settings</CardTitle>
-              <CardDescription>Manage your account settings</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p>No settings available yet.</p>
-            </CardContent>
-          </Card>
+          <SettingsPage />
         </TabsContent>
       </Tabs>
       

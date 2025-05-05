@@ -1,167 +1,257 @@
 
-import React, { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import React, { useState, useEffect } from "react";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Phone, PhoneOutgoing, PhoneIncoming } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { VtuProduct } from "@/services/products/types";
+import { getVtuProducts, getVtuProductsByCategory, buyVtuProduct } from "@/services/products/vtuService";
+import { Phone, Wifi, Tv, Lightbulb, Loader2 } from "lucide-react";
 
 interface VtuServiceProps {
   user: any;
 }
 
 const VtuService: React.FC<VtuServiceProps> = ({ user }) => {
-  const [vtuTab, setVtuTab] = useState("airtime");
-  const { toast } = useToast();
-  const [phoneNumber, setPhoneNumber] = useState("");
+  const [category, setCategory] = useState("airtime");
+  const [products, setProducts] = useState<VtuProduct[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedProduct, setSelectedProduct] = useState<VtuProduct | null>(null);
   const [amount, setAmount] = useState("");
-  const [selectedProvider, setSelectedProvider] = useState("MTN");
-  const [selectedPlan, setSelectedPlan] = useState("1GB");
-
-  const handleVtuAction = () => {
-    if (!phoneNumber || phoneNumber.length < 10) {
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [processing, setProcessing] = useState(false);
+  const { toast } = useToast();
+  
+  useEffect(() => {
+    const loadProducts = async () => {
+      setLoading(true);
+      try {
+        let data: VtuProduct[];
+        if (category) {
+          data = await getVtuProductsByCategory(category);
+        } else {
+          data = await getVtuProducts();
+        }
+        setProducts(data);
+      } catch (error) {
+        console.error("Failed to load VTU products:", error);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to load products"
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    loadProducts();
+  }, [category, toast]);
+  
+  const handleBuy = async () => {
+    if (!selectedProduct) {
       toast({
-        title: "Invalid phone number",
-        description: "Please enter a valid phone number",
         variant: "destructive",
+        title: "Error",
+        description: "Please select a product"
       });
       return;
     }
-
-    if (!amount || parseFloat(amount) <= 0) {
+    
+    if (!phoneNumber) {
       toast({
-        title: "Invalid amount",
-        description: "Please enter a valid amount",
         variant: "destructive",
+        title: "Error",
+        description: "Please enter a phone number"
       });
       return;
     }
-
-    const actionType = vtuTab === "airtime" ? "Airtime recharge" : "Data purchase";
-    const details = vtuTab === "airtime" 
-      ? `${amount} Naira to ${phoneNumber}` 
-      : `${selectedPlan} for ${phoneNumber}`;
-
-    toast({
-      title: `${actionType} successful`,
-      description: `Your ${actionType.toLowerCase()} of ${details} has been processed.`,
-    });
+    
+    let buyAmount = selectedProduct.price;
+    
+    // For airtime, use user-input amount
+    if (selectedProduct.category === "airtime") {
+      const inputAmount = parseFloat(amount);
+      if (isNaN(inputAmount) || inputAmount < 100) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Please enter a valid amount (minimum ₦100)"
+        });
+        return;
+      }
+      buyAmount = inputAmount;
+    }
+    
+    setProcessing(true);
+    
+    try {
+      const success = await buyVtuProduct(user.id, selectedProduct.id, buyAmount, phoneNumber);
+      
+      if (success) {
+        toast({
+          title: "Purchase Successful",
+          description: `Your ${selectedProduct.name} purchase was successful`,
+        });
+        setAmount("");
+        setPhoneNumber("");
+        setSelectedProduct(null);
+      } else {
+        throw new Error("Transaction failed");
+      }
+    } catch (error) {
+      console.error("Failed to buy VTU product:", error);
+      toast({
+        variant: "destructive",
+        title: "Purchase Failed",
+        description: "Insufficient funds or network error"
+      });
+    } finally {
+      setProcessing(false);
+    }
   };
-
+  
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>VTU Services</CardTitle>
-        <CardDescription>Purchase airtime, data, and other virtual top-up services.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Tabs defaultValue="airtime" onValueChange={setVtuTab}>
-          <TabsList className="grid w-full grid-cols-2 mb-4">
-            <TabsTrigger value="airtime">Airtime</TabsTrigger>
-            <TabsTrigger value="data">Data</TabsTrigger>
-          </TabsList>
+    <div>
+      <h1 className="text-2xl font-bold mb-4">VTU Services</h1>
+      
+      <Tabs defaultValue={category} onValueChange={setCategory}>
+        <TabsList className="mb-4">
+          <TabsTrigger value="airtime">
+            <Phone className="mr-2 h-4 w-4" />
+            Airtime
+          </TabsTrigger>
+          <TabsTrigger value="data">
+            <Wifi className="mr-2 h-4 w-4" />
+            Data
+          </TabsTrigger>
+          <TabsTrigger value="cable">
+            <Tv className="mr-2 h-4 w-4" />
+            Cable TV
+          </TabsTrigger>
+          <TabsTrigger value="electricity">
+            <Lightbulb className="mr-2 h-4 w-4" />
+            Electricity
+          </TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value={category}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+            {loading ? (
+              <div className="col-span-full py-10 text-center">Loading products...</div>
+            ) : products.length === 0 ? (
+              <div className="col-span-full py-10 text-center">No products available in this category</div>
+            ) : products.map((product) => (
+              <Card 
+                key={product.id}
+                className={`cursor-pointer transition-all ${selectedProduct?.id === product.id ? 'ring-2 ring-primary' : ''}`}
+                onClick={() => setSelectedProduct(product)}
+              >
+                <div className="aspect-video overflow-hidden">
+                  <img 
+                    src={product.imageUrl} 
+                    alt={product.name}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <CardHeader className="py-3">
+                  <CardTitle className="text-lg">{product.name}</CardTitle>
+                  <CardDescription>{product.description}</CardDescription>
+                </CardHeader>
+                <CardContent className="py-0">
+                  {product.price > 0 && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm">Price:</span>
+                      <span className="font-semibold">₦{product.price.toLocaleString()}</span>
+                    </div>
+                  )}
+                </CardContent>
+                <CardFooter className="py-3">
+                  <Button 
+                    variant="outline" 
+                    className="w-full"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedProduct(product);
+                    }}
+                  >
+                    {selectedProduct?.id === product.id ? 'Selected' : 'Select'}
+                  </Button>
+                </CardFooter>
+              </Card>
+            ))}
+          </div>
           
-          <TabsContent value="airtime" className="space-y-4">
-            <div className="grid gap-4">
-              <div>
-                <Label htmlFor="network">Select Network</Label>
-                <Select value={selectedProvider} onValueChange={setSelectedProvider}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select Network" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="MTN">MTN</SelectItem>
-                    <SelectItem value="AIRTEL">Airtel</SelectItem>
-                    <SelectItem value="GLO">Glo</SelectItem>
-                    <SelectItem value="9MOBILE">9Mobile</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div>
-                <Label htmlFor="phone">Phone Number</Label>
-                <Input 
-                  id="phone" 
-                  type="tel" 
-                  placeholder="Enter phone number" 
-                  value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="amount">Amount</Label>
-                <Input 
-                  id="amount" 
-                  type="number" 
-                  placeholder="0.00" 
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                />
-              </div>
-              
-              <Button onClick={handleVtuAction} className="w-full">
-                <PhoneOutgoing className="mr-2 h-4 w-4" />
-                Buy Airtime
-              </Button>
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="data" className="space-y-4">
-            <div className="grid gap-4">
-              <div>
-                <Label htmlFor="network">Select Network</Label>
-                <Select value={selectedProvider} onValueChange={setSelectedProvider}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select Network" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="MTN">MTN</SelectItem>
-                    <SelectItem value="AIRTEL">Airtel</SelectItem>
-                    <SelectItem value="GLO">Glo</SelectItem>
-                    <SelectItem value="9MOBILE">9Mobile</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div>
-                <Label htmlFor="plan">Select Data Plan</Label>
-                <Select value={selectedPlan} onValueChange={setSelectedPlan}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select Data Plan" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="1GB">1GB - 30 Days</SelectItem>
-                    <SelectItem value="2GB">2GB - 30 Days</SelectItem>
-                    <SelectItem value="5GB">5GB - 30 Days</SelectItem>
-                    <SelectItem value="10GB">10GB - 30 Days</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div>
-                <Label htmlFor="phone">Phone Number</Label>
-                <Input 
-                  id="phone" 
-                  type="tel" 
-                  placeholder="Enter phone number" 
-                  value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
-                />
-              </div>
-              
-              <Button onClick={handleVtuAction} className="w-full">
-                <PhoneIncoming className="mr-2 h-4 w-4" />
-                Buy Data
-              </Button>
-            </div>
-          </TabsContent>
-        </Tabs>
-      </CardContent>
-    </Card>
+          {selectedProduct && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Purchase {selectedProduct.name}</CardTitle>
+                <CardDescription>Enter the required details</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="phone-number">Phone Number</Label>
+                    <Input
+                      id="phone-number"
+                      placeholder="e.g., 08012345678"
+                      value={phoneNumber}
+                      onChange={(e) => setPhoneNumber(e.target.value)}
+                    />
+                  </div>
+                  
+                  {selectedProduct.category === "airtime" && (
+                    <div className="space-y-2">
+                      <Label htmlFor="airtime-amount">Amount (₦)</Label>
+                      <Input
+                        id="airtime-amount"
+                        type="number"
+                        placeholder="100"
+                        min="100"
+                        value={amount}
+                        onChange={(e) => setAmount(e.target.value)}
+                      />
+                    </div>
+                  )}
+                  
+                  <div className="bg-gray-50 p-3 rounded-md">
+                    <div className="flex justify-between">
+                      <span>Service:</span>
+                      <span>{selectedProduct.name}</span>
+                    </div>
+                    <div className="flex justify-between font-semibold">
+                      <span>Total:</span>
+                      <span>
+                        {selectedProduct.category === "airtime" && amount && parseFloat(amount) >= 100
+                          ? `₦${parseFloat(amount).toLocaleString()}`
+                          : selectedProduct.price > 0
+                            ? `₦${selectedProduct.price.toLocaleString()}`
+                            : "Variable price"}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <Button 
+                    className="w-full" 
+                    onClick={handleBuy}
+                    disabled={
+                      processing || 
+                      !phoneNumber || 
+                      (selectedProduct.category === "airtime" && (!amount || parseFloat(amount) < 100))
+                    }
+                  >
+                    {processing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    {processing ? "Processing..." : "Pay Now"}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 };
 
