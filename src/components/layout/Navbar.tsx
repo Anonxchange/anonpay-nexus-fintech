@@ -39,9 +39,21 @@ const Navbar: React.FC<NavbarProps> = () => {
   return (
     <div className="shadow-sm bg-white sticky top-0 z-50">
       <div className="container mx-auto py-4 px-4 flex items-center justify-between">
-        <Link to="/" className="font-bold text-2xl text-anonpay-primary">
-          AnonPay
-        </Link>
+        <div className="flex items-center">
+          <img 
+            src="/anonpay-logo.svg"
+            alt="AnonPay Logo"
+            className="h-8 w-8 mr-2"
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              target.onerror = null;
+              target.src = "/placeholder.svg";
+            }}
+          />
+          <Link to="/" className="font-bold text-2xl text-anonpay-primary">
+            AnonPay
+          </Link>
+        </div>
         
         <div className="hidden md:flex items-center space-x-4">
           <NavigationMenu>
