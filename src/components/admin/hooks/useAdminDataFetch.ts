@@ -60,15 +60,23 @@ export const useAdminDataFetch = (
         // Find matching auth user to get email
         const authUser = authUsers.find(user => user.id === profile.id);
         
-        return {
-          ...profile,
-          email: authUser?.email || "No email available",
-          kyc_status: (profile.kyc_status as KycStatus) || 'not_submitted',
+        // Create a profile object with all required fields
+        const formattedProfile: Profile = {
+          id: profile.id,
           name: profile.name || authUser?.email || "Unknown User",
+          avatar_url: profile.avatar_url,
+          kyc_status: (profile.kyc_status as KycStatus) || 'not_submitted',
+          wallet_balance: profile.wallet_balance || 0,
+          phone_number: profile.phone_number,
           role: profile.role || 'user',
+          email: authUser?.email || "No email available",
+          created_at: profile.created_at || new Date().toISOString(),
+          updated_at: profile.updated_at || new Date().toISOString(),
           account_status: (profile.account_status as AccountStatus) || 'active',
-          kyc_submissions: [] // Initialize with empty array as we don't have kyc_submissions table yet
-        } as Profile; // Use type assertion to ensure compatibility
+          kyc_submissions: []
+        };
+        
+        return formattedProfile;
       });
       
       // Format transactions data
