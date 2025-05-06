@@ -1,117 +1,162 @@
-
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
+import React, { useState, useEffect } from "react";
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { Toaster } from "@/components/ui/sonner";
 
 // Pages
 import Index from "./pages/Index";
 import Login from "./pages/Login";
 import SignUp from "./pages/SignUp";
 import Dashboard from "./pages/Dashboard";
-import KYC from "./pages/KYC";
 import Admin from "./pages/Admin";
-import Services from "./pages/Services";
-import VerifyEmail from "./pages/VerifyEmail";
 import NotFound from "./pages/NotFound";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+import VerifyEmail from "./pages/VerifyEmail";
+import Services from "./pages/Services";
+import KYC from "./pages/KYC";
 
-// Context
-import { AuthProvider, useAuth } from "./contexts/auth";
-import type { Profile } from './types/auth';
+// New pages
+import About from "./pages/About";
+import Contact from "./pages/Contact";
+import Terms from "./pages/Terms";
+import Privacy from "./pages/Privacy";
 
-// Define user types
-export type UserRole = "user" | "admin";
-export type KycStatus = "pending" | "approved" | "rejected" | "not_submitted" | "admin";
-export type EmailStatus = "verified" | "unverified";
+// Components
+import SettingsPage from "./components/settings/SettingsPage";
+import { AuthProvider } from "./contexts/auth";
 
-// Protected route component
-const ProtectedRoute = ({ 
-  children, 
-  requiredRole = "user",
-  requireVerified = true,
-}: { 
-  children: React.ReactNode,
-  requiredRole?: UserRole,
-  requireVerified?: boolean,
-}) => {
-  const { user, profile, isLoading } = useAuth();
-
-  if (isLoading) {
-    return <div className="flex items-center justify-center h-screen">Loading...</div>;
-  }
-
-  if (!user) {
-    return <Navigate to="/login" replace />;
-  }
-
-  if (requireVerified && user.email_confirmed_at === null) {
-    return <Navigate to="/verify-email" replace />;
-  }
-
-  if (requiredRole === "admin" && profile?.kyc_status !== "admin") {
-    return <Navigate to="/dashboard" replace />;
-  }
-
-  return <>{children}</>;
-};
+export type KycStatus = "not_submitted" | "pending" | "approved" | "rejected";
 
 const queryClient = new QueryClient();
 
-const AppRoutes = () => (
-  <Routes>
-    <Route path="/" element={<Index />} />
-    <Route path="/login" element={<Login />} />
-    <Route path="/signup" element={<SignUp />} />
-    <Route path="/forgot-password" element={<ForgotPassword />} />
-    <Route path="/reset-password" element={<ResetPassword />} />
-    <Route path="/verify-email" element={
-      <ProtectedRoute requireVerified={false}>
-        <VerifyEmail />
-      </ProtectedRoute>
-    } />
-    <Route path="/dashboard" element={
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loading, setLoading] = useState(true);
+  
+  useEffect(() => {
+    const checkAuth = () => {
+      const user = localStorage.getItem("anonpay_user");
+      if (user) {
+        setIsAuthenticated(true);
+      } else {
+        setIsAuthenticated(false);
+      }
+      setLoading(false);
+    };
+    
+    checkAuth();
+  }, []);
+  
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+  
+  if (!isAuthenticated) {
+    window.location.href = "/login";
+    return null;
+  }
+  
+  return children;
+};
+
+// Update the router configuration to include the new routes
+const router = createBrowserRouter([
+  {
+    path: "/",
+    element: <Index />,
+  },
+  {
+    path: "/login",
+    element: <Login />,
+  },
+  {
+    path: "/signup",
+    element: <SignUp />,
+  },
+  {
+    path: "/forgot-password",
+    element: <ForgotPassword />,
+  },
+  {
+    path: "/reset-password",
+    element: <ResetPassword />,
+  },
+  {
+    path: "/verify-email",
+    element: <VerifyEmail />,
+  },
+  {
+    path: "/dashboard",
+    element: (
       <ProtectedRoute>
         <Dashboard />
       </ProtectedRoute>
-    } />
-    <Route path="/kyc" element={
+    ),
+  },
+  {
+    path: "/admin",
+    element: (
+      <ProtectedRoute>
+        <Admin />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/settings",
+    element: (
+      <ProtectedRoute>
+        <SettingsPage />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/kyc",
+    element: (
       <ProtectedRoute>
         <KYC />
       </ProtectedRoute>
-    } />
-    <Route path="/services/*" element={
+    ),
+  },
+  {
+    path: "/services/*",
+    element: (
       <ProtectedRoute>
         <Services />
       </ProtectedRoute>
-    } />
-    <Route path="/admin/*" element={
-      <ProtectedRoute requiredRole="admin">
-        <Admin />
-      </ProtectedRoute>
-    } />
-    <Route path="*" element={<NotFound />} />
-  </Routes>
-);
+    ),
+  },
+  {
+    path: "/about",
+    element: <About />,
+  },
+  {
+    path: "/contact",
+    element: <Contact />,
+  },
+  {
+    path: "/terms",
+    element: <Terms />,
+  },
+  {
+    path: "/privacy",
+    element: <Privacy />,
+  },
+  {
+    path: "*",
+    element: <NotFound />,
+  },
+]);
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <BrowserRouter>
-        <AuthProvider>
-          <Toaster />
-          <Sonner />
-          <AppRoutes />
-        </AuthProvider>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
-
-// Export auth hook and types to be used throughout the app
-export { useAuth };
-export type { Profile };
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <RouterProvider router={router} />
+        <Toaster />
+      </AuthProvider>
+    </QueryClientProvider>
+  );
+}
 
 export default App;
