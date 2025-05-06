@@ -1,17 +1,9 @@
-
 import React from "react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { VtuProduct } from "@/services/products/types";
-
-// Network providers for airtime/data
-const networkProviders = [
-  { id: "mtn", name: "MTN", logo: "🟡" },
-  { id: "airtel", name: "Airtel", logo: "🔴" },
-  { id: "glo", name: "Glo", logo: "🟢" },
-  { id: "9mobile", name: "9Mobile", logo: "🟠" },
-];
+import { networkProviders } from "./constants/networkProviders";
 
 interface NetworkProviderSelectionProps {
   selectedProvider: string;
