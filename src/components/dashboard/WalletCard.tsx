@@ -23,6 +23,13 @@ const WalletCard: React.FC<WalletCardProps> = ({ balance, onFund }) => {
   const [depositOpen, setDepositOpen] = useState(false);
   const [withdrawOpen, setWithdrawOpen] = useState(false);
   
+  // Handle click on the History button
+  const handleHistoryClick = () => {
+    document.querySelector('[value="history"]')?.dispatchEvent(
+      new MouseEvent('click', { bubbles: true })
+    );
+  };
+  
   return (
     <>
       <Card className="bg-gradient-to-br from-anonpay-primary to-anonpay-secondary text-white overflow-hidden">
@@ -47,7 +54,10 @@ const WalletCard: React.FC<WalletCardProps> = ({ balance, onFund }) => {
               <ArrowUpRight className="h-4 w-4 mb-1" />
               <span>Withdraw</span>
             </div>
-            <div className="flex flex-col items-center bg-white/10 p-2 rounded-lg cursor-pointer hover:bg-white/20">
+            <div 
+              className="flex flex-col items-center bg-white/10 p-2 rounded-lg cursor-pointer hover:bg-white/20"
+              onClick={handleHistoryClick}
+            >
               <Clock className="h-4 w-4 mb-1" />
               <span>History</span>
             </div>

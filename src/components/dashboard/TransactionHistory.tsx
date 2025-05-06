@@ -1,9 +1,9 @@
-
 import React, { useState, useEffect } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getUserTransactions, Transaction } from "@/services/transactions";
 import { useAuth } from "@/contexts/auth";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 
 interface TransactionHistoryProps {
   limit?: number;
@@ -48,6 +48,27 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({ limit, showView
     };
     
     fetchTransactions();
+    
+    // Set up realtime subscription for transactions
+    const channel = supabase
+      .channel('public:transactions')
+      .on('postgres_changes', 
+        {
+          event: '*',
+          schema: 'public',
+          table: 'transactions',
+          filter: `user_id=eq.${user?.id}`
+        },
+        () => {
+          // Refresh transactions when changes occur
+          fetchTransactions();
+        }
+      )
+      .subscribe();
+    
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user, toast, limit]);
 
   const getStatusBadgeClass = (status: string) => {
@@ -67,12 +88,21 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({ limit, showView
     return amount >= 0 ? "text-green-600" : "text-red-600";
   };
 
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center p-6">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-anonpay-primary mr-3"></div>
+        <span>Loading transactions...</span>
+      </div>
+    );
+  }
+
   return (
     <div className="rounded-md border">
-      {loading ? (
-        <div className="flex justify-center items-center p-6">Loading transactions...</div>
-      ) : transactions.length === 0 ? (
-        <div className="flex justify-center items-center p-6 text-muted-foreground">No transactions found</div>
+      {transactions.length === 0 ? (
+        <div className="flex justify-center items-center p-6 text-muted-foreground">
+          No transactions found
+        </div>
       ) : (
         <Table>
           <TableHeader>

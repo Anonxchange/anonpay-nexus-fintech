@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import DepositDialog from "./DepositDialog";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/auth";
@@ -26,6 +26,7 @@ const DashboardOverview: React.FC<DashboardProps> = ({ user }) => {
       if (user?.id) {
         try {
           setLoading(true);
+          
           // Refresh profile data to get the latest wallet balance
           if (refreshProfile) {
             await refreshProfile();
@@ -44,6 +45,8 @@ const DashboardOverview: React.FC<DashboardProps> = ({ user }) => {
               
             if (!error && data) {
               setWalletBalance(data.wallet_balance || 0);
+            } else {
+              console.error('Error fetching wallet balance:', error);
             }
           }
         } catch (error) {
@@ -75,6 +78,7 @@ const DashboardOverview: React.FC<DashboardProps> = ({ user }) => {
           console.log('Profile updated:', payload);
           if (payload.new && payload.new.wallet_balance !== undefined) {
             setWalletBalance(payload.new.wallet_balance);
+            
             // Show toast notification for balance updates
             const oldBalance = payload.old?.wallet_balance || 0;
             const newBalance = payload.new.wallet_balance || 0;
@@ -111,7 +115,6 @@ const DashboardOverview: React.FC<DashboardProps> = ({ user }) => {
           // Refresh the profile to get the latest wallet balance
           if (refreshProfile) {
             await refreshProfile();
-            // The wallet balance will be updated automatically via the profile-changes channel
           }
         }
       )
@@ -135,7 +138,12 @@ const DashboardOverview: React.FC<DashboardProps> = ({ user }) => {
   };
 
   if (loading) {
-    return <div className="flex justify-center items-center h-64">Loading dashboard...</div>;
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-anonpay-primary"></div>
+        <span className="ml-3">Loading dashboard data...</span>
+      </div>
+    );
   }
 
   return (

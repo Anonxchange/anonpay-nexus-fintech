@@ -9,30 +9,25 @@ interface ProtectedRouteProps {
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const [loading, setLoading] = useState(true);
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
   const navigate = useNavigate();
   
   useEffect(() => {
-    const checkAuth = async () => {
-      // If we have auth context data, process it
+    // Wait for the auth context to initialize
+    if (!isLoading) {
       if (user === null) {
         console.log("No authenticated user found, redirecting to login");
         navigate("/login");
       }
-      
       setLoading(false);
-    };
-    
-    // Only check auth if loading is true (initial load)
-    if (loading) {
-      checkAuth();
     }
-  }, [user, navigate, loading]);
+  }, [user, navigate, isLoading]);
   
-  if (loading) {
+  if (loading || isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-anonpay-primary"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-anonpay-primary mr-3"></div>
+        <span>Loading your account data...</span>
       </div>
     );
   }
