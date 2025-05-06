@@ -1,43 +1,83 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { supabaseAdmin } from "@/integrations/supabase/adminClient";
 import { Profile, AccountStatus } from "@/types/auth";
 import { Transaction } from "../transactions/types";
 
-// Get all profiles for admin view - updated to correctly handle all users
+// Get all profiles for admin view
 export const getAllProfiles = async (adminId: string): Promise<Profile[]> => {
   try {
+    console.log("Checking if user is admin:", adminId);
     // First check if the user is an admin using the is_admin function
     const { data: isAdmin, error: adminError } = await supabase
       .rpc('is_admin', { user_id: adminId });
 
-    if (adminError || !isAdmin) {
-      console.error('Error: Not authorized as admin', adminError);
-      return [];
+    if (adminError) {
+      console.error('Error checking admin status:', adminError);
+      throw new Error('Not authorized as admin: ' + adminError.message);
     }
     
-    // Use supabaseAdmin client to fetch all profiles without restrictions
-    const { data: profiles, error } = await supabaseAdmin
-      .from('profiles')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      console.error('Error fetching profiles:', error);
-      return [];
+    if (!isAdmin) {
+      console.error('Error: User is not an admin');
+      throw new Error('Not authorized as admin');
     }
+    
+    console.log("Admin status confirmed, fetching all profiles");
+    
+    // For this version, we'll use the standard client since we need admin client setup
+    // First try with supabaseAdmin
+    let profiles = null;
+    let error = null;
+    
+    try {
+      console.log("Attempting to fetch profiles with supabaseAdmin");
+      const result = await supabaseAdmin
+        .from('profiles')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      profiles = result.data;
+      error = result.error;
+      
+      if (error) {
+        console.warn('Error using supabaseAdmin, falling back to standard client:', error);
+      } else {
+        console.log(`Successfully fetched ${profiles?.length || 0} profiles with supabaseAdmin`);
+      }
+    } catch (adminError) {
+      console.warn('Failed to use supabaseAdmin, falling back to standard client:', adminError);
+      error = adminError;
+    }
+
+    // Fall back to standard client if admin client fails
+    if (!profiles || error) {
+      console.log("Falling back to standard supabase client");
+      const result = await supabase
+        .from('profiles')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      profiles = result.data;
+      error = result.error;
+      
+      if (error) {
+        console.error('Error fetching profiles with standard client:', error);
+        throw new Error('Failed to fetch profiles: ' + error.message);
+      }
+    }
+    
+    console.log(`Successfully fetched ${profiles?.length || 0} profiles`);
     
     // Make sure to convert status fields and handle empty fields with proper defaults
-    return profiles.map(profile => ({
+    return (profiles || []).map(profile => ({
       ...profile,
-      kyc_status: (profile.kyc_status as any) || 'not_submitted',
+      kyc_status: profile.kyc_status || 'not_submitted',
       name: profile.name || "Unknown User", // Ensure name has a fallback
       role: profile.role || 'user', // Ensure role has a fallback
       account_status: profile.account_status || 'active' as AccountStatus // Ensure account_status has a fallback
     })) as Profile[];
-  } catch (error) {
-    console.error('Error fetching profiles:', error);
-    return [];
+  } catch (error: any) {
+    console.error('Error in getAllProfiles:', error);
+    throw error;
   }
 };
 
@@ -53,17 +93,45 @@ export const getUserCount = async (adminId: string): Promise<number> => {
       return 0;
     }
     
-    // Use supabaseAdmin client to get the exact count
-    const { count, error } = await supabaseAdmin
-      .from('profiles')
-      .select('*', { count: 'exact', head: true });
+    console.log("Admin status confirmed, fetching user count");
     
-    if (error) {
-      console.error('Error fetching user count:', error);
-      return 0;
+    // Try both clients to get the count
+    let count = 0;
+    let error = null;
+    
+    try {
+      // First try with supabaseAdmin
+      const result = await supabaseAdmin
+        .from('profiles')
+        .select('*', { count: 'exact', head: true });
+      
+      count = result.count || 0;
+      error = result.error;
+      
+      if (error) {
+        console.warn('Error using supabaseAdmin for count, falling back:', error);
+      }
+    } catch (adminError) {
+      console.warn('Failed to use supabaseAdmin for count, falling back:', adminError);
+      error = adminError;
+    }
+
+    // Fall back to standard client if admin client fails
+    if (error || count === 0) {
+      console.log("Falling back to standard supabase client for count");
+      const result = await supabase
+        .from('profiles')
+        .select('*', { count: 'exact', head: true });
+      
+      if (!result.error) {
+        count = result.count || 0;
+      } else {
+        console.error('Error fetching count with standard client:', result.error);
+      }
     }
     
-    return count || 0;
+    console.log(`User count: ${count}`);
+    return count;
   } catch (error) {
     console.error('Error in getUserCount:', error);
     return 0;
@@ -82,33 +150,77 @@ export const getAllTransactions = async (adminId: string): Promise<Transaction[]
       return [];
     }
     
-    // Use supabaseAdmin client to fetch transactions
-    const { data, error } = await supabaseAdmin
-      .from('transactions')
-      .select('*, profiles:user_id(name, id, email, kyc_status, wallet_balance)')
-      .order('created_at', { ascending: false });
+    console.log("Admin status confirmed, fetching all transactions");
     
-    if (error) {
-      console.error('Error fetching transactions:', error);
-      return [];
+    // Try both clients to fetch transactions
+    let transactions = null;
+    let error = null;
+    
+    try {
+      // First try with supabaseAdmin
+      const result = await supabaseAdmin
+        .from('transactions')
+        .select(`
+          *,
+          profiles:user_id (
+            name, 
+            id,
+            email
+          )
+        `)
+        .order('created_at', { ascending: false });
+      
+      transactions = result.data;
+      error = result.error;
+      
+      if (error) {
+        console.warn('Error using supabaseAdmin for transactions, falling back:', error);
+      } else {
+        console.log(`Successfully fetched ${transactions?.length || 0} transactions with supabaseAdmin`);
+      }
+    } catch (adminError) {
+      console.warn('Failed to use supabaseAdmin for transactions, falling back:', adminError);
+      error = adminError;
+    }
+
+    // Fall back to standard client if admin client fails
+    if (!transactions || error) {
+      console.log("Falling back to standard supabase client for transactions");
+      const result = await supabase
+        .from('transactions')
+        .select(`
+          *,
+          profiles:user_id (
+            name, 
+            id,
+            email
+          )
+        `)
+        .order('created_at', { ascending: false });
+      
+      transactions = result.data;
+      error = result.error;
+      
+      if (error) {
+        console.error('Error fetching transactions with standard client:', error);
+        return [];
+      }
+      
+      console.log(`Successfully fetched ${transactions?.length || 0} transactions with standard client`);
     }
     
     // Format the data to include user_name
-    const formattedTransactions = data.map(transaction => {
+    return (transactions || []).map(transaction => {
       // Extract the profile data
       const profileData = transaction.profiles || null;
       
       return {
         ...transaction,
         // Safely get the name value
-        user_name: profileData && typeof profileData === 'object' ? 
-          (profileData as any).name || 'Unknown User' : 'Unknown User'
+        user_name: profileData ? (profileData as any).name || 'Unknown User' : 'Unknown User'
       };
-    });
-    
-    // First convert to unknown then to Transaction[] to handle the type mismatch
-    return formattedTransactions as unknown as Transaction[];
-  } catch (error) {
+    }) as Transaction[];
+  } catch (error: any) {
     console.error('Error in getAllTransactions:', error);
     return [];
   }
@@ -126,8 +238,8 @@ export const getUserDetailsByAdmin = async (adminId: string, userId: string): Pr
       return null;
     }
     
-    // Use supabaseAdmin client to fetch user details
-    const { data, error } = await supabaseAdmin
+    // Use supabase client to fetch user details
+    const { data, error } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', userId)

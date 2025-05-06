@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getUserTransactions, Transaction } from "@/services/transactions";
@@ -29,11 +30,17 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({ limit, showView
 
   useEffect(() => {
     const fetchTransactions = async () => {
-      if (!user) return;
+      if (!user) {
+        console.log("No user found, skipping transaction fetch");
+        setLoading(false);
+        return;
+      }
       
       try {
         setLoading(true);
+        console.log("Fetching transactions for user:", user.id);
         const data = await getUserTransactions(user.id);
+        console.log("Fetched transactions:", data?.length || 0);
         setTransactions(limit ? data.slice(0, limit) : data);
       } catch (error: any) {
         console.error("Failed to fetch transactions:", error);
@@ -50,24 +57,35 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({ limit, showView
     fetchTransactions();
     
     // Set up realtime subscription for transactions
-    const channel = supabase
-      .channel('public:transactions')
-      .on('postgres_changes', 
-        {
-          event: '*',
-          schema: 'public',
-          table: 'transactions',
-          filter: `user_id=eq.${user?.id}`
-        },
-        () => {
-          // Refresh transactions when changes occur
-          fetchTransactions();
-        }
-      )
-      .subscribe();
+    let channel: any;
+    
+    if (user) {
+      console.log("Setting up realtime subscription for transactions");
+      channel = supabase
+        .channel('public:transactions')
+        .on('postgres_changes', 
+          {
+            event: '*',
+            schema: 'public',
+            table: 'transactions',
+            filter: `user_id=eq.${user?.id}`
+          },
+          (payload) => {
+            console.log("Transaction change detected:", payload);
+            // Refresh transactions when changes occur
+            fetchTransactions();
+          }
+        )
+        .subscribe((status: string) => {
+          console.log("Subscription status:", status);
+        });
+    }
     
     return () => {
-      supabase.removeChannel(channel);
+      if (channel) {
+        console.log("Removing realtime subscription");
+        supabase.removeChannel(channel);
+      }
     };
   }, [user, toast, limit]);
 
@@ -100,8 +118,9 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({ limit, showView
   return (
     <div className="rounded-md border">
       {transactions.length === 0 ? (
-        <div className="flex justify-center items-center p-6 text-muted-foreground">
-          No transactions found
+        <div className="flex flex-col justify-center items-center p-6 text-muted-foreground">
+          <p>No transactions found</p>
+          <p className="text-sm text-gray-500 mt-1">Transactions will appear here once you deposit or withdraw funds</p>
         </div>
       ) : (
         <Table>
@@ -141,9 +160,14 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({ limit, showView
         <div className="flex justify-center p-2 border-t">
           <button 
             className="text-sm text-primary hover:underline"
-            onClick={() => document.querySelector('[value="history"]')?.dispatchEvent(
-              new MouseEvent('click', { bubbles: true })
-            )}
+            onClick={() => {
+              const historyTab = document.querySelector('[value="history"]');
+              if (historyTab) {
+                historyTab.dispatchEvent(
+                  new MouseEvent('click', { bubbles: true })
+                );
+              }
+            }}
           >
             View All Transactions
           </button>
