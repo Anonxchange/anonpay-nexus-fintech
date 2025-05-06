@@ -35,7 +35,7 @@ const AdminProtectedRoute: React.FC<AdminProtectedRouteProps> = ({ children }) =
               const { data: { user } } = await supabase.auth.getUser();
               
               if (user && user.id === adminObj.id) {
-                // Verify admin role
+                // Verify admin role with our is_admin function through a profile query
                 const { data: profile, error } = await supabase
                   .from('profiles')
                   .select('role')
