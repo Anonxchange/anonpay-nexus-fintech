@@ -34,3 +34,4 @@
 # Configure realtime
 [realtime]
   enabled = true
+

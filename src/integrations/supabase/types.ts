@@ -41,6 +41,7 @@ export type Database = {
           kyc_status: string | null
           name: string | null
           phone_number: string | null
+          role: string | null
           updated_at: string | null
           wallet_balance: number | null
         }
@@ -51,6 +52,7 @@ export type Database = {
           kyc_status?: string | null
           name?: string | null
           phone_number?: string | null
+          role?: string | null
           updated_at?: string | null
           wallet_balance?: number | null
         }
@@ -61,6 +63,7 @@ export type Database = {
           kyc_status?: string | null
           name?: string | null
           phone_number?: string | null
+          role?: string | null
           updated_at?: string | null
           wallet_balance?: number | null
         }
