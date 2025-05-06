@@ -8,16 +8,26 @@ interface RootLayoutProps {
   children: React.ReactNode;
 }
 
-const queryClient = new QueryClient();
+// Create the QueryClient outside the component to avoid recreation on each render
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 const RootLayout: React.FC<RootLayoutProps> = ({ children }) => {
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <Toaster />
-        {children}
-      </AuthProvider>
-    </QueryClientProvider>
+    <React.StrictMode>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <Toaster />
+          {children}
+        </AuthProvider>
+      </QueryClientProvider>
+    </React.StrictMode>
   );
 };
 
