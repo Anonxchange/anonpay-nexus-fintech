@@ -24,18 +24,12 @@ export const updateKycStatus = async (userId: string, status: string): Promise<b
 // Update user account status (active, suspended, blocked)
 export const updateUserAccountStatus = async (adminId: string, userId: string, status: string): Promise<boolean> => {
   try {
-    // First check if the user is an admin
-    const { data: adminData, error: adminError } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', adminId)
-      .single();
+    // First check if the user is an admin using the is_admin function
+    const { data: isAdmin, error: adminError } = await supabase
+      .rpc('is_admin', { user_id: adminId });
 
-    // Safe access to role property
-    const role = adminData?.role || 'user';
-
-    if (adminError || role !== 'admin') {
-      console.error('Error: Not authorized as admin');
+    if (adminError || !isAdmin) {
+      console.error('Error: Not authorized as admin', adminError);
       return false;
     }
     

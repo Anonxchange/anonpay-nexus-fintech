@@ -118,6 +118,10 @@ export type Database = {
         Args: { user_id_param: string }
         Returns: Json[]
       }
+      is_admin: {
+        Args: { user_id: string }
+        Returns: boolean
+      }
       update_wallet_balance: {
         Args:
           | Record<PropertyKey, never>

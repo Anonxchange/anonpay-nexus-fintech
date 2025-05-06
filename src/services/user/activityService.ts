@@ -4,17 +4,11 @@ import { supabase } from "@/integrations/supabase/client";
 // Get user activity log
 export const getUserActivityLog = async (adminId: string, userId: string): Promise<any[]> => {
   try {
-    // First check if the user is an admin
-    const { data: adminData, error: adminError } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', adminId)
-      .single();
+    // First check if the user is an admin using the is_admin function
+    const { data: isAdmin, error: adminError } = await supabase
+      .rpc('is_admin', { user_id: adminId });
 
-    // Safe access to role property
-    const role = adminData?.role || 'user';
-
-    if (adminError || role !== 'admin') {
+    if (adminError || !isAdmin) {
       console.error('Error: Not authorized as admin', adminError);
       return [];
     }

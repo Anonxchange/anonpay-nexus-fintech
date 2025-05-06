@@ -6,18 +6,12 @@ import { Transaction } from "../transactions/types";
 // Get all profiles for admin view - updated to correctly handle all users
 export const getAllProfiles = async (adminId: string): Promise<Profile[]> => {
   try {
-    // First check if the user is an admin using their ID
-    const { data: adminData, error: adminError } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', adminId)
-      .single();
+    // First check if the user is an admin using the is_admin function
+    const { data: isAdmin, error: adminError } = await supabase
+      .rpc('is_admin', { user_id: adminId });
 
-    // Safe access to role property
-    const role = adminData?.role || 'user';
-
-    if (adminError || role !== 'admin') {
-      console.error('Error: Not authorized as admin');
+    if (adminError || !isAdmin) {
+      console.error('Error: Not authorized as admin', adminError);
       return [];
     }
     
@@ -49,18 +43,12 @@ export const getAllProfiles = async (adminId: string): Promise<Profile[]> => {
 // Get all transactions for admin view
 export const getAllTransactions = async (adminId: string): Promise<Transaction[]> => {
   try {
-    // First check if the user is an admin
-    const { data: adminData, error: adminError } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', adminId)
-      .single();
+    // First check if the user is an admin using the is_admin function
+    const { data: isAdmin, error: adminError } = await supabase
+      .rpc('is_admin', { user_id: adminId });
 
-    // Safe access to role property
-    const role = adminData?.role || 'user';
-
-    if (adminError || role !== 'admin') {
-      console.error('Error: Not authorized as admin');
+    if (adminError || !isAdmin) {
+      console.error('Error: Not authorized as admin', adminError);
       return [];
     }
     
@@ -98,18 +86,12 @@ export const getAllTransactions = async (adminId: string): Promise<Transaction[]
 // Get detailed user profile by ID (admin only)
 export const getUserDetailsByAdmin = async (adminId: string, userId: string): Promise<Profile | null> => {
   try {
-    // First check if the user is an admin
-    const { data: adminData, error: adminError } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', adminId)
-      .single();
+    // First check if the user is an admin using the is_admin function
+    const { data: isAdmin, error: adminError } = await supabase
+      .rpc('is_admin', { user_id: adminId });
 
-    // Safe access to role property
-    const role = adminData?.role || 'user';
-
-    if (adminError || role !== 'admin') {
-      console.error('Error: Not authorized as admin');
+    if (adminError || !isAdmin) {
+      console.error('Error: Not authorized as admin', adminError);
       return null;
     }
     
@@ -141,18 +123,12 @@ export const getUserDetailsByAdmin = async (adminId: string, userId: string): Pr
 // Update user wallet balance directly (admin only)
 export const updateUserWalletBalance = async (adminId: string, userId: string, newBalance: number): Promise<boolean> => {
   try {
-    // First check if the user is an admin
-    const { data: adminData, error: adminError } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', adminId)
-      .single();
+    // First check if the user is an admin using the is_admin function
+    const { data: isAdmin, error: adminError } = await supabase
+      .rpc('is_admin', { user_id: adminId });
 
-    // Safe access to role property
-    const role = adminData?.role || 'user';
-
-    if (adminError || role !== 'admin') {
-      console.error('Error: Not authorized as admin');
+    if (adminError || !isAdmin) {
+      console.error('Error: Not authorized as admin', adminError);
       return false;
     }
     
@@ -179,18 +155,12 @@ export const updateUserWalletBalance = async (adminId: string, userId: string, n
 // Delete user transaction (admin only)
 export const deleteUserTransaction = async (adminId: string, transactionId: string): Promise<boolean> => {
   try {
-    // First check if the user is an admin
-    const { data: adminData, error: adminError } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', adminId)
-      .single();
+    // First check if the user is an admin using the is_admin function
+    const { data: isAdmin, error: adminError } = await supabase
+      .rpc('is_admin', { user_id: adminId });
 
-    // Safe access to role property
-    const role = adminData?.role || 'user';
-
-    if (adminError || role !== 'admin') {
-      console.error('Error: Not authorized as admin');
+    if (adminError || !isAdmin) {
+      console.error('Error: Not authorized as admin', adminError);
       return false;
     }
     

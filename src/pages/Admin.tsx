@@ -38,29 +38,34 @@ const Admin: React.FC = () => {
           
           if (user) {
             console.log("Found Supabase user:", user);
-            // Check if the user has admin role in profiles
-            const { data: profileData, error } = await supabase
-              .from('profiles')
-              .select('role, name')
-              .eq('id', user.id)
-              .single();
+            // Check if the user is an admin using is_admin function
+            const { data: isAdmin, error: isAdminError } = await supabase
+              .rpc('is_admin', { user_id: user.id });
               
-            if (error) {
-              console.error("Error fetching profile:", error);
-              throw new Error("Failed to fetch user profile");
+            if (isAdminError) {
+              console.error("Error checking admin status:", isAdminError);
+              throw new Error("Failed to verify admin status");
             }
             
-            console.log("User profile data:", profileData);
-            // Safe access to properties using optional chaining
-            const role = profileData?.role || 'user';
-            
-            if (role === 'admin') {
-              console.log("User has admin role");
+            if (isAdmin) {
+              console.log("User is admin via is_admin function");
+              // Get profile to get name and other details
+              const { data: profileData, error: profileError } = await supabase
+                .from('profiles')
+                .select('name, role')
+                .eq('id', user.id)
+                .single();
+                
+              if (profileError) {
+                console.error("Error fetching profile:", profileError);
+                throw new Error("Failed to fetch user profile");
+              }
+              
               // Create admin data object
               const adminUser = {
                 email: user.email || '',
                 name: profileData?.name || user.email || 'Admin User',
-                role: role,
+                role: profileData?.role || 'admin',
                 id: user.id
               };
               
@@ -68,8 +73,7 @@ const Admin: React.FC = () => {
               localStorage.setItem("anonpay_admin", JSON.stringify(adminUser));
               setAdmin(adminUser);
             } else {
-              console.log("User is not an admin (role:", role, ")");
-              // User is not an admin
+              console.log("User is not an admin");
               toast({
                 variant: "destructive",
                 title: "Access Denied",

@@ -74,23 +74,28 @@ const AdminLogin: React.FC = () => {
         if (authData?.user) {
           console.log("Supabase auth successful, checking admin role");
           
-          // Check if user has admin role
-          const { data: profileData, error: profileError } = await supabase
-            .from('profiles')
-            .select('role, name')
-            .eq('id', authData.user.id)
-            .single();
+          // Check if user has admin role using the is_admin function
+          const { data: isAdmin, error: isAdminError } = await supabase
+            .rpc('is_admin', { user_id: authData.user.id });
             
-          if (profileError) {
-            console.error("Profile fetch error:", profileError);
-            throw new Error('Failed to fetch user profile');
+          if (isAdminError) {
+            console.error("Error checking admin status:", isAdminError);
+            throw new Error('Failed to verify admin status');
           }
           
-          // Safe access to properties
-          const role = profileData?.role || 'user';
-          console.log("User role:", role);
-          
-          if (role === 'admin') {
+          if (isAdmin) {
+            // Get profile data to get name
+            const { data: profileData, error: profileError } = await supabase
+              .from('profiles')
+              .select('role, name')
+              .eq('id', authData.user.id)
+              .single();
+              
+            if (profileError) {
+              console.error("Profile fetch error:", profileError);
+              // Continue with default values
+            }
+            
             // Store admin data
             const adminData = {
               email: authData.user.email,

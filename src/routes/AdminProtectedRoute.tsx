@@ -35,27 +35,20 @@ const AdminProtectedRoute: React.FC<AdminProtectedRouteProps> = ({ children }) =
               const { data: { user } } = await supabase.auth.getUser();
               
               if (user && user.id === adminObj.id) {
-                // Verify admin role with our is_admin function through a profile query
-                const { data: profile, error } = await supabase
-                  .from('profiles')
-                  .select('role')
-                  .eq('id', user.id)
-                  .single();
+                // Verify admin role with the is_admin function
+                const { data: isAdmin, error } = await supabase
+                  .rpc('is_admin', { user_id: user.id });
                   
                 if (error) {
-                  console.error("Error fetching profile:", error);
+                  console.error("Error checking admin status:", error);
                   throw new Error("Failed to verify admin status");
                 }
                 
-                // Safe access to properties
-                const role = profile?.role || 'user';
-                console.log("User role from database:", role);
-                
-                if (role === 'admin') {
-                  console.log("Admin role confirmed in database");
+                if (isAdmin) {
+                  console.log("Admin role confirmed via is_admin function");
                   setIsAuthenticated(true);
                 } else {
-                  console.error("User does not have admin role in database");
+                  console.error("User is not an admin according to is_admin function");
                   throw new Error("User is not an admin");
                 }
               } else {
@@ -81,24 +74,24 @@ const AdminProtectedRoute: React.FC<AdminProtectedRouteProps> = ({ children }) =
           
           if (user) {
             console.log("Current Supabase user found:", user.id);
-            // Check if user has admin role
-            const { data: profile, error } = await supabase
-              .from('profiles')
-              .select('role, name')
-              .eq('id', user.id)
-              .single();
+            // Check if user is admin using the is_admin function
+            const { data: isAdmin, error } = await supabase
+              .rpc('is_admin', { user_id: user.id });
               
             if (error) {
-              console.error("Error fetching profile:", error);
+              console.error("Error checking admin status:", error);
               throw new Error("Failed to verify admin status");
             }
             
-            // Safe access to properties
-            const role = profile?.role || 'user';
-            console.log("User role from database:", role);
-            
-            if (role === 'admin') {
-              console.log("Admin role confirmed for current user");
+            if (isAdmin) {
+              console.log("Admin role confirmed for current user via is_admin function");
+              // Get profile to get name
+              const { data: profile } = await supabase
+                .from('profiles')
+                .select('name')
+                .eq('id', user.id)
+                .single();
+                
               // Store admin data
               const adminData = {
                 email: user.email,
