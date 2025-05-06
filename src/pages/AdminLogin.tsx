@@ -10,7 +10,8 @@ import { LogIn, Shield } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import AuthLayout from "../components/layout/AuthLayout";
 
-// Admin credentials - in a real application, these would be stored and verified securely
+// Mock admin UUID - use a proper UUID format for local admin for testing
+const ADMIN_UUID = "11111111-1111-1111-1111-111111111111";
 const ADMIN_EMAIL = "admin@anonpay.com";
 const ADMIN_PASSWORD = "Admin@123456";
 
@@ -42,12 +43,12 @@ const AdminLogin: React.FC = () => {
       if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
         console.log("Local admin credentials matched");
         
-        // Store admin data using hardcoded credentials
+        // Store admin data using hardcoded credentials with a proper UUID format
         const adminData = {
           email: ADMIN_EMAIL,
           role: "admin",
           name: "Admin User",
-          id: "admin-1",
+          id: ADMIN_UUID,
         };
         
         localStorage.setItem("anonpay_admin", JSON.stringify(adminData));

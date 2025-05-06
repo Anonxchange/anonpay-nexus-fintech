@@ -25,35 +25,28 @@ const AdminProtectedRoute: React.FC<AdminProtectedRouteProps> = ({ children }) =
             const adminObj = JSON.parse(adminData);
             console.log("Found admin data in localStorage:", adminObj);
             
-            // For local admin account
-            if (adminObj.id === "admin-1") {
-              console.log("Local admin account verified");
+            // For local admin account with valid UUID
+            if (adminObj.id === "11111111-1111-1111-1111-111111111111") {
+              console.log("Local admin account with valid UUID verified");
               setIsAuthenticated(true);
             } else {
               // For Supabase authenticated admin, verify role
               console.log("Verifying Supabase admin with ID:", adminObj.id);
-              const { data: { user } } = await supabase.auth.getUser();
-              
-              if (user && user.id === adminObj.id) {
-                // Verify admin role with the is_admin function
-                const { data: isAdmin, error } = await supabase
-                  .rpc('is_admin', { user_id: user.id });
-                  
-                if (error) {
-                  console.error("Error checking admin status:", error);
-                  throw new Error("Failed to verify admin status");
-                }
+              // Verify admin role with the is_admin function
+              const { data: isAdmin, error } = await supabase
+                .rpc('is_admin', { user_id: adminObj.id });
                 
-                if (isAdmin) {
-                  console.log("Admin role confirmed via is_admin function");
-                  setIsAuthenticated(true);
-                } else {
-                  console.error("User is not an admin according to is_admin function");
-                  throw new Error("User is not an admin");
-                }
+              if (error) {
+                console.error("Error checking admin status:", error);
+                throw new Error("Failed to verify admin status");
+              }
+              
+              if (isAdmin) {
+                console.log("Admin role confirmed via is_admin function");
+                setIsAuthenticated(true);
               } else {
-                console.error("User ID mismatch or no user found");
-                throw new Error("Invalid admin data");
+                console.error("User is not an admin according to is_admin function");
+                throw new Error("User is not an admin");
               }
             }
           } catch (error) {

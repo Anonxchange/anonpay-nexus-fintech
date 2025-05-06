@@ -1,5 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
+import { supabaseAdmin } from "@/integrations/supabase/adminClient";
 import { Profile, AccountStatus } from "@/types/auth";
 import { Transaction } from "../transactions/types";
 
@@ -15,8 +16,8 @@ export const getAllProfiles = async (adminId: string): Promise<Profile[]> => {
       return [];
     }
     
-    // Get all profiles without filters
-    const { data: profiles, error } = await supabase
+    // Use supabaseAdmin client to fetch all profiles without restrictions
+    const { data: profiles, error } = await supabaseAdmin
       .from('profiles')
       .select('*')
       .order('created_at', { ascending: false });
@@ -52,7 +53,8 @@ export const getUserCount = async (adminId: string): Promise<number> => {
       return 0;
     }
     
-    const { count, error } = await supabase
+    // Use supabaseAdmin client to get the exact count
+    const { count, error } = await supabaseAdmin
       .from('profiles')
       .select('*', { count: 'exact', head: true });
     
@@ -80,7 +82,8 @@ export const getAllTransactions = async (adminId: string): Promise<Transaction[]
       return [];
     }
     
-    const { data, error } = await supabase
+    // Use supabaseAdmin client to fetch transactions
+    const { data, error } = await supabaseAdmin
       .from('transactions')
       .select('*, profiles:user_id(name, id, email, kyc_status, wallet_balance)')
       .order('created_at', { ascending: false });
@@ -123,7 +126,8 @@ export const getUserDetailsByAdmin = async (adminId: string, userId: string): Pr
       return null;
     }
     
-    const { data, error } = await supabase
+    // Use supabaseAdmin client to fetch user details
+    const { data, error } = await supabaseAdmin
       .from('profiles')
       .select('*')
       .eq('id', userId)
@@ -160,7 +164,8 @@ export const updateUserWalletBalance = async (adminId: string, userId: string, n
       return false;
     }
     
-    const { error } = await supabase
+    // Use supabaseAdmin client to update wallet balance
+    const { error } = await supabaseAdmin
       .from('profiles')
       .update({ 
         wallet_balance: newBalance,
@@ -192,7 +197,8 @@ export const deleteUserTransaction = async (adminId: string, transactionId: stri
       return false;
     }
     
-    const { error } = await supabase
+    // Use supabaseAdmin client to delete transaction
+    const { error } = await supabaseAdmin
       .from('transactions')
       .delete()
       .eq('id', transactionId);

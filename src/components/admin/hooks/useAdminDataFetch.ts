@@ -1,6 +1,6 @@
-
 import { useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { supabaseAdmin } from "@/integrations/supabase/adminClient";
 import { useToast } from "@/hooks/use-toast";
 import { Profile, KycStatus, AccountStatus } from "@/types/auth";
 import { Transaction } from "@/services/transactions/types";
@@ -25,8 +25,28 @@ export const useAdminDataFetch = (
       
       const admin = JSON.parse(adminData);
       
-      // Direct fetch from profiles table for admin - without filters
-      const { data: profilesData, error: profilesError } = await supabase
+      // Verify admin status first
+      let isVerifiedAdmin = false;
+      
+      // If it's our local test admin UUID, automatically trust it
+      if (admin.id === "11111111-1111-1111-1111-111111111111") {
+        isVerifiedAdmin = true;
+      } else {
+        // Otherwise verify with the is_admin function
+        const { data: isAdmin, error } = await supabase
+          .rpc('is_admin', { user_id: admin.id });
+          
+        if (!error && isAdmin) {
+          isVerifiedAdmin = true;
+        }
+      }
+      
+      if (!isVerifiedAdmin) {
+        throw new Error("Not authorized as admin");
+      }
+      
+      // Use supabaseAdmin for fetching all profiles
+      const { data: profilesData, error: profilesError } = await supabaseAdmin
         .from('profiles')
         .select('*')
         .order('created_at', { ascending: false });
@@ -43,25 +63,25 @@ export const useAdminDataFetch = (
       }
 
       // Try to fetch auth users data to get email information
-      // This is not required but adds email data if available
+      // Use supabaseAdmin to access this data
       let authUsers: any[] = [];
       try {
-        // Attempt to fetch auth users - this will work if the admin has the right permissions
-        const { data: authUsersResponse, error: authUsersError } = await supabase.auth.admin.listUsers();
+        // Attempt to fetch auth users - this will work with the admin client
+        const { data: users, error: usersError } = await supabaseAdmin.auth.admin.listUsers();
         
-        if (!authUsersError && authUsersResponse) {
-          authUsers = authUsersResponse.users || [];
+        if (!usersError && users) {
+          authUsers = users.users || [];
           console.log('Successfully fetched auth users:', authUsers.length);
         } else {
-          console.warn('Cannot access auth.admin.listUsers, continuing with limited data:', authUsersError);
+          console.warn('Error fetching auth users:', usersError);
         }
       } catch (error) {
         console.warn('Error accessing auth users:', error);
         // Continue without auth users data
       }
       
-      // Direct fetch from transactions table for admin with extended details
-      const { data: transactionsData, error: transactionsError } = await supabase
+      // Use supabaseAdmin for fetching all transactions
+      const { data: transactionsData, error: transactionsError } = await supabaseAdmin
         .from('transactions')
         .select('*, profiles:user_id(name, id, email, kyc_status, wallet_balance, account_status)')
         .order('created_at', { ascending: false });

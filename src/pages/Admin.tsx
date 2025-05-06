@@ -30,17 +30,17 @@ const Admin: React.FC = () => {
           // If admin data exists in local storage, use it
           const parsedAdmin = JSON.parse(adminData);
           console.log("Found admin data in localStorage:", parsedAdmin);
-          setAdmin(parsedAdmin);
-        } else {
-          console.log("No admin data in localStorage, checking Supabase auth...");
-          // Try to get the current user from Supabase
-          const { data: { user } } = await supabase.auth.getUser();
           
-          if (user) {
-            console.log("Found Supabase user:", user);
-            // Check if the user is an admin using is_admin function
+          // If it's a local admin with the specific UUID, we trust it
+          if (parsedAdmin.id === "11111111-1111-1111-1111-111111111111") {
+            console.log("Local admin with valid UUID found");
+            setAdmin(parsedAdmin);
+          } else {
+            // For Supabase users, verify admin role
+            console.log("Checking Supabase admin with ID:", parsedAdmin.id);
+            // Check if the user is actually an admin using is_admin function
             const { data: isAdmin, error: isAdminError } = await supabase
-              .rpc('is_admin', { user_id: user.id });
+              .rpc('is_admin', { user_id: parsedAdmin.id });
               
             if (isAdminError) {
               console.error("Error checking admin status:", isAdminError);
@@ -48,45 +48,60 @@ const Admin: React.FC = () => {
             }
             
             if (isAdmin) {
-              console.log("User is admin via is_admin function");
-              // Get profile to get name and other details
-              const { data: profileData, error: profileError } = await supabase
+              console.log("Admin role confirmed via is_admin function");
+              setAdmin(parsedAdmin);
+            } else {
+              console.error("User is not an admin according to is_admin function");
+              throw new Error("User is not an admin");
+            }
+          }
+        } else {
+          console.log("No admin data in localStorage, checking current Supabase user");
+          // Try to get the current user from Supabase
+          const { data: { user } } = await supabase.auth.getUser();
+          
+          if (user) {
+            console.log("Current Supabase user found:", user.id);
+            // Check if user is admin using the is_admin function
+            const { data: isAdmin, error } = await supabase
+              .rpc('is_admin', { user_id: user.id });
+              
+            if (error) {
+              console.error("Error checking admin status:", error);
+              throw new Error("Failed to verify admin status");
+            }
+            
+            if (isAdmin) {
+              console.log("Admin role confirmed for current user via is_admin function");
+              // Get profile to get name
+              const { data: profile } = await supabase
                 .from('profiles')
-                .select('name, role')
+                .select('name')
                 .eq('id', user.id)
                 .single();
                 
-              if (profileError) {
-                console.error("Error fetching profile:", profileError);
-                throw new Error("Failed to fetch user profile");
-              }
-              
-              // Create admin data object
-              const adminUser = {
-                email: user.email || '',
-                name: profileData?.name || user.email || 'Admin User',
-                role: profileData?.role || 'admin',
-                id: user.id
+              // Store admin data
+              const adminData = {
+                email: user.email,
+                role: "admin",
+                name: profile?.name || user.email || "Admin User",
+                id: user.id,
               };
               
-              // Store admin data in local storage
-              localStorage.setItem("anonpay_admin", JSON.stringify(adminUser));
-              setAdmin(adminUser);
+              localStorage.setItem("anonpay_admin", JSON.stringify(adminData));
+              setAdmin(adminData);
             } else {
-              console.log("User is not an admin");
-              toast({
-                variant: "destructive",
-                title: "Access Denied",
-                description: "You don't have permission to access the admin panel."
-              });
-              navigate("/dashboard");
+              console.log("Current user is not an admin");
+              setAdmin(null);
+              navigate("/admin-login");
             }
           } else {
             console.log("No authenticated user found");
+            navigate("/admin-login");
           }
         }
       } catch (error) {
-        console.error("Error checking admin:", error);
+        console.error("Admin authentication error:", error);
         toast({
           variant: "destructive",
           title: "Authentication Error",

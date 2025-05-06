@@ -1,5 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
+import { supabaseAdmin } from "@/integrations/supabase/adminClient";
 
 // Update user KYC status
 export const updateKycStatus = async (userId: string, status: string): Promise<boolean> => {
@@ -33,7 +34,8 @@ export const updateUserAccountStatus = async (adminId: string, userId: string, s
       return false;
     }
     
-    const { error } = await supabase
+    // Use supabaseAdmin client to update user account status
+    const { error } = await supabaseAdmin
       .from('profiles')
       .update({ 
         account_status: status,
