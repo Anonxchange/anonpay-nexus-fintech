@@ -73,8 +73,8 @@ export const getAllTransactions = async (): Promise<Transaction[]> => {
       
       return {
         ...transaction,
-        // Use the type guard to safely access the name
-        user_name: hasName(profileData) ? profileData.name : 'Unknown User'
+        // Safely access the name with null checks
+        user_name: profileData && hasName(profileData) ? profileData.name : 'Unknown User'
       };
     });
     

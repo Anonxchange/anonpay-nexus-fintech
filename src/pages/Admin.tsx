@@ -2,7 +2,8 @@
 import React, { useEffect, useState } from "react";
 import AdminPanel from "../components/admin/AdminPanel";
 import AdminLayout from "../components/layout/AdminLayout";
-import { Navigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
+import { useToast } from "@/hooks/use-toast";
 
 interface AdminUser {
   email: string;
@@ -14,21 +15,39 @@ interface AdminUser {
 const Admin: React.FC = () => {
   const [admin, setAdmin] = useState<AdminUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+  const { toast } = useToast();
   
   useEffect(() => {
     const checkAdmin = () => {
       const adminData = localStorage.getItem("anonpay_admin");
       if (adminData) {
-        setAdmin(JSON.parse(adminData));
+        try {
+          const parsedAdmin = JSON.parse(adminData);
+          setAdmin(parsedAdmin);
+        } catch (error) {
+          console.error("Error parsing admin data:", error);
+          toast({
+            variant: "destructive",
+            title: "Authentication Error",
+            description: "Your admin session is invalid. Please log in again."
+          });
+          localStorage.removeItem("anonpay_admin");
+          navigate("/admin-login");
+        }
       }
       setLoading(false);
     };
     
     checkAdmin();
-  }, []);
+  }, [navigate, toast]);
   
   if (loading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-anonpay-primary"></div>
+      </div>
+    );
   }
   
   if (!admin) {

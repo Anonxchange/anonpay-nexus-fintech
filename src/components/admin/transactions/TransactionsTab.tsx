@@ -20,6 +20,7 @@ const TransactionsTab: React.FC<TransactionsTabProps> = ({ filteredTransactions,
             <TableHead>Amount</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>Date</TableHead>
+            <TableHead>Reference</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -29,7 +30,15 @@ const TransactionsTab: React.FC<TransactionsTabProps> = ({ filteredTransactions,
                 <TableCell className="font-medium">
                   {transaction.user_name || "Unknown User"}
                 </TableCell>
-                <TableCell>{transaction.type}</TableCell>
+                <TableCell>
+                  <Badge variant="outline" className={
+                    transaction.type === 'deposit' ? 'border-green-500 text-green-600' :
+                    transaction.type === 'withdrawal' ? 'border-red-500 text-red-600' :
+                    'border-blue-500 text-blue-600'
+                  }>
+                    {transaction.type}
+                  </Badge>
+                </TableCell>
                 <TableCell>₦{transaction.amount.toLocaleString()}</TableCell>
                 <TableCell>
                   <Badge
@@ -45,11 +54,14 @@ const TransactionsTab: React.FC<TransactionsTabProps> = ({ filteredTransactions,
                 <TableCell>
                   {new Date(transaction.created_at).toLocaleDateString()}
                 </TableCell>
+                <TableCell className="text-xs truncate max-w-[100px]" title={transaction.reference || ""}>
+                  {transaction.reference || "-"}
+                </TableCell>
               </TableRow>
             ))
           ) : (
             <TableRow>
-              <TableCell colSpan={5} className="text-center py-4 text-gray-500">
+              <TableCell colSpan={6} className="text-center py-4 text-gray-500">
                 {searchTerm ? "No transactions match your search" : "No transactions found"}
               </TableCell>
             </TableRow>
