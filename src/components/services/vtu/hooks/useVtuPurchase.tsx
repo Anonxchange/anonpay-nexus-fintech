@@ -2,22 +2,15 @@
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { VtuProduct } from "@/services/products/types";
-import { getVtuProducts, getVtuProductsByCategory, buyVtuProduct, buyVtuWithEbills } from "@/services/products/vtuService";
+import { getVtuProducts, getVtuProductsByCategory, buyVtuProduct } from "@/services/products/vtuService";
 
-// Network provider mapping for Ebills API
+// Network provider mapping
 const networkProviders = [
   { id: "mtn", name: "MTN", logo: "🟡" },
   { id: "airtel", name: "Airtel", logo: "🔴" },
   { id: "glo", name: "Glo", logo: "🟢" },
   { id: "9mobile", name: "9Mobile", logo: "🟠" },
 ];
-
-const ebillsNetworkMap = {
-  mtn: "MTN",
-  airtel: "AIRTEL",
-  glo: "GLO",
-  "9mobile": "9MOBILE",
-};
 
 export function useVtuPurchase(user: any) {
   const [category, setCategory] = useState("airtime");
@@ -142,55 +135,27 @@ export function useVtuPurchase(user: any) {
     setTransactionStatus({ status: "loading", message: "Processing your request..." });
     
     try {
-      // Use the Ebills Africa API for airtime purchases
-      if (category === "airtime") {
-        const network = ebillsNetworkMap[selectedProvider] || selectedProvider.toUpperCase();
+      // Simulate API call
+      // In a real app, this would call a real VTU API
+      
+      // Use mock purchase function
+      const success = await buyVtuProduct(user.id, selectedProduct?.id || "", buyAmount, phoneNumber);
+      
+      if (success) {
+        // Add delay to simulate API processing time
+        await new Promise(resolve => setTimeout(resolve, 1500));
         
-        // Clear any previous error messages
-        if (transactionStatus.status === "error") {
-          setTransactionStatus({ status: "loading", message: "Processing your request..." });
-        }
-        
-        console.log("Sending request to Ebills API:", { network, phone: phoneNumber, amount: buyAmount });
-        
-        const response = await buyVtuWithEbills({
-          network,
-          phone: phoneNumber,
-          amount: buyAmount
+        setTransactionStatus({
+          status: "success",
+          message: `Your ${category} purchase was successful`
         });
         
-        console.log("Ebills API response received:", response);
-        
-        if (response.success) {
-          setTransactionStatus({
-            status: "success",
-            message: response.message || "Your airtime purchase was successful"
-          });
-          
-          toast({
-            title: "Purchase Successful",
-            description: response.message || "Your airtime purchase was successful",
-          });
-        } else {
-          throw new Error(response.message || "Transaction failed");
-        }
+        toast({
+          title: "Purchase Successful",
+          description: `Your ${category} purchase was successful`,
+        });
       } else {
-        // Use the original implementation for other categories
-        const success = await buyVtuProduct(user.id, selectedProduct?.id || "", buyAmount, phoneNumber);
-        
-        if (success) {
-          setTransactionStatus({
-            status: "success",
-            message: `Your ${selectedProduct?.name} purchase was successful`
-          });
-          
-          toast({
-            title: "Purchase Successful",
-            description: `Your ${selectedProduct?.name} purchase was successful`,
-          });
-        } else {
-          throw new Error("Transaction failed");
-        }
+        throw new Error("Transaction failed");
       }
       
       // Reset form on success
