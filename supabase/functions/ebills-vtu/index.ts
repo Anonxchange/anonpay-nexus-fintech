@@ -20,6 +20,10 @@ serve(async (req) => {
       throw new Error("JWT token is not configured in Supabase secrets. Please add EBILLS_AFRICA_JWT_TOKEN.");
     }
 
+    // Log JWT token length and format for debugging (without revealing the full token)
+    console.log(`JWT token length: ${jwtToken.length}`);
+    console.log(`JWT token format check: ${jwtToken.split('.').length === 3 ? 'Valid JWT format (3 parts)' : 'Invalid JWT format'}`);
+    
     // Parse request body
     let requestBody;
     try {
@@ -46,6 +50,7 @@ serve(async (req) => {
 
     try {
       // Make a test request to validate JWT first
+      console.log("Validating JWT token...");
       const testResponse = await fetch("https://ebills.africa/wp-json/jwt-auth/v1/token/validate", {
         method: "POST",
         headers: {
@@ -55,6 +60,7 @@ serve(async (req) => {
       });
       
       const testResponseText = await testResponse.text();
+      console.log("JWT validation response status:", testResponse.status);
       console.log("JWT validation response:", testResponseText);
       
       if (!testResponse.ok) {
@@ -68,6 +74,8 @@ serve(async (req) => {
         }
         throw new Error(errorMessage);
       }
+      
+      console.log("JWT token validation successful. Proceeding with airtime request...");
       
       // Proceed with the main airtime request
       const response = await fetch("https://ebills.africa/wp-json/ebills/v1/airtime", {
