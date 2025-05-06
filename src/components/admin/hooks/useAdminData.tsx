@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { getAllProfiles, getAllTransactions, updateKycStatus } from "@/services/user/userService";
 import { Profile, KycStatus } from "@/types/auth";
 import { Transaction } from "@/services/transactions/types";
@@ -13,12 +13,20 @@ export const useAdminData = () => {
   const { toast } = useToast();
 
   // Function to fetch all data
-  const fetchAllData = async () => {
+  const fetchAllData = useCallback(async () => {
     setLoading(true);
     try {
+      // Get admin data from local storage
+      const adminData = localStorage.getItem("anonpay_admin");
+      if (!adminData) {
+        throw new Error("Admin data not found");
+      }
+      
+      const admin = JSON.parse(adminData);
+      
       // Fetch all profiles and transactions
-      const profilesData = await getAllProfiles();
-      const transactionsData = await getAllTransactions();
+      const profilesData = await getAllProfiles(admin.id);
+      const transactionsData = await getAllTransactions(admin.id);
       
       setUsers(profilesData);
       setTransactions(transactionsData);
@@ -32,7 +40,7 @@ export const useAdminData = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
 
   const handleKycAction = async (userId: string, action: "approve" | "reject") => {
     try {
@@ -121,7 +129,7 @@ export const useAdminData = () => {
       supabase.removeChannel(profilesChannel);
       supabase.removeChannel(transactionsChannel);
     };
-  }, [toast]);
+  }, [fetchAllData]);
 
   return {
     users,

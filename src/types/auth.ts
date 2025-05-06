@@ -11,10 +11,10 @@ export interface Profile {
   kyc_status: KycStatus;
   wallet_balance: number | null;
   phone_number: string | null;
+  role?: string;
   created_at: string | null;
   updated_at: string | null;
   email_status?: EmailStatus;
-  role?: string;
 }
 
 export interface AuthContextType {

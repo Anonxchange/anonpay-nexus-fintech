@@ -33,6 +33,7 @@ export const useProfileFetch = () => {
           phone_number: data.phone_number,
           kyc_status: data.kyc_status as KycStatus,
           wallet_balance: data.wallet_balance || 0,
+          role: data.role || 'user',
           created_at: data.created_at,
           updated_at: data.updated_at
         };
@@ -55,6 +56,7 @@ export const useProfileFetch = () => {
           id: userId,
           wallet_balance: 0,
           kyc_status: 'not_submitted' as KycStatus,
+          role: 'user',
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         })

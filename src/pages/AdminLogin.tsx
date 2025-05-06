@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/components/ui/use-toast";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { LogIn, Shield } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 // Admin credentials - in a real application, these would be stored and verified securely
 const ADMIN_EMAIL = "admin@anonpay.com";
@@ -27,37 +28,85 @@ const AdminLogin: React.FC = () => {
     }
   }, [navigate]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Simple admin authentication
-    if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
-      // Store admin data
-      const adminData = {
-        email: ADMIN_EMAIL,
-        role: "admin",
-        name: "Admin User",
-        id: "admin-1",
-      };
-      
-      localStorage.setItem("anonpay_admin", JSON.stringify(adminData));
-      
-      toast({
-        title: "Admin login successful",
-        description: "Welcome to the admin dashboard!",
-      });
-      
-      navigate("/admin");
-    } else {
+    try {
+      // Try both methods: local admin credentials and Supabase auth
+      if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
+        // Store admin data using hardcoded credentials
+        const adminData = {
+          email: ADMIN_EMAIL,
+          role: "admin",
+          name: "Admin User",
+          id: "admin-1",
+        };
+        
+        localStorage.setItem("anonpay_admin", JSON.stringify(adminData));
+        
+        toast({
+          title: "Admin login successful",
+          description: "Welcome to the admin dashboard!",
+        });
+        
+        navigate("/admin");
+      } else {
+        // Try to sign in with Supabase
+        const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+          email,
+          password
+        });
+        
+        if (authError) {
+          throw new Error(authError.message);
+        }
+        
+        if (authData?.user) {
+          // Check if user has admin role
+          const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .select('role, name')
+            .eq('id', authData.user.id)
+            .single();
+            
+          if (profileError) {
+            throw new Error('Failed to fetch user profile');
+          }
+          
+          if (profileData?.role === 'admin') {
+            // Store admin data
+            const adminData = {
+              email: authData.user.email,
+              role: "admin",
+              name: profileData.name || authData.user.email || "Admin User",
+              id: authData.user.id,
+            };
+            
+            localStorage.setItem("anonpay_admin", JSON.stringify(adminData));
+            
+            toast({
+              title: "Admin login successful",
+              description: "Welcome to the admin dashboard!",
+            });
+            
+            navigate("/admin");
+          } else {
+            throw new Error('You do not have admin privileges');
+          }
+        } else {
+          throw new Error('Invalid admin credentials');
+        }
+      }
+    } catch (error: any) {
       toast({
         variant: "destructive",
         title: "Login failed",
-        description: "Invalid admin credentials. Please try again.",
+        description: error.message || "Invalid admin credentials. Please try again.",
       });
+    } finally {
+      setIsLoading(false);
     }
-    
-    setIsLoading(false);
   };
 
   return (

@@ -39,6 +39,7 @@ export const createUserProfile = async (userId: string): Promise<Profile | null>
       kyc_status: 'not_submitted' as KycStatus,
       wallet_balance: 0,
       phone_number: null,
+      role: 'user',
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
@@ -61,9 +62,22 @@ export const createUserProfile = async (userId: string): Promise<Profile | null>
   }
 };
 
-// Get all profiles for admin view
-export const getAllProfiles = async (): Promise<Profile[]> => {
+// Get all profiles for admin view - updated to use auth.uid() with RLS
+export const getAllProfiles = async (adminId: string): Promise<Profile[]> => {
   try {
+    // First check if the user is an admin using their ID
+    const { data: adminData, error: adminError } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', adminId)
+      .single();
+
+    if (adminError || adminData?.role !== 'admin') {
+      console.error('Error: Not authorized as admin');
+      return [];
+    }
+    
+    // Get all profiles - this will work with RLS if the admin policy is set up
     const { data: profiles, error } = await supabase
       .from('profiles')
       .select('*')
@@ -86,9 +100,21 @@ export const getAllProfiles = async (): Promise<Profile[]> => {
   }
 };
 
-// Get all transactions for admin view
-export const getAllTransactions = async (): Promise<Transaction[]> => {
+// Get all transactions for admin view - updated to use auth.uid() with RLS
+export const getAllTransactions = async (adminId: string): Promise<Transaction[]> => {
   try {
+    // First check if the user is an admin
+    const { data: adminData, error: adminError } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', adminId)
+      .single();
+
+    if (adminError || adminData?.role !== 'admin') {
+      console.error('Error: Not authorized as admin');
+      return [];
+    }
+    
     const { data, error } = await supabase
       .from('transactions')
       .select('*, profiles:user_id(name)')
