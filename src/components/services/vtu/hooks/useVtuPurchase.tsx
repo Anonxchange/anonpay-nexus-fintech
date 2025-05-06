@@ -146,11 +146,20 @@ export function useVtuPurchase(user: any) {
       if (category === "airtime") {
         const network = ebillsNetworkMap[selectedProvider] || selectedProvider.toUpperCase();
         
+        // Clear any previous error messages
+        if (transactionStatus.status === "error") {
+          setTransactionStatus({ status: "loading", message: "Processing your request..." });
+        }
+        
+        console.log("Sending request to Ebills API:", { network, phone: phoneNumber, amount: buyAmount });
+        
         const response = await buyVtuWithEbills({
           network,
           phone: phoneNumber,
           amount: buyAmount
         });
+        
+        console.log("Ebills API response received:", response);
         
         if (response.success) {
           setTransactionStatus({
@@ -191,7 +200,7 @@ export function useVtuPurchase(user: any) {
         setSelectedProduct(null);
         setSelectedProvider("");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to buy VTU product:", error);
       
       setTransactionStatus({

@@ -13,10 +13,11 @@ serve(async (req) => {
   }
 
   try {
+    // Get JWT token from environment variables (Supabase secrets)
     const jwtToken = Deno.env.get('EBILLS_AFRICA_JWT_TOKEN');
     
     if (!jwtToken) {
-      throw new Error("JWT token is not configured");
+      throw new Error("JWT token is not configured in Supabase secrets. Please add EBILLS_AFRICA_JWT_TOKEN.");
     }
 
     const { network, phone, amount } = await req.json();
@@ -25,6 +26,8 @@ serve(async (req) => {
     if (!network || !phone || !amount) {
       throw new Error("Missing required parameters: network, phone, or amount");
     }
+
+    console.log("Making request to Ebills Africa API with:", { network, phone, amount });
 
     // Make the request to Ebills Africa API
     const response = await fetch("https://ebills.africa/wp-json/ebills/v1/airtime", {
