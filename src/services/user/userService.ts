@@ -59,15 +59,22 @@ export const getAllTransactions = async (): Promise<Transaction[]> => {
     
     // Format the data to include user_name
     const formattedTransactions = data.map(transaction => {
-      // Check if profiles has actual data or is an error
-      const profileData = transaction.profiles && typeof transaction.profiles === 'object' 
-        ? transaction.profiles 
-        : null;
+      // Check if profiles exists and is an object with expected structure
+      const profileData = transaction.profiles && 
+        typeof transaction.profiles === 'object' && 
+        transaction.profiles !== null ? 
+        transaction.profiles : null;
+      
+      // Define a type guard function to check if the profile has a name property
+      const hasName = (profile: any): profile is { name: string } => 
+        profile !== null && 
+        typeof profile === 'object' && 
+        'name' in profile;
       
       return {
         ...transaction,
-        // Handle the case where profileData could be null
-        user_name: profileData ? profileData.name || 'Unknown User' : 'Unknown User'
+        // Use the type guard to safely access the name
+        user_name: hasName(profileData) ? profileData.name || 'Unknown User' : 'Unknown User'
       };
     });
     
