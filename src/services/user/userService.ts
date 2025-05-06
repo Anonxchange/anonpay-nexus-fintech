@@ -1,5 +1,6 @@
+
 import { supabase } from "@/integrations/supabase/client";
-import { Profile } from "@/types/auth";
+import { KycStatus, Profile } from "@/types/auth";
 import { Transaction } from "../transactions/types";
 
 // Get user profile data
@@ -33,11 +34,12 @@ export const getAllProfiles = async (): Promise<Profile[]> => {
 
     if (error) throw error;
     
-    // Make sure to properly handle the profile name
+    // Make sure to convert kyc_status to the correct type and handle empty name fields
     return profiles.map(profile => ({
       ...profile,
+      kyc_status: (profile.kyc_status as KycStatus) || 'not_submitted',
       name: profile.name || "Unknown User" // Ensure name has a fallback
-    }));
+    })) as Profile[];
   } catch (error) {
     console.error('Error fetching profiles:', error);
     throw error;
@@ -59,22 +61,14 @@ export const getAllTransactions = async (): Promise<Transaction[]> => {
     
     // Format the data to include user_name
     const formattedTransactions = data.map(transaction => {
-      // Check if profiles exists and is an object with expected structure
-      const profileData = transaction.profiles && 
-        typeof transaction.profiles === 'object' && 
-        transaction.profiles !== null ? 
-        transaction.profiles : null;
-      
-      // Define a type guard function to check if the profile has a name property
-      const hasName = (profile: any): profile is { name: string } => 
-        profile !== null && 
-        typeof profile === 'object' && 
-        'name' in profile;
+      // Extract the profile data
+      const profileData = transaction.profiles || null;
       
       return {
         ...transaction,
-        // Safely access the name with null checks
-        user_name: profileData && hasName(profileData) ? profileData.name : 'Unknown User'
+        // Safely get the name value
+        user_name: profileData && typeof profileData === 'object' ? 
+          (profileData as any).name || 'Unknown User' : 'Unknown User'
       };
     });
     
