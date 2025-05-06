@@ -4,10 +4,11 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { LogIn, Shield } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import AuthLayout from "../components/layout/AuthLayout";
 
 // Admin credentials - in a real application, these would be stored and verified securely
 const ADMIN_EMAIL = "admin@anonpay.com";
@@ -113,15 +114,18 @@ const AdminLogin: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <Card className="w-full max-w-md">
+    <AuthLayout 
+      title="Admin Login" 
+      subtitle="Enter your credentials to access the admin dashboard"
+    >
+      <Card className="w-full">
         <CardHeader className="space-y-1">
           <div className="flex items-center justify-center mb-4">
             <Shield className="h-12 w-12 text-anonpay-primary" />
           </div>
-          <CardTitle className="text-2xl text-center">Admin Login</CardTitle>
+          <CardTitle className="text-xl text-center">Admin Login</CardTitle>
           <CardDescription className="text-center">
-            Enter your credentials to access the admin dashboard
+            Access the admin dashboard to manage users and transactions
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
@@ -167,7 +171,7 @@ const AdminLogin: React.FC = () => {
           </CardFooter>
         </form>
       </Card>
-    </div>
+    </AuthLayout>
   );
 };
 

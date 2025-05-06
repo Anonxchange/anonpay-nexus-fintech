@@ -1,6 +1,5 @@
 
 import { useState, useEffect, useCallback } from "react";
-import { getAllProfiles, getAllTransactions, updateKycStatus } from "@/services/user/userService";
 import { Profile, KycStatus } from "@/types/auth";
 import { Transaction } from "@/services/transactions/types";
 import { supabase } from "@/integrations/supabase/client";
