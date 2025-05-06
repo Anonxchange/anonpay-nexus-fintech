@@ -9,10 +9,10 @@ export interface Transaction {
   created_at: string;
   updated_at: string | null;
   user_name?: string;
-  // Changed the profiles type to be optional since the join might fail
+  // Made profiles more flexible to handle join failure cases
   profiles?: {
     name: string;
-  } | null;
+  } | null | { error: boolean } | string;
 }
 
 export interface PaymentMethod {

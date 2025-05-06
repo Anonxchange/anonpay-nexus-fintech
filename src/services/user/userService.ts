@@ -59,8 +59,10 @@ export const getAllTransactions = async (): Promise<Transaction[]> => {
     
     // Format the data to include user_name
     const formattedTransactions = data.map(transaction => {
-      // Extract profile data or set to null if join failed
-      const profileData = transaction.profiles as any;
+      // Check if profiles has actual data or is an error
+      const profileData = typeof transaction.profiles === 'object' && transaction.profiles !== null 
+        ? transaction.profiles 
+        : null;
       
       return {
         ...transaction,
@@ -69,8 +71,8 @@ export const getAllTransactions = async (): Promise<Transaction[]> => {
       };
     });
     
-    // Type assertion to Transaction[] since we've manually formatted the data
-    return formattedTransactions as Transaction[];
+    // First convert to unknown then to Transaction[] to handle the type mismatch
+    return formattedTransactions as unknown as Transaction[];
   } catch (error) {
     console.error('Error in getAllTransactions:', error);
     return [];
