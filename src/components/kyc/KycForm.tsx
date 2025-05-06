@@ -1,9 +1,19 @@
 
 import React, { useState } from "react";
-import { KycStatus } from "../../types/auth";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import {
   Card,
   CardContent,
@@ -12,184 +22,210 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon } from "lucide-react";
-import { format } from "date-fns";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { updateKycStatus } from "@/services/user/userService";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/auth";
 
-interface KycFormProps {
-  user: any;
-  onSubmit: (data: any) => void;
-}
+const kycFormSchema = z.object({
+  fullName: z.string().min(2, {
+    message: "Full name must be at least 2 characters.",
+  }),
+  idType: z.enum(["national_id", "passport", "drivers_license"], {
+    required_error: "You need to select an ID type.",
+  }),
+  idNumber: z.string().min(5, {
+    message: "ID number must be at least 5 characters.",
+  }),
+  address: z.string().min(5, {
+    message: "Address must be at least 5 characters.",
+  }),
+  phone: z.string().min(5, {
+    message: "Phone number must be at least 5 characters.",
+  }),
+});
 
-const KycForm: React.FC<KycFormProps> = ({ user, onSubmit }) => {
-  const [fullName, setFullName] = useState(user?.name || "");
-  const [address, setAddress] = useState("");
-  const [city, setCity] = useState("");
-  const [country, setCountry] = useState("");
-  const [dob, setDob] = useState<Date | null>(null);
+type KycFormValues = z.infer<typeof kycFormSchema>;
+
+const KycForm = () => {
+  const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
-  
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    
-    const data = {
-      fullName,
-      address,
-      city,
-      country,
-      dob
-    };
-    
-    // Update the user's profile with KYC details
-    if (user?.id) {
-      try {
-        const { error } = await supabase
-          .from('profiles')
-          .update({ 
-            name: fullName,
-            kyc_status: 'pending' as KycStatus,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', user.id);
-        
-        if (error) {
-          console.error('Error updating KYC status:', error);
-          toast({
-            variant: "destructive",
-            title: "Submission Failed",
-            description: "There was a problem submitting your KYC information."
-          });
-        } else {
-          // Save the KYC details in a separate table for verification
-          const { error: kycError } = await supabase
-            .from('kyc_details')
-            .insert({
-              user_id: user.id,
-              full_name: fullName,
-              address: address,
-              city: city,
-              country: country,
-              date_of_birth: dob?.toISOString().split('T')[0],
-              status: 'pending'
-            });
-            
-          if (kycError) {
-            console.error('Error saving KYC details:', kycError);
-            toast({
-              variant: "warning",
-              title: "Partial Success",
-              description: "Your KYC status was updated, but some details may be missing."
-            });
-          }
-          
-          // Call the onSubmit callback from parent component
-          onSubmit(data);
-        }
-      } catch (error) {
-        console.error('Error submitting KYC:', error);
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "An unexpected error occurred. Please try again."
-        });
-      }
+  const navigate = useNavigate();
+
+  const form = useForm<KycFormValues>({
+    resolver: zodResolver(kycFormSchema),
+    defaultValues: {
+      fullName: "",
+      idType: "national_id",
+      idNumber: "",
+      address: "",
+      phone: "",
+    },
+  });
+
+  async function onSubmit(data: KycFormValues) {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "You must be logged in to submit your KYC",
+        variant: "destructive",
+      });
+      navigate("/login");
+      return;
     }
-    
-    setIsSubmitting(false);
-  };
+
+    setIsSubmitting(true);
+
+    try {
+      // Update the user's profile with KYC information
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          name: data.fullName,
+          phone_number: data.phone,
+          kyc_status: 'pending'
+        })
+        .eq('id', user.id);
+
+      if (error) {
+        throw error;
+      }
+
+      toast({
+        title: "KYC Submitted",
+        description: "Your KYC information has been submitted successfully and is under review.",
+        variant: "default",
+      });
+
+      navigate("/dashboard");
+    } catch (error: any) {
+      console.error("KYC submission error:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to submit KYC information. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
 
   return (
-    <Card>
+    <Card className="w-full max-w-2xl mx-auto">
       <CardHeader>
-        <CardTitle>KYC Verification Form</CardTitle>
+        <CardTitle>Know Your Customer (KYC)</CardTitle>
         <CardDescription>
-          Please fill out the form below to verify your identity.
+          Complete your KYC verification to unlock all features of the platform.
         </CardDescription>
       </CardHeader>
-      <CardContent className="grid gap-4">
-        <div className="grid gap-2">
-          <Label htmlFor="name">Full Name</Label>
-          <Input
-            id="name"
-            type="text"
-            placeholder="Enter your full name"
-            value={fullName}
-            onChange={(e) => setFullName(e.target.value)}
-            required
-          />
-        </div>
-        <div className="grid gap-2">
-          <Label htmlFor="address">Address</Label>
-          <Input
-            id="address"
-            type="text"
-            placeholder="Enter your street address"
-            value={address}
-            onChange={(e) => setAddress(e.target.value)}
-            required
-          />
-        </div>
-        <div className="grid gap-2">
-          <Label htmlFor="city">City</Label>
-          <Input
-            id="city"
-            type="text"
-            placeholder="Enter your city"
-            value={city}
-            onChange={(e) => setCity(e.target.value)}
-            required
-          />
-        </div>
-        <div className="grid gap-2">
-          <Label htmlFor="country">Country</Label>
-          <Input
-            id="country"
-            type="text"
-            placeholder="Enter your country"
-            value={country}
-            onChange={(e) => setCountry(e.target.value)}
-            required
-          />
-        </div>
-        <div className="grid gap-2">
-          <Label htmlFor="dob">Date of Birth</Label>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant={"outline"}
-                className="w-full justify-start text-left font-normal"
-              >
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {dob ? format(dob, "PPP") : <span>Pick a date</span>}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                mode="single"
-                selected={dob}
-                onSelect={setDob}
-                disabled={(date) =>
-                  date > new Date() || date < new Date("1900-01-01")
-                }
-                initialFocus
-              />
-            </PopoverContent>
-          </Popover>
-        </div>
-      </CardContent>
-      <CardFooter>
-        <Button 
-          onClick={handleSubmit} 
-          disabled={isSubmitting || !fullName || !address || !city || !country || !dob}
-        >
-          {isSubmitting ? "Submitting..." : "Submit KYC"}
-        </Button>
-      </CardFooter>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)}>
+          <CardContent className="space-y-4">
+            <FormField
+              control={form.control}
+              name="fullName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Full Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="John Doe" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="idType"
+              render={({ field }) => (
+                <FormItem className="space-y-3">
+                  <FormLabel>ID Type</FormLabel>
+                  <FormControl>
+                    <RadioGroup
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                      className="flex flex-col space-y-1"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="national_id" id="national_id" />
+                        <Label htmlFor="national_id">National ID</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="passport" id="passport" />
+                        <Label htmlFor="passport">Passport</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem
+                          value="drivers_license"
+                          id="drivers_license"
+                        />
+                        <Label htmlFor="drivers_license">Driver's License</Label>
+                      </div>
+                    </RadioGroup>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="idNumber"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>ID Number</FormLabel>
+                  <FormControl>
+                    <Input placeholder="ID Number" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="address"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Address</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Your residential address" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="phone"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Phone Number</FormLabel>
+                  <FormControl>
+                    <Input placeholder="+1234567890" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormDescription>
+              Your information will be securely stored and used only for verification purposes.
+            </FormDescription>
+          </CardContent>
+          <CardFooter>
+            <Button type="submit" disabled={isSubmitting} className="w-full">
+              {isSubmitting ? "Submitting..." : "Submit KYC"}
+            </Button>
+          </CardFooter>
+        </form>
+      </Form>
     </Card>
   );
 };
