@@ -45,7 +45,31 @@ serve(async (req) => {
     console.log("Making request to Ebills Africa API with:", { network, phone, amount });
 
     try {
-      // Make the request to Ebills Africa API
+      // Make a test request to validate JWT first
+      const testResponse = await fetch("https://ebills.africa/wp-json/jwt-auth/v1/token/validate", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${jwtToken}`,
+          "Content-Type": "application/json",
+        }
+      });
+      
+      const testResponseText = await testResponse.text();
+      console.log("JWT validation response:", testResponseText);
+      
+      if (!testResponse.ok) {
+        // If JWT validation fails, try to get a clearer error message
+        let errorMessage = "JWT validation failed";
+        try {
+          const errorData = JSON.parse(testResponseText);
+          errorMessage = errorData.message || "JWT validation failed with status " + testResponse.status;
+        } catch (e) {
+          errorMessage = "JWT validation failed: " + testResponseText;
+        }
+        throw new Error(errorMessage);
+      }
+      
+      // Proceed with the main airtime request
       const response = await fetch("https://ebills.africa/wp-json/ebills/v1/airtime", {
         method: "POST",
         headers: {

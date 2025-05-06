@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { VtuProduct, VtuProductVariant, EbillsVtuRequest, EbillsVtuResponse } from "./types";
 
@@ -102,27 +103,50 @@ export const buyVtuWithEbills = async (
       throw new Error("Amount must be a positive number");
     }
 
-    // Call the Supabase Edge Function
-    const { data, error } = await supabase.functions.invoke('ebills-vtu', {
-      body: request,
-    });
+    // Call the Supabase Edge Function with retry logic
+    let attempts = 0;
+    const maxAttempts = 2;
+    let lastError = null;
+    
+    while (attempts < maxAttempts) {
+      try {
+        const { data, error } = await supabase.functions.invoke('ebills-vtu', {
+          body: request,
+        });
 
-    if (error) {
-      console.error("Supabase function error:", error);
-      throw new Error(error.message || 'Failed to process VTU request');
+        if (error) {
+          console.error("Supabase function error:", error);
+          lastError = error;
+          // Try again
+          attempts++;
+          continue;
+        }
+
+        if (!data) {
+          throw new Error('No data returned from VTU service');
+        }
+
+        // Additional validation of the function response
+        if (!data.success) {
+          throw new Error(data.message || 'VTU request failed');
+        }
+
+        console.log("Ebills VTU function response:", data);
+        return data;
+      } catch (error) {
+        lastError = error;
+        attempts++;
+        if (attempts >= maxAttempts) {
+          break;
+        }
+        // Wait before retrying
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
     }
-
-    if (!data) {
-      throw new Error('No data returned from VTU service');
-    }
-
-    // Additional validation of the function response
-    if (!data.success) {
-      throw new Error(data.message || 'VTU request failed');
-    }
-
-    console.log("Ebills VTU function response:", data);
-    return data;
+    
+    // If we get here, all attempts failed
+    throw lastError || new Error('Failed to process VTU request after multiple attempts');
+    
   } catch (error: any) {
     console.error('Error buying VTU product with Ebills:', error);
     return {
