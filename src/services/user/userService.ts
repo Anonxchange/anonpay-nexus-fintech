@@ -60,14 +60,14 @@ export const getAllTransactions = async (): Promise<Transaction[]> => {
     // Format the data to include user_name
     const formattedTransactions = data.map(transaction => {
       // Check if profiles has actual data or is an error
-      const profileData = typeof transaction.profiles === 'object' && transaction.profiles !== null 
+      const profileData = transaction.profiles && typeof transaction.profiles === 'object' 
         ? transaction.profiles 
         : null;
       
       return {
         ...transaction,
-        // Use optional chaining to safely access profileData?.name
-        user_name: profileData?.name || 'Unknown User'
+        // Handle the case where profileData could be null
+        user_name: profileData ? profileData.name || 'Unknown User' : 'Unknown User'
       };
     });
     
