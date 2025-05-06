@@ -34,14 +34,20 @@ export const useAdminDataFetch = (
         throw profilesError;
       }
 
-      // Also fetch auth users data to get email information
-      const { data: authUsersData, error: authUsersError } = await supabase.auth.admin.listUsers();
-      
-      const authUsers = authUsersData?.users || [];
-      
-      if (authUsersError) {
-        console.error('Error fetching auth users:', authUsersError);
-        // Continue with just profiles data if auth users fetch fails
+      // Try to fetch auth users data to get email information
+      let authUsers: any[] = [];
+      try {
+        // This might fail due to permission issues, we'll handle it gracefully
+        const { data: authUsersData, error: authUsersError } = await supabase.auth.admin.listUsers();
+        
+        if (!authUsersError && authUsersData) {
+          authUsers = authUsersData.users || [];
+        } else {
+          console.warn('Cannot access auth.admin.listUsers, continuing with limited data:', authUsersError);
+        }
+      } catch (error) {
+        console.warn('Error accessing auth users:', error);
+        // Continue without auth users data
       }
       
       // Direct fetch from transactions table for admin with extended details
@@ -58,7 +64,7 @@ export const useAdminDataFetch = (
       // Format profiles data and merge with auth users data
       const formattedProfiles = profilesData.map(profile => {
         // Find matching auth user to get email
-        const authUser = authUsers.find(user => user.id === profile.id);
+        const authUser = authUsers.find(user => user?.id === profile.id);
         
         // Create a profile object with all required fields
         const formattedProfile: Profile = {

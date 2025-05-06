@@ -31,6 +31,13 @@ export const getUserProfile = async (userId: string): Promise<Profile | null> =>
 // Create a new user profile
 export const createUserProfile = async (userId: string): Promise<Profile | null> => {
   try {
+    // First check if user has auth
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      console.error('No authenticated user found');
+      return null;
+    }
+    
     const newProfile = {
       id: userId,
       name: null,
@@ -39,6 +46,7 @@ export const createUserProfile = async (userId: string): Promise<Profile | null>
       wallet_balance: 0,
       phone_number: null,
       role: 'user',
+      account_status: 'active',
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
@@ -64,12 +72,26 @@ export const createUserProfile = async (userId: string): Promise<Profile | null>
 // Update user profile
 export const updateUserProfile = async (userId: string, profileData: Partial<Profile>): Promise<boolean> => {
   try {
+    // First check if user has auth
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      console.error('No authenticated user found');
+      return false;
+    }
+    
+    // Ensure we're only updating allowed fields
+    const sanitizedData = {
+      ...(profileData.name !== undefined && { name: profileData.name }),
+      ...(profileData.avatar_url !== undefined && { avatar_url: profileData.avatar_url }),
+      ...(profileData.phone_number !== undefined && { phone_number: profileData.phone_number }),
+      ...(profileData.kyc_status !== undefined && { kyc_status: profileData.kyc_status }),
+      updated_at: new Date().toISOString()
+    };
+    
     const { error } = await supabase
       .from('profiles')
-      .update({
-        ...profileData,
-        updated_at: new Date().toISOString()
-      })
+      .update(sanitizedData)
       .eq('id', userId);
     
     if (error) {

@@ -15,7 +15,7 @@ export const getUserActivityLog = async (adminId: string, userId: string): Promi
     const role = adminData?.role || 'user';
 
     if (adminError || role !== 'admin') {
-      console.error('Error: Not authorized as admin');
+      console.error('Error: Not authorized as admin', adminError);
       return [];
     }
     
@@ -31,8 +31,25 @@ export const getUserActivityLog = async (adminId: string, userId: string): Promi
       return [];
     }
     
-    // For KYC submissions, we'll handle them differently since the table might not exist yet
-    let kycSubmissions = [];
+    // For KYC submissions, we'll handle them separately
+    // We'll create a properly structured empty array for consistency
+    const kycSubmissions: any[] = [];
+    
+    // Try to fetch KYC submissions if available
+    try {
+      const { data: kycData, error: kycError } = await supabase
+        .from('kyc_submissions')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+        
+      if (!kycError && kycData) {
+        kycSubmissions.push(...kycData);
+      }
+    } catch (error) {
+      console.log('KYC submissions table might not exist yet:', error);
+      // We'll continue without KYC data
+    }
     
     // Combine all activities with a type marker
     const allActivities = [

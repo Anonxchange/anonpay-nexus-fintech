@@ -18,19 +18,19 @@ const AdminProtectedRoute: React.FC<AdminProtectedRouteProps> = ({ children }) =
     const checkAdminAuth = async () => {
       try {
         // First check local storage
-        const admin = localStorage.getItem("anonpay_admin");
-        if (admin) {
+        const adminData = localStorage.getItem("anonpay_admin");
+        if (adminData) {
           try {
-            const adminData = JSON.parse(admin);
+            const adminObj = JSON.parse(adminData);
             
             // For local admin account
-            if (adminData.id === "admin-1") {
+            if (adminObj.id === "admin-1") {
               setIsAuthenticated(true);
             } else {
               // For Supabase authenticated admin, verify role
               const { data: { user } } = await supabase.auth.getUser();
               
-              if (user && user.id === adminData.id) {
+              if (user && user.id === adminObj.id) {
                 // Verify admin role
                 const { data: profile, error } = await supabase
                   .from('profiles')
@@ -59,6 +59,7 @@ const AdminProtectedRoute: React.FC<AdminProtectedRouteProps> = ({ children }) =
             });
             localStorage.removeItem("anonpay_admin");
             setIsAuthenticated(false);
+            navigate("/admin-login");
           }
         } else {
           // Try to check if current Supabase user is an admin
@@ -88,21 +89,24 @@ const AdminProtectedRoute: React.FC<AdminProtectedRouteProps> = ({ children }) =
               setIsAuthenticated(true);
             } else {
               setIsAuthenticated(false);
+              navigate("/admin-login");
             }
           } else {
             setIsAuthenticated(false);
+            navigate("/admin-login");
           }
         }
       } catch (error) {
         console.error("Admin authentication error:", error);
         setIsAuthenticated(false);
+        navigate("/admin-login");
       } finally {
         setLoading(false);
       }
     };
     
     checkAdminAuth();
-  }, [toast]);
+  }, [toast, navigate]);
   
   if (loading) {
     return (
@@ -113,7 +117,6 @@ const AdminProtectedRoute: React.FC<AdminProtectedRouteProps> = ({ children }) =
   }
   
   if (!isAuthenticated) {
-    navigate("/admin-login");
     return null;
   }
   
