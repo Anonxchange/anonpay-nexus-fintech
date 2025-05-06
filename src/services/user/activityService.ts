@@ -35,20 +35,25 @@ export const getUserActivityLog = async (adminId: string, userId: string): Promi
     // We'll create a properly structured empty array for consistency
     const kycSubmissions: any[] = [];
     
-    // Try to fetch KYC submissions if available
-    try {
-      const { data: kycData, error: kycError } = await supabase
-        .from('kyc_submissions')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false });
-        
-      if (!kycError && kycData) {
-        kycSubmissions.push(...kycData);
+    // Instead of directly querying a table that might not exist yet,
+    // check if the table exists first
+    const { data: tableExists } = await supabase
+      .rpc('check_table_exists', { table_name: 'kyc_submissions' });
+    
+    // Only try to fetch KYC submissions if the table exists
+    if (tableExists) {
+      try {
+        // Use raw query to fetch from kyc_submissions to avoid TypeScript errors
+        const { data, error } = await supabase
+          .rpc('get_kyc_submissions_for_user', { user_id_param: userId });
+          
+        if (!error && data) {
+          kycSubmissions.push(...data);
+        }
+      } catch (error) {
+        console.log('Error fetching KYC submissions:', error);
+        // We'll continue without KYC data
       }
-    } catch (error) {
-      console.log('KYC submissions table might not exist yet:', error);
-      // We'll continue without KYC data
     }
     
     // Combine all activities with a type marker
