@@ -7,9 +7,9 @@ import KycTab from "../kyc/KycTab";
 import RatesTab from "../rates/RatesTab";
 import GiftCardManagementTab from "../giftcards/GiftCardManagementTab";
 import { useNavigate } from "react-router-dom";
-import { Profile, KycAction } from "@/types/auth";
+import { Profile } from "@/types/auth";
+import { KycAction } from "@/services/products/types";
 import { Transaction } from "@/services/transactions/types";
-import { Bell } from "lucide-react";
 
 // Define the props interfaces for the tab components to match the components
 interface UsersTabProps {

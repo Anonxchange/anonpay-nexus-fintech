@@ -47,3 +47,6 @@ export interface GiftCardSubmission {
   created_at: string;
   image_url?: string;
 }
+
+// Add KycAction type to fix the import in AdminTabs.tsx
+export type KycAction = "approve" | "reject";
