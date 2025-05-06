@@ -27,7 +27,7 @@ export function useVtuTransaction(user: any) {
         title: "Error",
         description: "Please select a network provider"
       });
-      return;
+      return false;
     }
     
     if (!phoneNumber) {
@@ -36,7 +36,7 @@ export function useVtuTransaction(user: any) {
         title: "Error",
         description: "Please enter a phone number"
       });
-      return;
+      return false;
     }
     
     let buyAmount = selectedProduct?.price || 0;
@@ -50,7 +50,7 @@ export function useVtuTransaction(user: any) {
           title: "Error",
           description: "Please enter a valid amount (minimum ₦100)"
         });
-        return;
+        return false;
       }
       buyAmount = inputAmount;
     }
@@ -59,13 +59,16 @@ export function useVtuTransaction(user: any) {
     setTransactionStatus({ status: "loading", message: "Processing your request..." });
     
     try {
-      // Use mock purchase function
-      const success = await buyVtuProduct(user.id, selectedProduct?.id || "", buyAmount, phoneNumber);
+      // Use updated purchase function with provider parameter
+      const success = await buyVtuProduct(
+        user.id, 
+        selectedProduct?.id || "", 
+        buyAmount, 
+        phoneNumber,
+        selectedProvider
+      );
       
       if (success) {
-        // Add delay to simulate API processing time
-        await new Promise(resolve => setTimeout(resolve, 1500));
-        
         setTransactionStatus({
           status: "success",
           message: `Your ${category} purchase was successful`
