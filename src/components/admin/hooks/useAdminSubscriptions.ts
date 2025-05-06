@@ -47,6 +47,7 @@ export const useAdminSubscriptions = (onDataChange: () => Promise<void>) => {
     });
     
     return () => {
+      // Clean up subscriptions when component unmounts
       supabase.removeChannel(profilesChannel);
       supabase.removeChannel(transactionsChannel);
       authChangesSubscription.data.subscription.unsubscribe();

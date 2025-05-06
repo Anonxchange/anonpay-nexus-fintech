@@ -37,7 +37,8 @@ export const getAllProfiles = async (adminId: string): Promise<Profile[]> => {
       ...profile,
       kyc_status: (profile.kyc_status as any) || 'not_submitted',
       name: profile.name || "Unknown User", // Ensure name has a fallback
-      role: profile.role || 'user' // Ensure role has a fallback
+      role: profile.role || 'user', // Ensure role has a fallback
+      account_status: profile.account_status || 'active' // Ensure account_status has a fallback
     })) as Profile[];
   } catch (error) {
     console.error('Error fetching profiles:', error);

@@ -16,7 +16,7 @@ export interface Profile {
   email?: string;
   created_at: string;
   updated_at: string;
-  account_status?: AccountStatus;
+  account_status: AccountStatus;
   kyc_submissions?: KycSubmission[];
 }
 
