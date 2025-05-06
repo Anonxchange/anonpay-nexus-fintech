@@ -24,7 +24,7 @@ export const getUserProfile = async (userId: string): Promise<Profile | null> =>
     // Ensure account_status has a default value if not present in the database
     const profile = {
       ...data,
-      account_status: data.account_status || 'active'
+      account_status: data.account_status || 'active' as AccountStatus
     } as Profile;
     
     return profile;
