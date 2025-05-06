@@ -1,12 +1,12 @@
 
 import React from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { Loader2 } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 import { VtuProduct } from "@/services/products/types";
 import TransactionStatus from "./TransactionStatus";
+import PurchaseHeader from "./purchase/PurchaseHeader";
+import PurchaseForm from "./purchase/PurchaseForm";
+import PurchaseSummary from "./purchase/PurchaseSummary";
+import PurchaseAction from "./purchase/PurchaseAction";
 
 interface PurchaseDetailsProps {
   selectedProduct: VtuProduct | null;
@@ -40,29 +40,21 @@ const PurchaseDetails: React.FC<PurchaseDetailsProps> = ({
   onBuyClick,
   transactionStatus,
 }) => {
+  // Determine if the purchase button should be disabled
+  const isPurchaseDisabled = 
+    processing || 
+    !phoneNumber || 
+    (category === "airtime" && (!amount || parseFloat(amount) < 100));
+  
   return (
     <Card>
-      <CardHeader>
-        <div className="flex items-center">
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={onBackClick}
-            className="mr-2"
-            disabled={processing}
-          >
-            ← Back
-          </Button>
-          <div>
-            <CardTitle>
-              {selectedProduct?.name || 
-              (selectedProvider && providerName) || 
-              "Purchase Details"}
-            </CardTitle>
-            <CardDescription>Enter the required details</CardDescription>
-          </div>
-        </div>
-      </CardHeader>
+      <PurchaseHeader 
+        selectedProduct={selectedProduct}
+        providerName={providerName}
+        selectedProvider={selectedProvider}
+        onBackClick={onBackClick}
+        processing={processing}
+      />
       <CardContent>
         <div className="space-y-4">
           <TransactionStatus 
@@ -70,66 +62,26 @@ const PurchaseDetails: React.FC<PurchaseDetailsProps> = ({
             message={transactionStatus.message} 
           />
 
-          <div className="space-y-2">
-            <Label htmlFor="phone-number">Phone Number</Label>
-            <Input
-              id="phone-number"
-              placeholder="e.g., 08012345678"
-              value={phoneNumber}
-              onChange={(e) => setPhoneNumber(e.target.value)}
-              disabled={processing}
-            />
-          </div>
+          <PurchaseForm 
+            phoneNumber={phoneNumber}
+            setPhoneNumber={setPhoneNumber}
+            amount={amount}
+            setAmount={setAmount}
+            category={category}
+            processing={processing}
+          />
           
-          {(selectedProduct?.category === "airtime" || category === "airtime") && (
-            <div className="space-y-2">
-              <Label htmlFor="airtime-amount">Amount (₦)</Label>
-              <Input
-                id="airtime-amount"
-                type="number"
-                placeholder="100"
-                min="100"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                disabled={processing}
-              />
-            </div>
-          )}
+          <PurchaseSummary 
+            selectedProduct={selectedProduct}
+            amount={amount}
+            category={category}
+          />
           
-          {category === "data" && selectedProduct && (
-            <div className="bg-gray-50 p-3 rounded-md">
-              <div className="flex justify-between">
-                <span>Data Plan:</span>
-                <span>{selectedProduct.name}</span>
-              </div>
-              <div className="flex justify-between font-semibold">
-                <span>Price:</span>
-                <span>₦{selectedProduct.price.toLocaleString()}</span>
-              </div>
-            </div>
-          )}
-          
-          {(category === "airtime" && amount && parseFloat(amount) >= 100) && (
-            <div className="bg-gray-50 p-3 rounded-md">
-              <div className="flex justify-between font-semibold">
-                <span>Total:</span>
-                <span>₦{parseFloat(amount).toLocaleString()}</span>
-              </div>
-            </div>
-          )}
-          
-          <Button 
-            className="w-full" 
-            onClick={onBuyClick}
-            disabled={
-              processing || 
-              !phoneNumber || 
-              (category === "airtime" && (!amount || parseFloat(amount) < 100))
-            }
-          >
-            {processing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {processing ? "Processing..." : "Pay Now"}
-          </Button>
+          <PurchaseAction 
+            onBuyClick={onBuyClick}
+            processing={processing}
+            disabled={isPurchaseDisabled}
+          />
         </div>
       </CardContent>
     </Card>
