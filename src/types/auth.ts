@@ -1,3 +1,4 @@
+
 import { User } from '@supabase/supabase-js';
 
 export type KycStatus = 'approved' | 'pending' | 'rejected' | 'not_submitted';

@@ -1,10 +1,10 @@
-
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import AdminLayout from "../components/layout/AdminLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { getUserDetailsByAdmin, updateKycStatus } from "@/services/user/userService";
+import { getUserDetailsByAdmin } from "@/services/user/adminService";
+import { updateKycStatus } from "@/services/user/accountService";
 import { Profile } from "@/types/auth";
 import { useToast } from "@/hooks/use-toast";
 import StatusBadge from "@/components/ui/StatusBadge";

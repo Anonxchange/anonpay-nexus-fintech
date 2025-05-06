@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useAdminData } from "./hooks/useAdminData";
 import AdminDashboard from "./dashboard/AdminDashboard";
@@ -7,7 +6,7 @@ import { useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { updateUserAccountStatus } from "@/services/user/userService";
+import { updateUserAccountStatus } from "@/services/user/accountService";
 
 const AdminPanel = ({ currentAdmin }: { currentAdmin: any }) => {
   const { toast } = useToast();

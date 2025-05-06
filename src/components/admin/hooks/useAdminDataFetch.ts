@@ -2,7 +2,7 @@
 import { useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Profile, KycStatus } from "@/types/auth";
+import { Profile, KycStatus, AccountStatus } from "@/types/auth";
 import { Transaction } from "@/services/transactions/types";
 
 export const useAdminDataFetch = (
@@ -60,13 +60,16 @@ export const useAdminDataFetch = (
         // Find matching auth user to get email
         const authUser = authUsers.find(user => user.id === profile.id);
         
+        // Ensure account_status has a default value if it doesn't exist
+        const account_status = profile.account_status || 'active' as AccountStatus;
+        
         return {
           ...profile,
           email: authUser?.email || "No email available",
           kyc_status: (profile.kyc_status as KycStatus) || 'not_submitted',
           name: profile.name || authUser?.email || "Unknown User",
           role: profile.role || 'user',
-          account_status: profile.account_status || 'active',
+          account_status: account_status,
           kyc_submissions: [] // Initialize with empty array as we don't have kyc_submissions table yet
         };
       });
