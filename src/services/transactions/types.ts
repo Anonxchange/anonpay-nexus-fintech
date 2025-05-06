@@ -4,13 +4,15 @@ export interface Transaction {
   user_id: string;
   amount: number;
   type: string;
-  reference: string;
+  reference: string | null;
   status: string;
   created_at: string;
+  updated_at: string | null;
   user_name?: string;
+  // Changed the profiles type to be optional since the join might fail
   profiles?: {
     name: string;
-  };
+  } | null;
 }
 
 export interface PaymentMethod {

@@ -59,13 +59,17 @@ export const getAllTransactions = async (): Promise<Transaction[]> => {
     
     // Format the data to include user_name
     const formattedTransactions = data.map(transaction => {
+      // Extract profile data or set to null if join failed
       const profileData = transaction.profiles as any;
+      
       return {
         ...transaction,
+        // Set user_name from profiles data or fallback to 'Unknown User'
         user_name: profileData?.name || 'Unknown User'
       };
     });
     
+    // Type assertion to Transaction[] since we've manually formatted the data
     return formattedTransactions as Transaction[];
   } catch (error) {
     console.error('Error in getAllTransactions:', error);
