@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { KycStatus, Profile } from "@/types/auth";
+import { KycStatus, Profile, AccountStatus } from "@/types/auth";
 
 // Get user profile data
 export const getUserProfile = async (userId: string): Promise<Profile | null> => {
@@ -21,7 +21,13 @@ export const getUserProfile = async (userId: string): Promise<Profile | null> =>
       return null;
     }
     
-    return data as Profile;
+    // Ensure account_status has a default value if not present in the database
+    const profile = {
+      ...data,
+      account_status: data.account_status || 'active'
+    } as Profile;
+    
+    return profile;
   } catch (error) {
     console.error('Error in getUserProfile:', error);
     return null;
@@ -46,7 +52,7 @@ export const createUserProfile = async (userId: string): Promise<Profile | null>
       wallet_balance: 0,
       phone_number: null,
       role: 'user',
-      account_status: 'active',
+      account_status: 'active' as AccountStatus,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
@@ -86,6 +92,7 @@ export const updateUserProfile = async (userId: string, profileData: Partial<Pro
       ...(profileData.avatar_url !== undefined && { avatar_url: profileData.avatar_url }),
       ...(profileData.phone_number !== undefined && { phone_number: profileData.phone_number }),
       ...(profileData.kyc_status !== undefined && { kyc_status: profileData.kyc_status }),
+      ...(profileData.account_status !== undefined && { account_status: profileData.account_status }),
       updated_at: new Date().toISOString()
     };
     
