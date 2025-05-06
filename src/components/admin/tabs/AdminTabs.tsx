@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import UsersTab from "../users/UsersTab";
 import TransactionsTab from "../transactions/TransactionsTab";
@@ -8,12 +8,10 @@ import RatesTab from "../rates/RatesTab";
 import GiftCardManagementTab from "../giftcards/GiftCardManagementTab";
 import { useNavigate } from "react-router-dom";
 import { Profile } from "@/types/auth";
-import { KycAction } from "@/services/products/types"; // Update import to use from products/types
+import { KycAction } from "@/services/products/types"; 
 import { Transaction } from "@/services/transactions/types";
 
-// Comment out these interfaces since they appear to conflict with the actual component props
-// We'll let the components define their own prop interfaces
-/*
+// Define interfaces that match the expected props of each component
 interface UsersTabProps {
   users: Profile[];
 }
@@ -26,7 +24,6 @@ interface KycTabProps {
   users: Profile[];
   onAction: (userId: string, action: KycAction) => Promise<void>;
 }
-*/
 
 interface AdminTabsProps {
   users: Profile[];
@@ -79,7 +76,10 @@ const AdminTabs: React.FC<AdminTabsProps> = ({
       </TabsContent>
 
       <TabsContent value="kyc">
-        <KycTab users={users.filter(user => user.kyc_status !== 'not_submitted')} onAction={handleKycAction} />
+        <KycTab 
+          users={users.filter(user => user.kyc_status !== 'not_submitted')} 
+          onAction={handleKycAction} 
+        />
       </TabsContent>
 
       <TabsContent value="rates">
