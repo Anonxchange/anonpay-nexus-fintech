@@ -68,7 +68,7 @@ export const useAdminDataFetch = (
           role: profile.role || 'user',
           account_status: (profile.account_status as AccountStatus) || 'active',
           kyc_submissions: [] // Initialize with empty array as we don't have kyc_submissions table yet
-        };
+        } as Profile; // Use type assertion to ensure compatibility
       });
       
       // Format transactions data
@@ -89,8 +89,7 @@ export const useAdminDataFetch = (
       console.log('Fetched profiles:', formattedProfiles);
       console.log('Fetched transactions:', formattedTransactions);
       
-      // Type assertion to ensure compatibility with Profile type
-      setUsers(formattedProfiles as unknown as Profile[]);
+      setUsers(formattedProfiles);
       setTransactions(formattedTransactions as unknown as Transaction[]);
     } catch (error) {
       console.error("Error fetching admin data:", error);
