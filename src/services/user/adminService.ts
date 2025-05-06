@@ -40,6 +40,34 @@ export const getAllProfiles = async (adminId: string): Promise<Profile[]> => {
   }
 };
 
+// Get user count for admin dashboard
+export const getUserCount = async (adminId: string): Promise<number> => {
+  try {
+    // First check if the user is an admin using the is_admin function
+    const { data: isAdmin, error: adminError } = await supabase
+      .rpc('is_admin', { user_id: adminId });
+
+    if (adminError || !isAdmin) {
+      console.error('Error: Not authorized as admin', adminError);
+      return 0;
+    }
+    
+    const { count, error } = await supabase
+      .from('profiles')
+      .select('*', { count: 'exact', head: true });
+    
+    if (error) {
+      console.error('Error fetching user count:', error);
+      return 0;
+    }
+    
+    return count || 0;
+  } catch (error) {
+    console.error('Error in getUserCount:', error);
+    return 0;
+  }
+};
+
 // Get all transactions for admin view
 export const getAllTransactions = async (adminId: string): Promise<Transaction[]> => {
   try {

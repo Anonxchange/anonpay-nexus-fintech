@@ -4,11 +4,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Profile, KycStatus, AccountStatus } from "@/types/auth";
 import { Transaction } from "@/services/transactions/types";
+import { getUserCount } from "@/services/user/adminService";
 
 export const useAdminDataFetch = (
   setUsers: React.Dispatch<React.SetStateAction<Profile[]>>,
   setTransactions: React.Dispatch<React.SetStateAction<Transaction[]>>,
-  setLoading: React.Dispatch<React.SetStateAction<boolean>>
+  setLoading: React.Dispatch<React.SetStateAction<boolean>>,
+  setUserCount?: React.Dispatch<React.SetStateAction<number>>
 ) => {
   const { toast } = useToast();
   
@@ -32,6 +34,12 @@ export const useAdminDataFetch = (
       if (profilesError) {
         console.error('Error fetching profiles:', profilesError);
         throw profilesError;
+      }
+
+      // Fetch total user count if setUserCount is provided
+      if (setUserCount) {
+        const count = await getUserCount(admin.id);
+        setUserCount(count);
       }
 
       // Try to fetch auth users data to get email information
@@ -119,7 +127,7 @@ export const useAdminDataFetch = (
     } finally {
       setLoading(false);
     }
-  }, [toast, setUsers, setTransactions, setLoading]);
+  }, [toast, setUsers, setTransactions, setLoading, setUserCount]);
   
   return { fetchAllData };
 };

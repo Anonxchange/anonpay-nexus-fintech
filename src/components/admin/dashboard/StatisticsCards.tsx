@@ -7,9 +7,12 @@ import { Transaction } from "@/services/transactions/types";
 interface StatisticsCardsProps {
   users: Profile[];
   transactions: Transaction[];
+  totalUserCount?: number;
 }
 
-const StatisticsCards: React.FC<StatisticsCardsProps> = ({ users, transactions }) => {
+const StatisticsCards: React.FC<StatisticsCardsProps> = ({ users, transactions, totalUserCount }) => {
+  const displayUserCount = totalUserCount || users.length;
+  
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
       <Card>
@@ -31,7 +34,7 @@ const StatisticsCards: React.FC<StatisticsCardsProps> = ({ users, transactions }
           </svg>
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{users.length}</div>
+          <div className="text-2xl font-bold">{displayUserCount}</div>
           <p className="text-xs text-muted-foreground">
             {users.length > 0 ? `${users.filter(u => 
               new Date(u.created_at || '').getMonth() === new Date().getMonth()).length} new this month` : 'No users yet'}

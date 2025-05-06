@@ -12,6 +12,7 @@ interface AdminDashboardProps {
   loading: boolean;
   onRefreshData: () => void;
   currentAdmin: any;
+  userCount?: number;
 }
 
 const AdminDashboard: React.FC<AdminDashboardProps> = ({
@@ -19,7 +20,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   transactions,
   loading,
   onRefreshData,
-  currentAdmin
+  currentAdmin,
+  userCount
 }) => {
   // Calculate statistics
   const pendingKyc = users.filter(user => user.kyc_status === "pending").length;
@@ -42,6 +44,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     );
   }
 
+  const totalUsers = userCount || users.length;
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -50,7 +54,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
             Welcome back, {currentAdmin.name || currentAdmin.email}
           </p>
           <p className="text-sm text-gray-400">
-            Connected to Supabase. Total users: {users.length}, Total transactions: {transactions.length}
+            Connected to Supabase. Total users: {totalUsers}, Total transactions: {transactions.length}
           </p>
         </div>
         <Button 
@@ -68,7 +72,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-500">Total Users</p>
-              <p className="text-2xl font-bold">{users.length}</p>
+              <p className="text-2xl font-bold">{totalUsers}</p>
               <p className="text-xs text-green-500 mt-1">+{recentUsers} new this week</p>
             </div>
             <div className="bg-blue-50 p-2 rounded-full">
@@ -117,7 +121,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
         </div>
       </div>
 
-      <StatisticsCards users={users} transactions={transactions} />
+      <StatisticsCards users={users} transactions={transactions} totalUserCount={totalUsers} />
     </div>
   );
 };
