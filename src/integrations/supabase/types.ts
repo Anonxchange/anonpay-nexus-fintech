@@ -107,6 +107,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_table_exists: {
+        Args: { table_name: string }
+        Returns: boolean
+      }
+      get_kyc_submissions_for_user: {
+        Args: { user_id_param: string }
+        Returns: Json[]
+      }
       update_wallet_balance: {
         Args:
           | Record<PropertyKey, never>

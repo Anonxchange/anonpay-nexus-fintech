@@ -35,19 +35,22 @@ export const getUserActivityLog = async (adminId: string, userId: string): Promi
     // We'll create a properly structured empty array for consistency
     const kycSubmissions: any[] = [];
     
-    // Instead of directly querying a table that might not exist yet,
-    // check if the table exists first
-    const { data: tableExists } = await supabase
-      .rpc('check_table_exists', { table_name: 'kyc_submissions' });
+    // Check if the table exists first using our new RPC function
+    const { data: tableExists, error: checkError } = await supabase
+      .rpc<boolean>('check_table_exists', { table_name: 'kyc_submissions' });
+    
+    if (checkError) {
+      console.error('Error checking if table exists:', checkError);
+    }
     
     // Only try to fetch KYC submissions if the table exists
     if (tableExists) {
       try {
-        // Use raw query to fetch from kyc_submissions to avoid TypeScript errors
+        // Use our new RPC function to fetch KYC submissions
         const { data, error } = await supabase
-          .rpc('get_kyc_submissions_for_user', { user_id_param: userId });
+          .rpc<any[]>('get_kyc_submissions_for_user', { user_id_param: userId });
           
-        if (!error && data) {
+        if (!error && data && Array.isArray(data)) {
           kycSubmissions.push(...data);
         }
       } catch (error) {
