@@ -15,6 +15,7 @@ export interface Profile {
   created_at: string | null;
   updated_at: string | null;
   email_status?: EmailStatus;
+  email?: string; // Added email field to display in admin panel
 }
 
 export interface AuthContextType {

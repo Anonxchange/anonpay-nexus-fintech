@@ -33,6 +33,16 @@ export const useAdminData = () => {
         console.error('Error fetching profiles:', profilesError);
         throw profilesError;
       }
+
+      // Also fetch auth users data to get email information
+      const { data: authUsersData, error: authUsersError } = await supabase.auth.admin.listUsers();
+      
+      const authUsers = authUsersData?.users || [];
+      
+      if (authUsersError) {
+        console.error('Error fetching auth users:', authUsersError);
+        // Continue with just profiles data if auth users fetch fails
+      }
       
       // Direct fetch from transactions table for admin
       const { data: transactionsData, error: transactionsError } = await supabase
@@ -45,13 +55,19 @@ export const useAdminData = () => {
         throw transactionsError;
       }
 
-      // Format profiles data
-      const formattedProfiles = profilesData.map(profile => ({
-        ...profile,
-        kyc_status: (profile.kyc_status as KycStatus) || 'not_submitted',
-        name: profile.name || "Unknown User",
-        role: profile.role || 'user'
-      }));
+      // Format profiles data and merge with auth users data
+      const formattedProfiles = profilesData.map(profile => {
+        // Find matching auth user to get email
+        const authUser = authUsers.find(user => user.id === profile.id);
+        
+        return {
+          ...profile,
+          email: authUser?.email || "No email available",
+          kyc_status: (profile.kyc_status as KycStatus) || 'not_submitted',
+          name: profile.name || authUser?.email || "Unknown User",
+          role: profile.role || 'user'
+        };
+      });
       
       // Format transactions data
       const formattedTransactions = transactionsData.map(transaction => {
@@ -168,9 +184,19 @@ export const useAdminData = () => {
       )
       .subscribe();
     
+    // Add listener for auth user changes as well
+    const authChangesSubscription = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'USER_UPDATED' || event === 'SIGNED_IN' || event === 'SIGNED_UP') {
+        // Refresh data when auth state changes that might affect user data
+        console.log('Auth state changed:', event);
+        fetchAllData();
+      }
+    });
+    
     return () => {
       supabase.removeChannel(profilesChannel);
       supabase.removeChannel(transactionsChannel);
+      authChangesSubscription.data.subscription.unsubscribe();
     };
   }, [fetchAllData]);
 

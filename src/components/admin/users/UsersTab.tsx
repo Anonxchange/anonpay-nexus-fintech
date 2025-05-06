@@ -5,7 +5,7 @@ import StatusBadge from "@/components/ui/StatusBadge";
 import { Profile } from "@/types/auth";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { Eye, Edit2, CreditCard } from "lucide-react";
+import { Eye, Edit2, CreditCard, Mail, Phone, Calendar } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -71,13 +71,22 @@ const UsersTab: React.FC<UsersTabProps> = ({ filteredUsers, searchTerm }) => {
       setIsSubmitting(false);
     }
   };
+
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return "Unknown";
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
   
   return (
     <div className="space-y-4">
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Name</TableHead>
+            <TableHead>Name/Email</TableHead>
             <TableHead>KYC Status</TableHead>
             <TableHead>Balance</TableHead>
             <TableHead>Joined</TableHead>
@@ -88,13 +97,24 @@ const UsersTab: React.FC<UsersTabProps> = ({ filteredUsers, searchTerm }) => {
           {filteredUsers.length > 0 ? (
             filteredUsers.map((user) => (
               <TableRow key={user.id}>
-                <TableCell className="font-medium">{user.name || "Unnamed User"}</TableCell>
+                <TableCell className="font-medium">
+                  <div>
+                    <div>{user.name || "Unnamed User"}</div>
+                    <div className="text-xs text-gray-500 flex items-center">
+                      <Mail className="h-3 w-3 mr-1" />
+                      {(user as any).email || "No email"}
+                    </div>
+                  </div>
+                </TableCell>
                 <TableCell>
                   <StatusBadge status={user.kyc_status || "not_submitted"} />
                 </TableCell>
                 <TableCell>₦{(user.wallet_balance || 0).toLocaleString()}</TableCell>
                 <TableCell>
-                  {user.created_at ? new Date(user.created_at).toLocaleDateString() : "Unknown"}
+                  <div className="flex items-center">
+                    <Calendar className="h-3 w-3 mr-1 text-gray-500" />
+                    {formatDate(user.created_at)}
+                  </div>
                 </TableCell>
                 <TableCell>
                   <div className="flex space-x-2">
