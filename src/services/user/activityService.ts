@@ -37,7 +37,7 @@ export const getUserActivityLog = async (adminId: string, userId: string): Promi
     
     // Check if the table exists first using our new RPC function
     const { data: tableExists, error: checkError } = await supabase
-      .rpc<boolean>('check_table_exists', { table_name: 'kyc_submissions' });
+      .rpc('check_table_exists', { table_name: 'kyc_submissions' });
     
     if (checkError) {
       console.error('Error checking if table exists:', checkError);
@@ -48,7 +48,7 @@ export const getUserActivityLog = async (adminId: string, userId: string): Promi
       try {
         // Use our new RPC function to fetch KYC submissions
         const { data, error } = await supabase
-          .rpc<any[]>('get_kyc_submissions_for_user', { user_id_param: userId });
+          .rpc('get_kyc_submissions_for_user', { user_id_param: userId });
           
         if (!error && data && Array.isArray(data)) {
           kycSubmissions.push(...data);
