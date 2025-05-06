@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Profile, AccountStatus } from "@/types/auth";
 import { Transaction } from "../transactions/types";
 
-// Get all profiles for admin view - updated to use auth.uid() with RLS
+// Get all profiles for admin view - updated to correctly handle all users
 export const getAllProfiles = async (adminId: string): Promise<Profile[]> => {
   try {
     // First check if the user is an admin using their ID
@@ -21,7 +21,7 @@ export const getAllProfiles = async (adminId: string): Promise<Profile[]> => {
       return [];
     }
     
-    // Get all profiles - this will work with RLS if the admin policy is set up
+    // Get all profiles without filters
     const { data: profiles, error } = await supabase
       .from('profiles')
       .select('*')
@@ -32,7 +32,7 @@ export const getAllProfiles = async (adminId: string): Promise<Profile[]> => {
       return [];
     }
     
-    // Make sure to convert kyc_status to the correct type and handle empty name fields
+    // Make sure to convert status fields and handle empty fields with proper defaults
     return profiles.map(profile => ({
       ...profile,
       kyc_status: (profile.kyc_status as any) || 'not_submitted',
@@ -124,7 +124,14 @@ export const getUserDetailsByAdmin = async (adminId: string, userId: string): Pr
       return null;
     }
     
-    return data as Profile;
+    // Make sure to properly set defaults for nullable values
+    return {
+      ...data,
+      kyc_status: data.kyc_status || 'not_submitted',
+      account_status: data.account_status || 'active',
+      wallet_balance: data.wallet_balance || 0,
+      role: data.role || 'user'
+    } as Profile;
   } catch (error) {
     console.error('Error in getUserDetailsByAdmin:', error);
     return null;

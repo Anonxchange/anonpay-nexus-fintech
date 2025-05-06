@@ -23,7 +23,7 @@ export const useAdminDataFetch = (
       
       const admin = JSON.parse(adminData);
       
-      // Direct fetch from profiles table for admin with extended details
+      // Direct fetch from profiles table for admin - without filters
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
         .select('*')
@@ -35,13 +35,15 @@ export const useAdminDataFetch = (
       }
 
       // Try to fetch auth users data to get email information
+      // This is not required but adds email data if available
       let authUsers: any[] = [];
       try {
-        // This might fail due to permission issues, we'll handle it gracefully
-        const { data: authUsersData, error: authUsersError } = await supabase.auth.admin.listUsers();
+        // Attempt to fetch auth users - this will work if the admin has the right permissions
+        const { data: authUsersResponse, error: authUsersError } = await supabase.auth.admin.listUsers();
         
-        if (!authUsersError && authUsersData) {
-          authUsers = authUsersData.users || [];
+        if (!authUsersError && authUsersResponse) {
+          authUsers = authUsersResponse.users || [];
+          console.log('Successfully fetched auth users:', authUsers.length);
         } else {
           console.warn('Cannot access auth.admin.listUsers, continuing with limited data:', authUsersError);
         }
@@ -53,7 +55,7 @@ export const useAdminDataFetch = (
       // Direct fetch from transactions table for admin with extended details
       const { data: transactionsData, error: transactionsError } = await supabase
         .from('transactions')
-        .select('*, profiles:user_id(name, id, email, kyc_status, wallet_balance)')
+        .select('*, profiles:user_id(name, id, email, kyc_status, wallet_balance, account_status)')
         .order('created_at', { ascending: false });
       
       if (transactionsError) {
@@ -66,7 +68,7 @@ export const useAdminDataFetch = (
         // Find matching auth user to get email
         const authUser = authUsers.find(user => user?.id === profile.id);
         
-        // Create a profile object with all required fields
+        // Create a profile object with all required fields and fallbacks
         const formattedProfile: Profile = {
           id: profile.id,
           name: profile.name || authUser?.email || "Unknown User",
@@ -96,12 +98,14 @@ export const useAdminDataFetch = (
           user_email: profileData && typeof profileData === 'object' ? 
             (profileData as any).email : null,
           user_kyc_status: profileData && typeof profileData === 'object' ? 
-            (profileData as any).kyc_status : null
+            (profileData as any).kyc_status : null,
+          user_account_status: profileData && typeof profileData === 'object' ? 
+            (profileData as any).account_status || 'active' : 'active'
         };
       });
       
-      console.log('Fetched profiles:', formattedProfiles);
-      console.log('Fetched transactions:', formattedTransactions);
+      console.log('Fetched profiles:', formattedProfiles.length);
+      console.log('Fetched transactions:', formattedTransactions.length);
       
       setUsers(formattedProfiles);
       setTransactions(formattedTransactions as unknown as Transaction[]);
