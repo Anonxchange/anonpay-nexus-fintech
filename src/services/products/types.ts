@@ -1,30 +1,35 @@
 
+// Gift Card Type
 export interface GiftCard {
   id: string;
   name: string;
   description: string;
   buyRate: number;
   sellRate: number;
-  imageUrl: string;
+  imageUrl?: string;
   isActive: boolean;
+  currency?: string;
 }
 
+// VTU Product Type
 export interface VtuProduct {
   id: string;
   name: string;
-  description: string;
-  price: number;
-  imageUrl: string;
-  isActive: boolean;
-  category: "airtime" | "data" | "electricity" | "cable";
+  description?: string;
+  category: string;
+  provider: string;
+  minAmount?: number;
+  maxAmount?: number;
+  imageUrl?: string;
+  isAvailable: boolean;
 }
 
-export interface RateInfo {
+// VTU Bundle Type
+export interface VtuBundle {
   id: string;
   name: string;
-  buyRate: number;
-  sellRate: number;
-  lastUpdated: string;
+  amount: number;
+  description?: string;
+  validity: string;
+  productId: string;
 }
-
-// We don't need to export these functions here since they're already exported from their respective service files

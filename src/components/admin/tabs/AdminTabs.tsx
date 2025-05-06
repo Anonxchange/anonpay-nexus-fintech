@@ -9,6 +9,7 @@ import UsersTab from "../users/UsersTab";
 import TransactionsTab from "../transactions/TransactionsTab";
 import KycTab from "../kyc/KycTab";
 import RatesTab from "../rates/RatesTab";
+import GiftCardManagementTab from "../giftcards/GiftCardManagementTab";
 
 interface AdminTabsProps {
   users: Profile[];
@@ -65,6 +66,7 @@ const AdminTabs: React.FC<AdminTabsProps> = ({
             KYC Verification ({users.filter(u => u.kyc_status === "pending").length})
           </TabsTrigger>
           <TabsTrigger value="rates">Rates</TabsTrigger>
+          <TabsTrigger value="giftcards">Gift Cards</TabsTrigger>
         </TabsList>
         <TabsContent value="users" className="space-y-4">
           <Card>
@@ -118,6 +120,19 @@ const AdminTabs: React.FC<AdminTabsProps> = ({
             </CardHeader>
             <CardContent>
               <RatesTab />
+            </CardContent>
+          </Card>
+        </TabsContent>
+        <TabsContent value="giftcards" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Gift Card Management</CardTitle>
+              <CardDescription>
+                Manage gift cards and review user submissions.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <GiftCardManagementTab />
             </CardContent>
           </Card>
         </TabsContent>

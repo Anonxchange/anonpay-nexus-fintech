@@ -27,68 +27,24 @@ const RatesTab: React.FC = () => {
   
   const { toast } = useToast();
 
-  // Sample exchange rates data - in a real app, this would come from your database
-  const dummyRates: ExchangeRate[] = [
-    {
-      id: "1",
-      currency_code: "USD",
-      currency_name: "US Dollar",
-      buy_rate: 750,
-      sell_rate: 780,
-      last_updated: new Date().toISOString()
-    },
-    {
-      id: "2",
-      currency_code: "EUR",
-      currency_name: "Euro",
-      buy_rate: 830,
-      sell_rate: 860,
-      last_updated: new Date().toISOString()
-    },
-    {
-      id: "3",
-      currency_code: "GBP",
-      currency_name: "British Pound",
-      buy_rate: 960,
-      sell_rate: 990,
-      last_updated: new Date().toISOString()
-    },
-    {
-      id: "4",
-      currency_code: "BTC",
-      currency_name: "Bitcoin",
-      buy_rate: 39000000,
-      sell_rate: 40000000,
-      last_updated: new Date().toISOString()
-    },
-    {
-      id: "5",
-      currency_code: "ETH",
-      currency_name: "Ethereum",
-      buy_rate: 2100000,
-      sell_rate: 2150000,
-      last_updated: new Date().toISOString()
-    }
-  ];
-
   useEffect(() => {
     const fetchRates = async () => {
       try {
         setLoading(true);
         
-        // In a real app, this would fetch from your database
-        // const { data, error } = await supabase
-        //   .from('exchange_rates')
-        //   .select('*')
-        //   .order('currency_code', { ascending: true });
+        const { data, error } = await supabase
+          .from('exchange_rates')
+          .select('*')
+          .order('currency_code', { ascending: true });
         
-        // if (error) throw error;
+        if (error) throw error;
         
-        // For now, we'll use dummy data
-        setTimeout(() => {
-          setRates(dummyRates);
-          setLoading(false);
-        }, 500);
+        if (data && data.length > 0) {
+          setRates(data);
+        } else {
+          // If no data exists, we'll use dummy data for initial setup
+          await setupInitialRates();
+        }
         
       } catch (error) {
         console.error('Error fetching rates:', error);
@@ -97,26 +53,86 @@ const RatesTab: React.FC = () => {
           title: "Error",
           description: "Failed to load exchange rates data."
         });
+      } finally {
         setLoading(false);
       }
     };
     
     fetchRates();
     
-    // In a real app, set up a realtime subscription
-    // const channel = supabase
-    //   .channel('exchange_rates_changes')
-    //   .on('postgres_changes', { 
-    //     event: '*', 
-    //     schema: 'public', 
-    //     table: 'exchange_rates' 
-    //   }, () => {
-    //     fetchRates();
-    //   })
-    //   .subscribe();
+    // Set up a realtime subscription
+    const channel = supabase
+      .channel('exchange_rates_changes')
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'exchange_rates' 
+      }, () => {
+        fetchRates();
+      })
+      .subscribe();
     
-    // return () => { supabase.removeChannel(channel); };
+    return () => { supabase.removeChannel(channel); };
   }, [toast]);
+
+  // Setup initial rates if table is empty
+  const setupInitialRates = async () => {
+    const dummyRates: Omit<ExchangeRate, 'id'>[] = [
+      {
+        currency_code: "USD",
+        currency_name: "US Dollar",
+        buy_rate: 750,
+        sell_rate: 780,
+        last_updated: new Date().toISOString()
+      },
+      {
+        currency_code: "EUR",
+        currency_name: "Euro",
+        buy_rate: 830,
+        sell_rate: 860,
+        last_updated: new Date().toISOString()
+      },
+      {
+        currency_code: "GBP",
+        currency_name: "British Pound",
+        buy_rate: 960,
+        sell_rate: 990,
+        last_updated: new Date().toISOString()
+      },
+      {
+        currency_code: "BTC",
+        currency_name: "Bitcoin",
+        buy_rate: 39000000,
+        sell_rate: 40000000,
+        last_updated: new Date().toISOString()
+      },
+      {
+        currency_code: "ETH",
+        currency_name: "Ethereum",
+        buy_rate: 2100000,
+        sell_rate: 2150000,
+        last_updated: new Date().toISOString()
+      }
+    ];
+
+    try {
+      const { data, error } = await supabase
+        .from('exchange_rates')
+        .insert(dummyRates)
+        .select();
+      
+      if (error) throw error;
+      
+      if (data) setRates(data);
+    } catch (error) {
+      console.error('Error setting up initial rates:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to set up initial exchange rates."
+      });
+    }
+  };
 
   const handleEdit = (rate: ExchangeRate) => {
     setEditingId(rate.id);
@@ -128,29 +144,16 @@ const RatesTab: React.FC = () => {
 
   const handleSave = async (id: string) => {
     try {
-      // In a real app, update in database
-      // const { error } = await supabase
-      //   .from('exchange_rates')
-      //   .update({ 
-      //     buy_rate: editForm.buy_rate,
-      //     sell_rate: editForm.sell_rate,
-      //     last_updated: new Date().toISOString()
-      //   })
-      //   .eq('id', id);
+      const { error } = await supabase
+        .from('exchange_rates')
+        .update({ 
+          buy_rate: editForm.buy_rate,
+          sell_rate: editForm.sell_rate,
+          last_updated: new Date().toISOString()
+        })
+        .eq('id', id);
       
-      // if (error) throw error;
-      
-      // For demo purposes, update local state
-      setRates(rates.map(rate => 
-        rate.id === id 
-          ? { 
-              ...rate, 
-              buy_rate: editForm.buy_rate, 
-              sell_rate: editForm.sell_rate,
-              last_updated: new Date().toISOString()
-            } 
-          : rate
-      ));
+      if (error) throw error;
       
       toast({
         title: "Rate Updated",
