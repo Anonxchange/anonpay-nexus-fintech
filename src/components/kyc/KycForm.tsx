@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -52,9 +53,10 @@ type KycFormValues = z.infer<typeof kycFormSchema>;
 interface KycFormProps {
   user?: User;
   onSubmit?: (data: KycFormValues) => Promise<void>;
+  onComplete?: () => void; // Add the missing onComplete prop
 }
 
-const KycForm: React.FC<KycFormProps> = ({ user: propUser, onSubmit: propOnSubmit }) => {
+const KycForm: React.FC<KycFormProps> = ({ user: propUser, onSubmit: propOnSubmit, onComplete }) => {
   const { user: authUser } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
@@ -91,6 +93,10 @@ const KycForm: React.FC<KycFormProps> = ({ user: propUser, onSubmit: propOnSubmi
       // If a custom onSubmit handler was provided, use that
       if (propOnSubmit) {
         await propOnSubmit(data);
+        // Call onComplete if provided
+        if (onComplete) {
+          onComplete();
+        }
         return;
       }
       
@@ -115,7 +121,12 @@ const KycForm: React.FC<KycFormProps> = ({ user: propUser, onSubmit: propOnSubmi
         variant: "default",
       });
 
-      navigate("/dashboard");
+      // Call onComplete if provided
+      if (onComplete) {
+        onComplete();
+      } else {
+        navigate("/dashboard");
+      }
     } catch (error: any) {
       console.error("KYC submission error:", error);
       toast({
