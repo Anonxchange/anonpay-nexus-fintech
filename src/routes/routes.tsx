@@ -19,6 +19,9 @@ import About from "@/pages/About";
 import Contact from "@/pages/Contact";
 import Terms from "@/pages/Terms";
 import Privacy from "@/pages/Privacy";
+import Blog from "@/pages/Blog";
+import Careers from "@/pages/Careers";
+import RefundPolicy from "@/pages/RefundPolicy";
 
 // Components
 import SettingsPage from "@/components/settings/SettingsPage";
@@ -134,6 +137,18 @@ const router = createBrowserRouter([
   {
     path: "/privacy",
     element: <RootLayout><Privacy /></RootLayout>,
+  },
+  {
+    path: "/blog",
+    element: <RootLayout><Blog /></RootLayout>,
+  },
+  {
+    path: "/careers",
+    element: <RootLayout><Careers /></RootLayout>,
+  },
+  {
+    path: "/refund-policy",
+    element: <RootLayout><RefundPolicy /></RootLayout>,
   },
   {
     path: "*",

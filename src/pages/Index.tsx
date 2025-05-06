@@ -26,6 +26,26 @@ const Index: React.FC = () => {
         <div className="container mx-auto px-4 py-20 md:py-28">
           <div className="flex flex-col md:flex-row gap-8 items-center">
             <div className="flex-1 space-y-6">
+              {/* Logo and tagline */}
+              <div className="flex items-center gap-3 mb-6">
+                <div className="bg-white rounded-xl p-2 shadow-xl">
+                  <img
+                    src="/anonpay-logo.svg"
+                    alt="AnonPay Logo"
+                    className="h-12 w-12"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.onerror = null;
+                      target.src = "/placeholder.svg";
+                    }}
+                  />
+                </div>
+                <div className="flex flex-col">
+                  <h2 className="text-xl font-bold">AnonPay</h2>
+                  <p className="text-sm opacity-90">Secure Crypto & Fintech Solutions</p>
+                </div>
+              </div>
+              
               <div className="inline-block px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-sm font-medium mb-2">
                 🚀 Most trusted fintech platform in Nigeria
               </div>

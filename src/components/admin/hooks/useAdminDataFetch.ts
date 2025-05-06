@@ -23,7 +23,7 @@ export const useAdminDataFetch = (
       
       const admin = JSON.parse(adminData);
       
-      // Direct fetch from profiles table for admin
+      // Direct fetch from profiles table for admin with extended details
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
         .select('*')
@@ -44,10 +44,10 @@ export const useAdminDataFetch = (
         // Continue with just profiles data if auth users fetch fails
       }
       
-      // Direct fetch from transactions table for admin
+      // Direct fetch from transactions table for admin with extended details
       const { data: transactionsData, error: transactionsError } = await supabase
         .from('transactions')
-        .select('*, profiles:user_id(name)')
+        .select('*, profiles:user_id(name, id, email, kyc_status, wallet_balance)')
         .order('created_at', { ascending: false });
       
       if (transactionsError) {
@@ -55,17 +55,32 @@ export const useAdminDataFetch = (
         throw transactionsError;
       }
 
+      // Get KYC submissions data
+      const { data: kycData, error: kycError } = await supabase
+        .from('kyc_submissions')
+        .select('*')
+        .order('created_at', { ascending: false });
+        
+      if (kycError && kycError.code !== 'PGRST116') {  // Ignore table not found error
+        console.error('Error fetching KYC submissions:', kycError);
+      }
+      
       // Format profiles data and merge with auth users data
       const formattedProfiles = profilesData.map(profile => {
         // Find matching auth user to get email
         const authUser = authUsers.find(user => user.id === profile.id);
+        
+        // Find KYC submissions for this user
+        const userKycSubmissions = kycData?.filter(kyc => kyc.user_id === profile.id) || [];
         
         return {
           ...profile,
           email: authUser?.email || "No email available",
           kyc_status: (profile.kyc_status as KycStatus) || 'not_submitted',
           name: profile.name || authUser?.email || "Unknown User",
-          role: profile.role || 'user'
+          role: profile.role || 'user',
+          account_status: profile.account_status || 'active',
+          kyc_submissions: userKycSubmissions
         };
       });
       
@@ -76,7 +91,11 @@ export const useAdminDataFetch = (
         return {
           ...transaction,
           user_name: profileData && typeof profileData === 'object' ? 
-            (profileData as any).name || 'Unknown User' : 'Unknown User'
+            (profileData as any).name || 'Unknown User' : 'Unknown User',
+          user_email: profileData && typeof profileData === 'object' ? 
+            (profileData as any).email : null,
+          user_kyc_status: profileData && typeof profileData === 'object' ? 
+            (profileData as any).kyc_status : null
         };
       });
       

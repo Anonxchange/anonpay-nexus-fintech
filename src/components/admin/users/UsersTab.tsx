@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { UsersTabProps } from "./types";
 import {
   Table,
@@ -10,25 +10,62 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Eye, Shield, User } from "lucide-react";
+import { Eye, Shield, User, UserCog, Ban, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger 
+} from "@/components/ui/dropdown-menu";
 
-const UsersTab: React.FC<UsersTabProps> = ({ users }) => {
+const UsersTab: React.FC<UsersTabProps> = ({ users, onUserAction }) => {
   const navigate = useNavigate();
+  const [searchTerm, setSearchTerm] = useState("");
 
   const handleViewUser = (userId: string) => {
     navigate(`/admin/users/${userId}`);
   };
+
+  const handleUserAction = (userId: string, action: string) => {
+    if (onUserAction) {
+      onUserAction(userId, action);
+    }
+  };
+
+  // Filter users based on search term
+  const filteredUsers = users.filter((user) => {
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      (user.name && user.name.toLowerCase().includes(searchLower)) ||
+      (user.email && user.email.toLowerCase().includes(searchLower)) ||
+      (user.id && user.id.includes(searchLower)) ||
+      (user.role && user.role.toLowerCase().includes(searchLower))
+    );
+  });
 
   return (
     <div className="space-y-4">
       <Card>
         <CardHeader>
           <CardTitle>Users Management</CardTitle>
+          <CardDescription>
+            Manage all users and their account statuses
+          </CardDescription>
         </CardHeader>
         <CardContent>
+          <div className="flex items-center pb-4">
+            <Input
+              placeholder="Search users..."
+              className="max-w-sm mr-4"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+
           <div className="rounded-md border">
             <Table>
               <TableHeader>
@@ -37,13 +74,14 @@ const UsersTab: React.FC<UsersTabProps> = ({ users }) => {
                   <TableHead>Email</TableHead>
                   <TableHead>Role</TableHead>
                   <TableHead>KYC Status</TableHead>
+                  <TableHead>Account Status</TableHead>
                   <TableHead>Wallet Balance</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {users.length > 0 ? (
-                  users.map((user) => (
+                {filteredUsers.length > 0 ? (
+                  filteredUsers.map((user) => (
                     <TableRow key={user.id}>
                       <TableCell className="font-medium">
                         <div className="flex items-center gap-2">
@@ -76,23 +114,68 @@ const UsersTab: React.FC<UsersTabProps> = ({ users }) => {
                         </Badge>
                       </TableCell>
                       <TableCell>
+                        <Badge
+                          variant={
+                            user.account_status === "active"
+                              ? "default"
+                              : user.account_status === "suspended"
+                              ? "outline"
+                              : user.account_status === "blocked"
+                              ? "destructive"
+                              : "secondary"
+                          }
+                        >
+                          {user.account_status || "active"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
                         ₦{user.wallet_balance?.toLocaleString() || "0.00"}
                       </TableCell>
                       <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleViewUser(user.id)}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleViewUser(user.id)}
+                            title="View User Details"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon">
+                                <UserCog className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              {user.account_status !== "blocked" && (
+                                <DropdownMenuItem 
+                                  onClick={() => handleUserAction(user.id, "block")}
+                                  className="text-red-500"
+                                >
+                                  <Ban className="h-4 w-4 mr-2" />
+                                  Block User
+                                </DropdownMenuItem>
+                              )}
+                              {user.account_status !== "active" && (
+                                <DropdownMenuItem 
+                                  onClick={() => handleUserAction(user.id, "activate")}
+                                  className="text-green-500"
+                                >
+                                  <Check className="h-4 w-4 mr-2" />
+                                  Activate User
+                                </DropdownMenuItem>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))
                 ) : (
                   <TableRow>
                     <TableCell
-                      colSpan={6}
+                      colSpan={7}
                       className="h-24 text-center"
                     >
                       No users found.

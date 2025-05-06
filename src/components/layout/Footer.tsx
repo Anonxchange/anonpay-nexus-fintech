@@ -36,7 +36,10 @@ const Footer = () => {
                 <Link to="/contact" className="text-gray-600 hover:text-anonpay-primary">Contact Us</Link>
               </li>
               <li>
-                <Link to="#" className="text-gray-600 hover:text-anonpay-primary">Careers</Link>
+                <Link to="/careers" className="text-gray-600 hover:text-anonpay-primary">Careers</Link>
+              </li>
+              <li>
+                <Link to="/blog" className="text-gray-600 hover:text-anonpay-primary">Blog</Link>
               </li>
             </ul>
           </div>
@@ -45,13 +48,13 @@ const Footer = () => {
             <h3 className="text-lg font-bold mb-4">Resources</h3>
             <ul className="space-y-2">
               <li>
-                <Link to="#" className="text-gray-600 hover:text-anonpay-primary">Help Center</Link>
+                <Link to="/contact" className="text-gray-600 hover:text-anonpay-primary">Help Center</Link>
               </li>
               <li>
-                <Link to="#" className="text-gray-600 hover:text-anonpay-primary">Blog</Link>
+                <Link to="/blog" className="text-gray-600 hover:text-anonpay-primary">Blog</Link>
               </li>
               <li>
-                <Link to="#" className="text-gray-600 hover:text-anonpay-primary">FAQs</Link>
+                <Link to="/contact" className="text-gray-600 hover:text-anonpay-primary">FAQs</Link>
               </li>
             </ul>
           </div>
@@ -66,7 +69,7 @@ const Footer = () => {
                 <Link to="/privacy" className="text-gray-600 hover:text-anonpay-primary">Privacy Policy</Link>
               </li>
               <li>
-                <Link to="#" className="text-gray-600 hover:text-anonpay-primary">Cookie Policy</Link>
+                <Link to="/refund-policy" className="text-gray-600 hover:text-anonpay-primary">Refund Policy</Link>
               </li>
             </ul>
           </div>
@@ -80,7 +83,7 @@ const Footer = () => {
             <Link to="#" className="text-gray-600 text-sm hover:text-anonpay-primary">
               English (US)
             </Link>
-            <Link to="#" className="text-gray-600 text-sm hover:text-anonpay-primary">
+            <Link to="/contact" className="text-gray-600 text-sm hover:text-anonpay-primary">
               Support
             </Link>
           </div>

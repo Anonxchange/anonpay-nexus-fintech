@@ -15,6 +15,7 @@ interface AdminTabsProps {
   users: Profile[];
   transactions: Transaction[];
   handleKycAction: (userId: string, action: KycAction) => Promise<void>;
+  handleUserAction: (userId: string, action: string) => Promise<void>;
   activeTab: string;
   onTabChange: (tab: string) => void;
 }
@@ -22,7 +23,8 @@ interface AdminTabsProps {
 const AdminTabs: React.FC<AdminTabsProps> = ({
   users, 
   transactions, 
-  handleKycAction, 
+  handleKycAction,
+  handleUserAction, 
   activeTab, 
   onTabChange
 }) => {
@@ -54,7 +56,7 @@ const AdminTabs: React.FC<AdminTabsProps> = ({
       </TabsList>
 
       <TabsContent value="users">
-        <UsersTab users={users} />
+        <UsersTab users={users} onUserAction={handleUserAction} />
       </TabsContent>
 
       <TabsContent value="transactions">

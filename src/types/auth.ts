@@ -1,8 +1,7 @@
-
 import { User } from '@supabase/supabase-js';
 
-export type KycStatus = "not_submitted" | "pending" | "approved" | "rejected";
-export type EmailStatus = "verified" | "unverified";
+export type KycStatus = 'approved' | 'pending' | 'rejected' | 'not_submitted';
+export type AccountStatus = 'active' | 'suspended' | 'blocked';
 export type KycAction = "approve" | "reject"; // Add KycAction type
 
 export interface Profile {
@@ -10,13 +9,25 @@ export interface Profile {
   name: string | null;
   avatar_url: string | null;
   kyc_status: KycStatus;
-  wallet_balance: number | null;
+  wallet_balance: number;
   phone_number: string | null;
   role: string;
-  created_at: string | null;
-  updated_at: string | null;
-  email_status?: EmailStatus;
-  email?: string; // Added email field to display in admin panel
+  email?: string;
+  created_at: string;
+  updated_at: string;
+  account_status?: AccountStatus;
+  kyc_submissions?: KycSubmission[];
+}
+
+export interface KycSubmission {
+  id: string;
+  user_id: string;
+  document_type: string;
+  document_url: string;
+  status: KycStatus;
+  admin_notes?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface AuthContextType {

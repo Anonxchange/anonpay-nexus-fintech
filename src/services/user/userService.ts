@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { KycStatus, Profile } from "@/types/auth";
 import { Transaction } from "../transactions/types";
@@ -304,5 +303,105 @@ export const getUserDetailsByAdmin = async (adminId: string, userId: string): Pr
   } catch (error) {
     console.error('Error in getUserDetailsByAdmin:', error);
     return null;
+  }
+};
+
+// Update user account status (active, suspended, blocked)
+export const updateUserAccountStatus = async (adminId: string, userId: string, status: string): Promise<boolean> => {
+  try {
+    // First check if the user is an admin
+    const { data: adminData, error: adminError } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', adminId)
+      .single();
+
+    // Safe access to role property
+    const role = adminData?.role || 'user';
+
+    if (adminError || role !== 'admin') {
+      console.error('Error: Not authorized as admin');
+      return false;
+    }
+    
+    const { error } = await supabase
+      .from('profiles')
+      .update({ 
+        account_status: status,
+        updated_at: new Date().toISOString() 
+      })
+      .eq('id', userId);
+    
+    if (error) {
+      console.error('Error updating user account status:', error);
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Error in updateUserAccountStatus:', error);
+    return false;
+  }
+};
+
+// Get user activity log
+export const getUserActivityLog = async (adminId: string, userId: string): Promise<any[]> => {
+  try {
+    // First check if the user is an admin
+    const { data: adminData, error: adminError } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', adminId)
+      .single();
+
+    // Safe access to role property
+    const role = adminData?.role || 'user';
+
+    if (adminError || role !== 'admin') {
+      console.error('Error: Not authorized as admin');
+      return [];
+    }
+    
+    // Get all transactions for the user
+    const { data: transactions, error: transactionsError } = await supabase
+      .from('transactions')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+    
+    if (transactionsError) {
+      console.error('Error fetching user transactions:', transactionsError);
+      return [];
+    }
+    
+    // Get KYC submissions for the user if the table exists
+    let kycSubmissions = [];
+    try {
+      const { data: kycData, error: kycError } = await supabase
+        .from('kyc_submissions')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+        
+      if (!kycError) {
+        kycSubmissions = kycData || [];
+      }
+    } catch (error) {
+      console.log('KYC submissions table might not exist yet:', error);
+    }
+    
+    // Combine all activities with a type marker
+    const allActivities = [
+      ...(transactions || []).map(t => ({ ...t, activity_type: 'transaction' })),
+      ...(kycSubmissions || []).map(k => ({ ...k, activity_type: 'kyc_submission' }))
+    ];
+    
+    // Sort by created_at date
+    return allActivities.sort((a, b) => 
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    );
+  } catch (error) {
+    console.error('Error in getUserActivityLog:', error);
+    return [];
   }
 };
