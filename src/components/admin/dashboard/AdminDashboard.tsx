@@ -38,6 +38,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
           <p className="text-gray-500">
             Welcome back, {currentAdmin.name || currentAdmin.email}
           </p>
+          <p className="text-sm text-gray-400">
+            Connected to Supabase. Total users: {users.length}, Total transactions: {transactions.length}
+          </p>
         </div>
         <div>
           <Button 

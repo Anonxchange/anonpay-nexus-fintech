@@ -22,18 +22,22 @@ const Admin: React.FC = () => {
   useEffect(() => {
     const checkAdmin = async () => {
       try {
+        console.log("Checking admin status...");
         // First check local storage for admin session
         const adminData = localStorage.getItem("anonpay_admin");
         
         if (adminData) {
           // If admin data exists in local storage, use it
           const parsedAdmin = JSON.parse(adminData);
+          console.log("Found admin data in localStorage:", parsedAdmin);
           setAdmin(parsedAdmin);
         } else {
+          console.log("No admin data in localStorage, checking Supabase auth...");
           // Try to get the current user from Supabase
           const { data: { user } } = await supabase.auth.getUser();
           
           if (user) {
+            console.log("Found Supabase user:", user);
             // Check if the user has admin role in profiles
             const { data: profileData, error } = await supabase
               .from('profiles')
@@ -46,10 +50,12 @@ const Admin: React.FC = () => {
               throw new Error("Failed to fetch user profile");
             }
             
+            console.log("User profile data:", profileData);
             // Safe access to properties using optional chaining
             const role = profileData?.role || 'user';
             
             if (role === 'admin') {
+              console.log("User has admin role");
               // Create admin data object
               const adminUser = {
                 email: user.email || '',
@@ -62,6 +68,7 @@ const Admin: React.FC = () => {
               localStorage.setItem("anonpay_admin", JSON.stringify(adminUser));
               setAdmin(adminUser);
             } else {
+              console.log("User is not an admin (role:", role, ")");
               // User is not an admin
               toast({
                 variant: "destructive",
@@ -70,6 +77,8 @@ const Admin: React.FC = () => {
               });
               navigate("/dashboard");
             }
+          } else {
+            console.log("No authenticated user found");
           }
         }
       } catch (error) {
