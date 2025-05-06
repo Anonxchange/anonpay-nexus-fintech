@@ -1,73 +1,61 @@
 
-import React from "react";
-import { cn } from "@/lib/utils";
-import { KycStatus, EmailStatus } from "../../types/auth";
-import { ShieldAlert, ShieldCheck, ShieldX } from "lucide-react";
+import React from 'react';
+import { Badge } from "@/components/ui/badge";
+import { KycStatus, AccountStatus } from "@/types/auth";
 
 interface StatusBadgeProps {
-  status: KycStatus | EmailStatus;
-  type?: "kyc" | "email";
-  showIcon?: boolean;
-  className?: string;
+  status: KycStatus | AccountStatus | string;
 }
 
-const StatusBadge: React.FC<StatusBadgeProps> = ({ 
-  status, 
-  type = "kyc", 
-  showIcon = true,
-  className 
-}) => {
-  let badgeClass = "";
-  let label = "";
-  let Icon = ShieldCheck;
+const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
+  // Convert status to lowercase string for consistent comparison
+  const normalizedStatus = String(status).toLowerCase();
   
-  if (type === "kyc") {
-    switch (status) {
-      case "pending":
-        badgeClass = "bg-yellow-100 text-yellow-800";
-        label = "Pending";
-        Icon = ShieldAlert;
-        break;
-      case "approved":
-        badgeClass = "bg-green-100 text-green-800";
-        label = "Approved";
-        Icon = ShieldCheck;
-        break;
-      case "rejected":
-        badgeClass = "bg-red-100 text-red-800";
-        label = "Rejected";
-        Icon = ShieldX;
-        break;
-      case "not_submitted":
-        badgeClass = "bg-gray-100 text-gray-800";
+  // Define styling based on status
+  let variant: "default" | "secondary" | "destructive" | "outline" = "default";
+  let label = status;
+  
+  switch (normalizedStatus) {
+    case "approved":
+    case "active":
+    case "completed":
+    case "success":
+      variant = "default";
+      break;
+      
+    case "pending":
+    case "processing":
+    case "in_progress":
+      variant = "secondary";
+      break;
+      
+    case "rejected":
+    case "blocked":
+    case "suspended":
+    case "failed":
+    case "error":
+      variant = "destructive";
+      break;
+      
+    case "not_submitted":
+    default:
+      variant = "outline";
+      // Format not_submitted to be more readable
+      if (normalizedStatus === "not_submitted") {
         label = "Not Submitted";
-        Icon = ShieldAlert;
-        break;
-    }
-  } else {
-    switch (status) {
-      case "verified":
-        badgeClass = "bg-green-100 text-green-800";
-        label = "Verified";
-        Icon = ShieldCheck;
-        break;
-      case "unverified":
-        badgeClass = "bg-yellow-100 text-yellow-800";
-        label = "Unverified";
-        Icon = ShieldAlert;
-        break;
-    }
+      }
   }
-
+  
+  // Capitalize first letter of each word
+  const formattedLabel = String(label)
+    .split('_')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+  
   return (
-    <span className={cn(
-      "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium", 
-      badgeClass,
-      className
-    )}>
-      {showIcon && <Icon className="w-3 h-3 mr-1" />}
-      {label}
-    </span>
+    <Badge variant={variant}>
+      {formattedLabel}
+    </Badge>
   );
 };
 

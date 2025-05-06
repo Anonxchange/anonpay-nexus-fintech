@@ -54,24 +54,11 @@ export const useAdminDataFetch = (
         console.error('Error fetching transactions:', transactionsError);
         throw transactionsError;
       }
-
-      // Get KYC submissions data
-      const { data: kycData, error: kycError } = await supabase
-        .from('kyc_submissions')
-        .select('*')
-        .order('created_at', { ascending: false });
-        
-      if (kycError && kycError.code !== 'PGRST116') {  // Ignore table not found error
-        console.error('Error fetching KYC submissions:', kycError);
-      }
       
       // Format profiles data and merge with auth users data
       const formattedProfiles = profilesData.map(profile => {
         // Find matching auth user to get email
         const authUser = authUsers.find(user => user.id === profile.id);
-        
-        // Find KYC submissions for this user
-        const userKycSubmissions = kycData?.filter(kyc => kyc.user_id === profile.id) || [];
         
         return {
           ...profile,
@@ -80,7 +67,7 @@ export const useAdminDataFetch = (
           name: profile.name || authUser?.email || "Unknown User",
           role: profile.role || 'user',
           account_status: profile.account_status || 'active',
-          kyc_submissions: userKycSubmissions
+          kyc_submissions: [] // Initialize with empty array as we don't have kyc_submissions table yet
         };
       });
       
@@ -102,7 +89,8 @@ export const useAdminDataFetch = (
       console.log('Fetched profiles:', formattedProfiles);
       console.log('Fetched transactions:', formattedTransactions);
       
-      setUsers(formattedProfiles as Profile[]);
+      // Type assertion to ensure compatibility with Profile type
+      setUsers(formattedProfiles as unknown as Profile[]);
       setTransactions(formattedTransactions as unknown as Transaction[]);
     } catch (error) {
       console.error("Error fetching admin data:", error);
