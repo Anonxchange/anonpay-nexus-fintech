@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { KycStatus } from "../../types/auth";
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
+import { supabase } from "@/integrations/supabase/client";
 
 interface KycFormProps {
   user: any;
@@ -27,9 +29,11 @@ const KycForm: React.FC<KycFormProps> = ({ user, onSubmit }) => {
   const [city, setCity] = useState("");
   const [country, setCountry] = useState("");
   const [dob, setDob] = useState<Date | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
     
     const data = {
       fullName,
@@ -39,7 +43,30 @@ const KycForm: React.FC<KycFormProps> = ({ user, onSubmit }) => {
       dob
     };
     
-    onSubmit(data);
+    // Update the user's profile with KYC details
+    if (user?.id) {
+      try {
+        const { error } = await supabase
+          .from('profiles')
+          .update({ 
+            name: fullName,
+            kyc_status: 'pending' as KycStatus,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', user.id);
+        
+        if (error) {
+          console.error('Error updating KYC status:', error);
+        } else {
+          // Call the onSubmit callback from parent component
+          onSubmit(data);
+        }
+      } catch (error) {
+        console.error('Error submitting KYC:', error);
+      }
+    }
+    
+    setIsSubmitting(false);
   };
 
   return (
@@ -59,6 +86,7 @@ const KycForm: React.FC<KycFormProps> = ({ user, onSubmit }) => {
             placeholder="Enter your full name"
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
+            required
           />
         </div>
         <div className="grid gap-2">
@@ -69,6 +97,7 @@ const KycForm: React.FC<KycFormProps> = ({ user, onSubmit }) => {
             placeholder="Enter your street address"
             value={address}
             onChange={(e) => setAddress(e.target.value)}
+            required
           />
         </div>
         <div className="grid gap-2">
@@ -79,6 +108,7 @@ const KycForm: React.FC<KycFormProps> = ({ user, onSubmit }) => {
             placeholder="Enter your city"
             value={city}
             onChange={(e) => setCity(e.target.value)}
+            required
           />
         </div>
         <div className="grid gap-2">
@@ -89,6 +119,7 @@ const KycForm: React.FC<KycFormProps> = ({ user, onSubmit }) => {
             placeholder="Enter your country"
             value={country}
             onChange={(e) => setCountry(e.target.value)}
+            required
           />
         </div>
         <div className="grid gap-2">
@@ -118,7 +149,12 @@ const KycForm: React.FC<KycFormProps> = ({ user, onSubmit }) => {
         </div>
       </CardContent>
       <CardFooter>
-        <Button onClick={handleSubmit}>Submit KYC</Button>
+        <Button 
+          onClick={handleSubmit} 
+          disabled={isSubmitting || !fullName || !address || !city || !country || !dob}
+        >
+          {isSubmitting ? "Submitting..." : "Submit KYC"}
+        </Button>
       </CardFooter>
     </Card>
   );

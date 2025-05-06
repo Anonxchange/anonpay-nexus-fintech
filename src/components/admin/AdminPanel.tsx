@@ -1,163 +1,107 @@
+
 import React, { useState, useEffect } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/components/ui/use-toast";
 import StatusBadge from "../ui/StatusBadge";
-import { KycStatus } from "../../types/auth";
+import { KycStatus, Profile } from "../../types/auth";
 import { BarChart, LineChart, PieChart } from "lucide-react";
+import { getAllProfiles, getAllTransactions, updateKycStatus } from "@/services/user/userService";
+import { Transaction } from "@/services/transactions/types";
 
 // Define the admin email constant
 export const ADMIN_EMAIL = "admin@anonpay.com";
 
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  kyc_status: KycStatus;
-  wallet_balance: number;
-  created_at: string;
-}
-
-interface Transaction {
-  id: string;
-  user_id: string;
-  user_name: string;
-  type: string;
-  amount: number;
-  status: string;
-  created_at: string;
-}
-
 const AdminPanel = ({ currentAdmin }: { currentAdmin: any }) => {
-  const [users, setUsers] = useState<User[]>([]);
+  const [users, setUsers] = useState<Profile[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
 
   useEffect(() => {
-    // In a real app, we would fetch this data from an API
-    // For demo purposes, we'll use mock data
-    const mockUsers: User[] = [
-      {
-        id: "1",
-        name: "John Doe",
-        email: "john@example.com",
-        kyc_status: "approved",
-        wallet_balance: 5000,
-        created_at: "2023-01-15T10:30:00Z",
-      },
-      {
-        id: "2",
-        name: "Jane Smith",
-        email: "jane@example.com",
-        kyc_status: "pending",
-        wallet_balance: 2500,
-        created_at: "2023-02-20T14:45:00Z",
-      },
-      {
-        id: "3",
-        name: "Robert Johnson",
-        email: "robert@example.com",
-        kyc_status: "rejected",
-        wallet_balance: 0,
-        created_at: "2023-03-05T09:15:00Z",
-      },
-      {
-        id: "4",
-        name: "Sarah Williams",
-        email: "sarah@example.com",
-        kyc_status: "not_submitted",
-        wallet_balance: 1000,
-        created_at: "2023-03-10T16:20:00Z",
-      },
-    ];
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        // Fetch all profiles and transactions
+        const profilesData = await getAllProfiles();
+        const transactionsData = await getAllTransactions();
+        
+        setUsers(profilesData);
+        setTransactions(transactionsData);
+      } catch (error) {
+        console.error("Error fetching admin data:", error);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to load admin dashboard data."
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    const mockTransactions: Transaction[] = [
-      {
-        id: "t1",
-        user_id: "1",
-        user_name: "John Doe",
-        type: "Crypto Purchase",
-        amount: 1000,
-        status: "completed",
-        created_at: "2023-03-01T10:30:00Z",
-      },
-      {
-        id: "t2",
-        user_id: "2",
-        user_name: "Jane Smith",
-        type: "Gift Card Sale",
-        amount: 500,
-        status: "completed",
-        created_at: "2023-03-02T14:45:00Z",
-      },
-      {
-        id: "t3",
-        user_id: "1",
-        user_name: "John Doe",
-        type: "Withdrawal",
-        amount: 2000,
-        status: "pending",
-        created_at: "2023-03-03T09:15:00Z",
-      },
-      {
-        id: "t4",
-        user_id: "3",
-        user_name: "Robert Johnson",
-        type: "Airtime Purchase",
-        amount: 100,
-        status: "completed",
-        created_at: "2023-03-04T16:20:00Z",
-      },
-    ];
+    fetchData();
+  }, [toast]);
 
-    setUsers(mockUsers);
-    setTransactions(mockTransactions);
-    setLoading(false);
-  }, []);
+  const handleKycAction = async (userId: string, action: "approve" | "reject") => {
+    try {
+      const success = await updateKycStatus(userId, action === "approve" ? "approved" : "rejected");
+      
+      if (success) {
+        // Update the local state
+        setUsers(
+          users.map((user) => {
+            if (user.id === userId) {
+              return {
+                ...user,
+                kyc_status: action === "approve" ? "approved" as KycStatus : "rejected" as KycStatus,
+              };
+            }
+            return user;
+          })
+        );
 
-  const handleKycAction = (userId: string, action: "approve" | "reject") => {
-    // In a real app, we would make an API call to update the KYC status
-    setUsers(
-      users.map((user) => {
-        if (user.id === userId) {
-          return {
-            ...user,
-            kyc_status: action === "approve" ? "approved" : "rejected",
-          };
-        }
-        return user;
-      })
-    );
-
-    toast({
-      title: `KYC ${action === "approve" ? "Approved" : "Rejected"}`,
-      description: `User KYC has been ${
-        action === "approve" ? "approved" : "rejected"
-      } successfully.`,
-    });
+        toast({
+          title: `KYC ${action === "approve" ? "Approved" : "Rejected"}`,
+          description: `User KYC has been ${
+            action === "approve" ? "approved" : "rejected"
+          } successfully.`,
+        });
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Action Failed",
+          description: `Failed to ${action} KYC. Please try again.`,
+        });
+      }
+    } catch (error) {
+      console.error(`Error in ${action} KYC:`, error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: `An error occurred while ${action === "approve" ? "approving" : "rejecting"} KYC.`,
+      });
+    }
   };
 
   const filteredUsers = users.filter(
     (user) =>
-      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase())
+      user.name?.toLowerCase().includes(searchTerm.toLowerCase()) 
   );
 
   const filteredTransactions = transactions.filter(
     (transaction) =>
-      transaction.user_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      transaction.user_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       transaction.type.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   if (loading) {
-    return <div>Loading admin panel...</div>;
+    return <div className="flex justify-center items-center h-64">Loading admin panel...</div>;
   }
 
   return (
@@ -196,7 +140,8 @@ const AdminPanel = ({ currentAdmin }: { currentAdmin: any }) => {
           <CardContent>
             <div className="text-2xl font-bold">{users.length}</div>
             <p className="text-xs text-muted-foreground">
-              +2 since last month
+              {users.length > 0 ? `${users.filter(u => 
+                new Date(u.created_at || '').getMonth() === new Date().getMonth()).length} new this month` : 'No users yet'}
             </p>
           </CardContent>
         </Card>
@@ -221,7 +166,9 @@ const AdminPanel = ({ currentAdmin }: { currentAdmin: any }) => {
           <CardContent>
             <div className="text-2xl font-bold">{transactions.length}</div>
             <p className="text-xs text-muted-foreground">
-              +8 since last week
+              {transactions.length > 0 ? 
+                `${transactions.filter(t => new Date(t.created_at).getTime() > Date.now() - 7 * 24 * 60 * 60 * 1000).length} in the last week` : 
+                'No transactions yet'}
             </p>
           </CardContent>
         </Card>
@@ -279,32 +226,36 @@ const AdminPanel = ({ currentAdmin }: { currentAdmin: any }) => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>KYC Status</TableHead>
-                      <TableHead>Balance</TableHead>
-                      <TableHead>Joined</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredUsers.map((user) => (
-                      <TableRow key={user.id}>
-                        <TableCell className="font-medium">{user.name}</TableCell>
-                        <TableCell>{user.email}</TableCell>
-                        <TableCell>
-                          <StatusBadge status={user.kyc_status} />
-                        </TableCell>
-                        <TableCell>₦{user.wallet_balance.toLocaleString()}</TableCell>
-                        <TableCell>
-                          {new Date(user.created_at).toLocaleDateString()}
-                        </TableCell>
+                {filteredUsers.length > 0 ? (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead>KYC Status</TableHead>
+                        <TableHead>Balance</TableHead>
+                        <TableHead>Joined</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredUsers.map((user) => (
+                        <TableRow key={user.id}>
+                          <TableCell className="font-medium">{user.name || "Unnamed User"}</TableCell>
+                          <TableCell>
+                            <StatusBadge status={user.kyc_status || "not_submitted"} />
+                          </TableCell>
+                          <TableCell>₦{(user.wallet_balance || 0).toLocaleString()}</TableCell>
+                          <TableCell>
+                            {user.created_at ? new Date(user.created_at).toLocaleDateString() : "Unknown"}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                ) : (
+                  <div className="text-center py-4 text-gray-500">
+                    {searchTerm ? "No users match your search" : "No users found"}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -317,42 +268,48 @@ const AdminPanel = ({ currentAdmin }: { currentAdmin: any }) => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>User</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Amount</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Date</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredTransactions.map((transaction) => (
-                      <TableRow key={transaction.id}>
-                        <TableCell className="font-medium">
-                          {transaction.user_name}
-                        </TableCell>
-                        <TableCell>{transaction.type}</TableCell>
-                        <TableCell>₦{transaction.amount.toLocaleString()}</TableCell>
-                        <TableCell>
-                          <Badge
-                            variant={
-                              transaction.status === "completed"
-                                ? "default"
-                                : "secondary"
-                            }
-                          >
-                            {transaction.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          {new Date(transaction.created_at).toLocaleDateString()}
-                        </TableCell>
+                {filteredTransactions.length > 0 ? (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>User</TableHead>
+                        <TableHead>Type</TableHead>
+                        <TableHead>Amount</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Date</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredTransactions.map((transaction) => (
+                        <TableRow key={transaction.id}>
+                          <TableCell className="font-medium">
+                            {transaction.user_name || "Unknown User"}
+                          </TableCell>
+                          <TableCell>{transaction.type}</TableCell>
+                          <TableCell>₦{transaction.amount.toLocaleString()}</TableCell>
+                          <TableCell>
+                            <Badge
+                              variant={
+                                transaction.status === "completed"
+                                  ? "default"
+                                  : "secondary"
+                              }
+                            >
+                              {transaction.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            {new Date(transaction.created_at).toLocaleDateString()}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                ) : (
+                  <div className="text-center py-4 text-gray-500">
+                    {searchTerm ? "No transactions match your search" : "No transactions found"}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -365,55 +322,61 @@ const AdminPanel = ({ currentAdmin }: { currentAdmin: any }) => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Submitted</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredUsers
-                      .filter(
-                        (user) =>
-                          user.kyc_status === "pending" ||
-                          user.kyc_status === "rejected"
-                      )
-                      .map((user) => (
-                        <TableRow key={user.id}>
-                          <TableCell className="font-medium">{user.name}</TableCell>
-                          <TableCell>{user.email}</TableCell>
-                          <TableCell>
-                            <StatusBadge status={user.kyc_status} />
-                          </TableCell>
-                          <TableCell>
-                            {new Date(user.created_at).toLocaleDateString()}
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex space-x-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleKycAction(user.id, "approve")}
-                              >
-                                Approve
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleKycAction(user.id, "reject")}
-                              >
-                                Reject
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                  </TableBody>
-                </Table>
+                {users.filter(user => 
+                    user.kyc_status === "pending" || user.kyc_status === "rejected"
+                  ).length > 0 ? (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Submitted</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filteredUsers
+                        .filter(
+                          (user) =>
+                            user.kyc_status === "pending" ||
+                            user.kyc_status === "rejected"
+                        )
+                        .map((user) => (
+                          <TableRow key={user.id}>
+                            <TableCell className="font-medium">{user.name || "Unnamed User"}</TableCell>
+                            <TableCell>
+                              <StatusBadge status={user.kyc_status || "not_submitted"} />
+                            </TableCell>
+                            <TableCell>
+                              {user.updated_at ? new Date(user.updated_at).toLocaleDateString() : "Unknown"}
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex space-x-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleKycAction(user.id, "approve")}
+                                >
+                                  Approve
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleKycAction(user.id, "reject")}
+                                >
+                                  Reject
+                                </Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                    </TableBody>
+                  </Table>
+                ) : (
+                  <div className="text-center py-4 text-gray-500">
+                    No pending KYC submissions
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>

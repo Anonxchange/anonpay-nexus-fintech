@@ -11,6 +11,7 @@ import { useAuth } from "@/contexts/auth";
 import { Link } from "react-router-dom";
 import { Bitcoin, Gift, Phone, Search } from "lucide-react";
 import SettingsPage from "../settings/SettingsPage";
+import { supabase } from "@/integrations/supabase/client";
 
 interface DashboardProps {
   user: any;
@@ -19,19 +20,70 @@ interface DashboardProps {
 const DashboardOverview: React.FC<DashboardProps> = ({ user }) => {
   const [fundDialogOpen, setFundDialogOpen] = useState(false);
   const { toast } = useToast();
-  const { profile } = useAuth();
+  const { profile, refreshProfile } = useAuth();
   const [walletBalance, setWalletBalance] = useState(0);
+  const [loading, setLoading] = useState(true);
   
   useEffect(() => {
-    if (profile && profile.wallet_balance !== undefined) {
-      setWalletBalance(profile.wallet_balance);
-    }
-  }, [profile]);
+    const fetchUserData = async () => {
+      if (user?.id) {
+        try {
+          setLoading(true);
+          // Refresh profile data to get the latest wallet balance
+          if (refreshProfile) {
+            await refreshProfile();
+          }
+          
+          if (profile && profile.wallet_balance !== undefined) {
+            setWalletBalance(profile.wallet_balance);
+          }
+        } catch (error) {
+          console.error('Error fetching user data:', error);
+          toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Failed to load your dashboard data. Please refresh."
+          });
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+    
+    fetchUserData();
+    
+    // Set up real-time listener for profile updates
+    const channel = supabase
+      .channel('public:profiles')
+      .on('postgres_changes', 
+        { 
+          event: 'UPDATE', 
+          schema: 'public', 
+          table: 'profiles',
+          filter: `id=eq.${user?.id}` 
+        }, 
+        (payload) => {
+          console.log('Profile updated:', payload);
+          if (payload.new && payload.new.wallet_balance !== undefined) {
+            setWalletBalance(payload.new.wallet_balance);
+          }
+        }
+      )
+      .subscribe();
+    
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, profile, refreshProfile, toast]);
   
   // Function to handle fund wallet action
   const handleFundWallet = () => {
     setFundDialogOpen(true);
   };
+
+  if (loading) {
+    return <div className="flex justify-center items-center h-64">Loading dashboard...</div>;
+  }
 
   return (
     <>
