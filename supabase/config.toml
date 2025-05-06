@@ -1,5 +1,36 @@
 
-project_id = "evtzcardsedazhxugntw"
+# This file is used by supabase CLI to configure the project
 
-[functions.process-deposit]
-verify_jwt = true
+[functions]
+  [functions.send-verification-email]
+    verify_jwt = true
+
+[api]
+  # Port to use for the API URL.
+  port = 54321
+  # Schemas to expose in your API. Tables, views and stored procedures in this schema will get API
+  # endpoints. public and storage are always included.
+  schemas = ["public", "storage", "extensions"]
+  # Extra schemas to add to the search_path of every request. public is always included.
+  extra_search_path = ["public", "extensions"]
+  # Maximum rows to return when listing records.
+  max_rows = 1000
+
+[db]
+  # Port to use for the local database URL.
+  port = 54322
+  # Port used by db diff command to initialize the shadow database.
+  shadow_port = 54320
+  # The database major version to use. This has to be the same as your remote database's. Run `SHOW
+  # server_version;` on the remote database to check.
+  major_version = 15
+
+[studio]
+  # Port to use for Supabase Studio.
+  port = 54323
+  # External URL of the API server that frontend connects to.
+  api_url = "http://localhost"
+
+# Configure realtime
+[realtime]
+  enabled = true

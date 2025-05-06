@@ -28,14 +28,23 @@ const DashboardOverview: React.FC<DashboardProps> = ({ user }) => {
           setLoading(true);
           // Refresh profile data to get the latest wallet balance
           if (refreshProfile) {
-            // Call refreshProfile but don't check its return value directly
             await refreshProfile();
-            // Instead, use the updated profile from context after refresh
-            if (profile && profile.wallet_balance !== undefined) {
-              setWalletBalance(profile.wallet_balance);
-            }
-          } else if (profile && profile.wallet_balance !== undefined) {
+          }
+          
+          // Get the latest balance from profile or Supabase
+          if (profile && profile.wallet_balance !== undefined && profile.wallet_balance !== null) {
             setWalletBalance(profile.wallet_balance);
+          } else {
+            // Fallback - fetch directly from database
+            const { data, error } = await supabase
+              .from('profiles')
+              .select('wallet_balance')
+              .eq('id', user.id)
+              .single();
+              
+            if (!error && data) {
+              setWalletBalance(data.wallet_balance || 0);
+            }
           }
         } catch (error) {
           console.error('Error fetching user data:', error);
@@ -54,7 +63,7 @@ const DashboardOverview: React.FC<DashboardProps> = ({ user }) => {
     
     // Set up real-time listener for profile updates
     const channel = supabase
-      .channel('public:profiles')
+      .channel('profile-changes')
       .on('postgres_changes', 
         { 
           event: 'UPDATE', 
@@ -66,6 +75,43 @@ const DashboardOverview: React.FC<DashboardProps> = ({ user }) => {
           console.log('Profile updated:', payload);
           if (payload.new && payload.new.wallet_balance !== undefined) {
             setWalletBalance(payload.new.wallet_balance);
+            // Show toast notification for balance updates
+            const oldBalance = payload.old?.wallet_balance || 0;
+            const newBalance = payload.new.wallet_balance || 0;
+            const difference = newBalance - oldBalance;
+            
+            if (difference > 0) {
+              toast({
+                title: "Deposit Successful",
+                description: `₦${difference.toLocaleString()} has been added to your wallet`
+              });
+            } else if (difference < 0) {
+              toast({
+                title: "Withdrawal Processed",
+                description: `₦${Math.abs(difference).toLocaleString()} has been withdrawn from your wallet`
+              });
+            }
+          }
+        }
+      )
+      .subscribe();
+    
+    // Set up real-time listener for transaction updates
+    const transactionsChannel = supabase
+      .channel('transactions-changes')
+      .on('postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'transactions',
+          filter: `user_id=eq.${user?.id}`
+        },
+        async (payload) => {
+          console.log('New transaction:', payload);
+          // Refresh the profile to get the latest wallet balance
+          if (refreshProfile) {
+            await refreshProfile();
+            // The wallet balance will be updated automatically via the profile-changes channel
           }
         }
       )
@@ -73,6 +119,7 @@ const DashboardOverview: React.FC<DashboardProps> = ({ user }) => {
     
     return () => {
       supabase.removeChannel(channel);
+      supabase.removeChannel(transactionsChannel);
     };
   }, [user, profile, refreshProfile, toast]);
   

@@ -40,6 +40,17 @@ export const processDeposit = async (
       throw new Error(`Failed to process deposit: ${error.message}`);
     }
     
+    // Get the updated profile with new balance
+    const { data: profileData, error: profileError } = await supabase
+      .from('profiles')
+      .select('wallet_balance')
+      .eq('id', userId)
+      .single();
+      
+    if (!profileError) {
+      console.log("Updated wallet balance:", profileData.wallet_balance);
+    }
+    
     console.log("Deposit processed successfully:", data);
     return transaction;
   } catch (error) {
