@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { Profile } from "@/types/auth";
+import { Profile, AccountStatus } from "@/types/auth";
 import { Transaction } from "../transactions/types";
 
 // Get all profiles for admin view - updated to use auth.uid() with RLS
@@ -38,7 +38,7 @@ export const getAllProfiles = async (adminId: string): Promise<Profile[]> => {
       kyc_status: (profile.kyc_status as any) || 'not_submitted',
       name: profile.name || "Unknown User", // Ensure name has a fallback
       role: profile.role || 'user', // Ensure role has a fallback
-      account_status: profile.account_status || 'active' // Ensure account_status has a fallback
+      account_status: profile.account_status || 'active' as AccountStatus // Ensure account_status has a fallback
     })) as Profile[];
   } catch (error) {
     console.error('Error fetching profiles:', error);

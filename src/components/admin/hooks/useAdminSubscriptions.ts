@@ -1,8 +1,11 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 export const useAdminSubscriptions = (onDataChange: () => Promise<void>) => {
+  const { toast } = useToast();
+
   useEffect(() => {
     // Set up real-time listeners for profiles and transactions tables
     const profilesChannel = supabase
@@ -15,11 +18,21 @@ export const useAdminSubscriptions = (onDataChange: () => Promise<void>) => {
         }, 
         (payload) => {
           console.log('Profile change received:', payload);
+          toast({
+            title: "Profile Updated",
+            description: `A user profile has been ${payload.eventType === 'INSERT' ? 'created' : 'updated'}.`,
+            duration: 3000,
+          });
           // Refresh data when a profile changes
           onDataChange();
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log(`Profiles channel status: ${status}`);
+        if (status === 'SUBSCRIBED') {
+          console.log('Successfully subscribed to profile changes');
+        }
+      });
       
     const transactionsChannel = supabase
       .channel('admin-transactions-changes')
@@ -31,11 +44,21 @@ export const useAdminSubscriptions = (onDataChange: () => Promise<void>) => {
         }, 
         (payload) => {
           console.log('Transaction change received:', payload);
+          toast({
+            title: "Transaction Updated",
+            description: `A transaction has been ${payload.eventType === 'INSERT' ? 'created' : 'updated'}.`,
+            duration: 3000,
+          });
           // Refresh data when a transaction changes
           onDataChange();
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log(`Transactions channel status: ${status}`);
+        if (status === 'SUBSCRIBED') {
+          console.log('Successfully subscribed to transaction changes');
+        }
+      });
     
     // Add listener for auth user changes as well
     const authChangesSubscription = supabase.auth.onAuthStateChange((event) => {
@@ -52,5 +75,5 @@ export const useAdminSubscriptions = (onDataChange: () => Promise<void>) => {
       supabase.removeChannel(transactionsChannel);
       authChangesSubscription.data.subscription.unsubscribe();
     };
-  }, [onDataChange]);
+  }, [onDataChange, toast]);
 };
