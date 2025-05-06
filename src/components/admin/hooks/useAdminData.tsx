@@ -6,6 +6,10 @@ import { useAdminDataFetch } from "./useAdminDataFetch";
 import { useKycManagement } from "./useKycManagement";
 import { useAdminSubscriptions } from "./useAdminSubscriptions";
 
+/**
+ * Main hook for admin panel data management
+ * This hook combines multiple specialized hooks to provide a unified interface
+ */
 export const useAdminData = () => {
   const [users, setUsers] = useState<Profile[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
