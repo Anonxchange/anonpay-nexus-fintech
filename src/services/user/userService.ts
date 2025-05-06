@@ -66,7 +66,7 @@ export const getAllTransactions = async (): Promise<Transaction[]> => {
       
       return {
         ...transaction,
-        // Use optional chaining to safely access profileData.name
+        // Use optional chaining to safely access profileData?.name
         user_name: profileData?.name || 'Unknown User'
       };
     });
