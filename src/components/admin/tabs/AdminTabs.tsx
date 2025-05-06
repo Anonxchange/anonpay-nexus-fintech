@@ -8,19 +8,30 @@ import { Transaction } from "@/services/transactions/types";
 import UsersTab from "../users/UsersTab";
 import TransactionsTab from "../transactions/TransactionsTab";
 import KycTab from "../kyc/KycTab";
+import RatesTab from "../rates/RatesTab";
 
 interface AdminTabsProps {
   users: Profile[];
   transactions: Transaction[];
   handleKycAction: (userId: string, action: "approve" | "reject") => Promise<void>;
+  activeTab?: string;
+  onTabChange?: (tab: string) => void;
 }
 
 const AdminTabs: React.FC<AdminTabsProps> = ({ 
   users, 
   transactions,
-  handleKycAction 
+  handleKycAction,
+  activeTab = "users",
+  onTabChange
 }) => {
   const [searchTerm, setSearchTerm] = useState("");
+
+  const handleTabChange = (value: string) => {
+    if (onTabChange) {
+      onTabChange(value);
+    }
+  };
 
   const filteredUsers = users.filter(
     (user) =>
@@ -46,13 +57,14 @@ const AdminTabs: React.FC<AdminTabsProps> = ({
         />
       </div>
 
-      <Tabs defaultValue="users">
+      <Tabs value={activeTab} onValueChange={handleTabChange}>
         <TabsList>
           <TabsTrigger value="users">Users ({users.length})</TabsTrigger>
           <TabsTrigger value="transactions">Transactions ({transactions.length})</TabsTrigger>
           <TabsTrigger value="kyc">
             KYC Verification ({users.filter(u => u.kyc_status === "pending").length})
           </TabsTrigger>
+          <TabsTrigger value="rates">Rates</TabsTrigger>
         </TabsList>
         <TabsContent value="users" className="space-y-4">
           <Card>
@@ -93,6 +105,19 @@ const AdminTabs: React.FC<AdminTabsProps> = ({
                 filteredUsers={users.filter(user => user.kyc_status === "pending")}
                 handleKycAction={handleKycAction}
               />
+            </CardContent>
+          </Card>
+        </TabsContent>
+        <TabsContent value="rates" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Exchange Rates</CardTitle>
+              <CardDescription>
+                Manage platform exchange rates and conversion fees.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <RatesTab />
             </CardContent>
           </Card>
         </TabsContent>

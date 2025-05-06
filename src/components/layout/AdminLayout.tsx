@@ -1,6 +1,6 @@
 
 import React from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { LogOut, Shield, User, Settings, Home, CreditCard, Users, BarChart2 } from "lucide-react";
 import {
@@ -18,10 +18,19 @@ interface AdminLayoutProps {
 
 const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title = "Admin" }) => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const handleLogout = () => {
     localStorage.removeItem("anonpay_admin");
     navigate("/admin-login");
+  };
+
+  const handleNavigation = (tab: string) => {
+    if (tab === "dashboard") {
+      navigate("/admin");
+    } else {
+      navigate(`/admin?tab=${tab}`);
+    }
   };
 
   return (
@@ -63,23 +72,43 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children, title = "Admin" }) 
         <div className="w-full lg:w-64 bg-white shadow rounded-lg p-4">
           <div className="space-y-2">
             <p className="text-sm font-medium text-gray-500 uppercase mb-2">Main</p>
-            <Button variant="ghost" className="w-full justify-start" onClick={() => navigate("/admin")}>
+            <Button 
+              variant="ghost" 
+              className={`w-full justify-start ${!searchParams.get('tab') ? 'bg-gray-100' : ''}`} 
+              onClick={() => handleNavigation("dashboard")}
+            >
               <Home className="mr-2 h-4 w-4" />
               Dashboard
             </Button>
-            <Button variant="ghost" className="w-full justify-start" onClick={() => navigate("/admin?tab=users")}>
+            <Button 
+              variant="ghost" 
+              className={`w-full justify-start ${searchParams.get('tab') === 'users' ? 'bg-gray-100' : ''}`} 
+              onClick={() => handleNavigation("users")}
+            >
               <Users className="mr-2 h-4 w-4" />
               Users
             </Button>
-            <Button variant="ghost" className="w-full justify-start" onClick={() => navigate("/admin?tab=transactions")}>
+            <Button 
+              variant="ghost" 
+              className={`w-full justify-start ${searchParams.get('tab') === 'transactions' ? 'bg-gray-100' : ''}`} 
+              onClick={() => handleNavigation("transactions")}
+            >
               <BarChart2 className="mr-2 h-4 w-4" />
               Transactions
             </Button>
-            <Button variant="ghost" className="w-full justify-start" onClick={() => navigate("/admin?tab=rates")}>
+            <Button 
+              variant="ghost" 
+              className={`w-full justify-start ${searchParams.get('tab') === 'rates' ? 'bg-gray-100' : ''}`} 
+              onClick={() => handleNavigation("rates")}
+            >
               <CreditCard className="mr-2 h-4 w-4" />
               Rates
             </Button>
-            <Button variant="ghost" className="w-full justify-start" onClick={() => navigate("/admin?tab=settings")}>
+            <Button 
+              variant="ghost" 
+              className={`w-full justify-start ${searchParams.get('tab') === 'settings' ? 'bg-gray-100' : ''}`} 
+              onClick={() => handleNavigation("settings")}
+            >
               <Settings className="mr-2 h-4 w-4" />
               Settings
             </Button>
