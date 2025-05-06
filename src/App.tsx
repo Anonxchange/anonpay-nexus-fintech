@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/sonner";
@@ -90,108 +90,122 @@ const AdminProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return children;
 };
 
+// Root layout component to wrap the app with providers
+const RootLayout = ({ children }: { children: React.ReactNode }) => {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <Toaster />
+        {children}
+      </AuthProvider>
+    </QueryClientProvider>
+  );
+};
+
 // Update the router configuration to include the new routes
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <Index />,
+    element: <RootLayout><Index /></RootLayout>,
   },
   {
     path: "/login",
-    element: <Login />,
+    element: <RootLayout><Login /></RootLayout>,
   },
   {
     path: "/signup",
-    element: <SignUp />,
+    element: <RootLayout><SignUp /></RootLayout>,
   },
   {
     path: "/forgot-password",
-    element: <ForgotPassword />,
+    element: <RootLayout><ForgotPassword /></RootLayout>,
   },
   {
     path: "/reset-password",
-    element: <ResetPassword />,
+    element: <RootLayout><ResetPassword /></RootLayout>,
   },
   {
     path: "/verify-email",
-    element: <VerifyEmail />,
+    element: <RootLayout><VerifyEmail /></RootLayout>,
   },
   {
     path: "/dashboard",
     element: (
-      <ProtectedRoute>
-        <Dashboard />
-      </ProtectedRoute>
+      <RootLayout>
+        <ProtectedRoute>
+          <Dashboard />
+        </ProtectedRoute>
+      </RootLayout>
     ),
   },
   {
     path: "/admin-login",
-    element: <AdminLogin />,
+    element: <RootLayout><AdminLogin /></RootLayout>,
   },
   {
     path: "/admin",
     element: (
-      <AdminProtectedRoute>
-        <Admin />
-      </AdminProtectedRoute>
+      <RootLayout>
+        <AdminProtectedRoute>
+          <Admin />
+        </AdminProtectedRoute>
+      </RootLayout>
     ),
   },
   {
     path: "/settings",
     element: (
-      <ProtectedRoute>
-        <SettingsPage />
-      </ProtectedRoute>
+      <RootLayout>
+        <ProtectedRoute>
+          <SettingsPage />
+        </ProtectedRoute>
+      </RootLayout>
     ),
   },
   {
     path: "/kyc",
     element: (
-      <ProtectedRoute>
-        <KYC />
-      </ProtectedRoute>
+      <RootLayout>
+        <ProtectedRoute>
+          <KYC />
+        </ProtectedRoute>
+      </RootLayout>
     ),
   },
   {
     path: "/services/*",
     element: (
-      <ProtectedRoute>
-        <Services />
-      </ProtectedRoute>
+      <RootLayout>
+        <ProtectedRoute>
+          <Services />
+        </ProtectedRoute>
+      </RootLayout>
     ),
   },
   {
     path: "/about",
-    element: <About />,
+    element: <RootLayout><About /></RootLayout>,
   },
   {
     path: "/contact",
-    element: <Contact />,
+    element: <RootLayout><Contact /></RootLayout>,
   },
   {
     path: "/terms",
-    element: <Terms />,
+    element: <RootLayout><Terms /></RootLayout>,
   },
   {
     path: "/privacy",
-    element: <Privacy />,
+    element: <RootLayout><Privacy /></RootLayout>,
   },
   {
     path: "*",
-    element: <NotFound />,
+    element: <RootLayout><NotFound /></RootLayout>,
   },
 ]);
 
 function App() {
-  return (
-    <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router}>
-        <AuthProvider>
-          <Toaster />
-        </AuthProvider>
-      </RouterProvider>
-    </QueryClientProvider>
-  );
+  return <RouterProvider router={router} />;
 }
 
 export default App;
