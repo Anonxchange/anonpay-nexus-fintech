@@ -1,10 +1,11 @@
 
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import { Profile } from "@/types/auth";
 import { Transaction } from "@/services/transactions/types";
 import { useAdminDataFetch } from "./useAdminDataFetch";
 import { useKycManagement } from "./useKycManagement";
 import { useAdminSubscriptions } from "./useAdminSubscriptions";
+import { useAdminInitializer } from "./useAdminInitializer";
 
 /**
  * Main hook for admin panel data management
@@ -24,10 +25,8 @@ export const useAdminData = () => {
   // Set up subscriptions using the useAdminSubscriptions hook
   useAdminSubscriptions(fetchAllData);
   
-  // Initial data fetch
-  useCallback(() => {
-    fetchAllData();
-  }, [fetchAllData])();
+  // Initialize data on mount
+  useAdminInitializer(fetchAllData);
 
   return {
     users,
