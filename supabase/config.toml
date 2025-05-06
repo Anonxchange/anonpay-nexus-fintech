@@ -1,5 +1,4 @@
 
-
 # This file is used by supabase CLI to configure the project
 
 [functions]
@@ -39,4 +38,3 @@
   enabled = true
   [realtime.realtime_options]
     max_subscription_payload_kb = 1024
-

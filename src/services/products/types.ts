@@ -1,5 +1,4 @@
 
-
 // Define types for gift card product data
 
 export interface GiftCard {
@@ -66,4 +65,3 @@ export interface GiftCardSubmission {
 
 // Add KycAction type to fix the import in AdminTabs.tsx
 export type KycAction = "approve" | "reject";
-
