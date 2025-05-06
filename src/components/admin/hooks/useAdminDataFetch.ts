@@ -1,16 +1,14 @@
+
 import { useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { supabaseAdmin } from "@/integrations/supabase/adminClient";
 import { useToast } from "@/hooks/use-toast";
 import { Profile, KycStatus, AccountStatus } from "@/types/auth";
 import { Transaction } from "@/services/transactions/types";
-import { getUserCount } from "@/services/user/adminService";
 
 export const useAdminDataFetch = (
   setUsers: React.Dispatch<React.SetStateAction<Profile[]>>,
   setTransactions: React.Dispatch<React.SetStateAction<Transaction[]>>,
-  setLoading: React.Dispatch<React.SetStateAction<boolean>>,
-  setUserCount?: React.Dispatch<React.SetStateAction<number>>
+  setLoading: React.Dispatch<React.SetStateAction<boolean>>
 ) => {
   const { toast } = useToast();
   
@@ -25,28 +23,8 @@ export const useAdminDataFetch = (
       
       const admin = JSON.parse(adminData);
       
-      // Verify admin status first
-      let isVerifiedAdmin = false;
-      
-      // If it's our local test admin UUID, automatically trust it
-      if (admin.id === "11111111-1111-1111-1111-111111111111") {
-        isVerifiedAdmin = true;
-      } else {
-        // Otherwise verify with the is_admin function
-        const { data: isAdmin, error } = await supabase
-          .rpc('is_admin', { user_id: admin.id });
-          
-        if (!error && isAdmin) {
-          isVerifiedAdmin = true;
-        }
-      }
-      
-      if (!isVerifiedAdmin) {
-        throw new Error("Not authorized as admin");
-      }
-      
-      // Use supabaseAdmin for fetching all profiles
-      const { data: profilesData, error: profilesError } = await supabaseAdmin
+      // Direct fetch from profiles table for admin - without filters
+      const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
         .select('*')
         .order('created_at', { ascending: false });
@@ -56,32 +34,26 @@ export const useAdminDataFetch = (
         throw profilesError;
       }
 
-      // Fetch total user count if setUserCount is provided
-      if (setUserCount) {
-        const count = await getUserCount(admin.id);
-        setUserCount(count);
-      }
-
       // Try to fetch auth users data to get email information
-      // Use supabaseAdmin to access this data
+      // This is not required but adds email data if available
       let authUsers: any[] = [];
       try {
-        // Attempt to fetch auth users - this will work with the admin client
-        const { data: users, error: usersError } = await supabaseAdmin.auth.admin.listUsers();
+        // Attempt to fetch auth users - this will work if the admin has the right permissions
+        const { data: authUsersResponse, error: authUsersError } = await supabase.auth.admin.listUsers();
         
-        if (!usersError && users) {
-          authUsers = users.users || [];
+        if (!authUsersError && authUsersResponse) {
+          authUsers = authUsersResponse.users || [];
           console.log('Successfully fetched auth users:', authUsers.length);
         } else {
-          console.warn('Error fetching auth users:', usersError);
+          console.warn('Cannot access auth.admin.listUsers, continuing with limited data:', authUsersError);
         }
       } catch (error) {
         console.warn('Error accessing auth users:', error);
         // Continue without auth users data
       }
       
-      // Use supabaseAdmin for fetching all transactions
-      const { data: transactionsData, error: transactionsError } = await supabaseAdmin
+      // Direct fetch from transactions table for admin with extended details
+      const { data: transactionsData, error: transactionsError } = await supabase
         .from('transactions')
         .select('*, profiles:user_id(name, id, email, kyc_status, wallet_balance, account_status)')
         .order('created_at', { ascending: false });
@@ -147,7 +119,7 @@ export const useAdminDataFetch = (
     } finally {
       setLoading(false);
     }
-  }, [toast, setUsers, setTransactions, setLoading, setUserCount]);
+  }, [toast, setUsers, setTransactions, setLoading]);
   
   return { fetchAllData };
 };

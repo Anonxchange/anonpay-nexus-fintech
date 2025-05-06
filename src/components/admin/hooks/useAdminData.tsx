@@ -15,10 +15,9 @@ export const useAdminData = () => {
   const [users, setUsers] = useState<Profile[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
-  const [userCount, setUserCount] = useState(0);
   
   // Get the fetch function from the useAdminDataFetch hook
-  const { fetchAllData } = useAdminDataFetch(setUsers, setTransactions, setLoading, setUserCount);
+  const { fetchAllData } = useAdminDataFetch(setUsers, setTransactions, setLoading);
   
   // Get the KYC management function from the useKycManagement hook
   const { handleKycAction } = useKycManagement(users, setUsers);
@@ -34,7 +33,6 @@ export const useAdminData = () => {
     transactions,
     loading,
     fetchAllData,
-    handleKycAction,
-    userCount
+    handleKycAction
   };
 };

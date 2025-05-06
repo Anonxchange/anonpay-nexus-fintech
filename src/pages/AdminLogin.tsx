@@ -10,8 +10,7 @@ import { LogIn, Shield } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import AuthLayout from "../components/layout/AuthLayout";
 
-// Mock admin UUID - use a proper UUID format for local admin for testing
-const ADMIN_UUID = "11111111-1111-1111-1111-111111111111";
+// Admin credentials - in a real application, these would be stored and verified securely
 const ADMIN_EMAIL = "admin@anonpay.com";
 const ADMIN_PASSWORD = "Admin@123456";
 
@@ -43,12 +42,12 @@ const AdminLogin: React.FC = () => {
       if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
         console.log("Local admin credentials matched");
         
-        // Store admin data using hardcoded credentials with a proper UUID format
+        // Store admin data using hardcoded credentials
         const adminData = {
           email: ADMIN_EMAIL,
           role: "admin",
           name: "Admin User",
-          id: ADMIN_UUID,
+          id: "admin-1",
         };
         
         localStorage.setItem("anonpay_admin", JSON.stringify(adminData));
@@ -75,28 +74,23 @@ const AdminLogin: React.FC = () => {
         if (authData?.user) {
           console.log("Supabase auth successful, checking admin role");
           
-          // Check if user has admin role using the is_admin function
-          const { data: isAdmin, error: isAdminError } = await supabase
-            .rpc('is_admin', { user_id: authData.user.id });
+          // Check if user has admin role
+          const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .select('role, name')
+            .eq('id', authData.user.id)
+            .single();
             
-          if (isAdminError) {
-            console.error("Error checking admin status:", isAdminError);
-            throw new Error('Failed to verify admin status');
+          if (profileError) {
+            console.error("Profile fetch error:", profileError);
+            throw new Error('Failed to fetch user profile');
           }
           
-          if (isAdmin) {
-            // Get profile data to get name
-            const { data: profileData, error: profileError } = await supabase
-              .from('profiles')
-              .select('role, name')
-              .eq('id', authData.user.id)
-              .single();
-              
-            if (profileError) {
-              console.error("Profile fetch error:", profileError);
-              // Continue with default values
-            }
-            
+          // Safe access to properties
+          const role = profileData?.role || 'user';
+          console.log("User role:", role);
+          
+          if (role === 'admin') {
             // Store admin data
             const adminData = {
               email: authData.user.email,

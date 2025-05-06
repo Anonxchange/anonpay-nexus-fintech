@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useAuth } from "../contexts/auth";
 import { 
   SidebarProvider, 
@@ -22,47 +22,13 @@ import DashboardOverview from "../components/dashboard/DashboardOverview";
 import MyAccount from "../components/dashboard/MyAccount";
 import KycService from "../components/dashboard/KycService";
 import AddBankAccount from "../components/dashboard/AddBankAccount";
-import { useNavigate } from "react-router-dom";
-import { Profile } from "@/types/auth";
 
 const Dashboard: React.FC = () => {
-  const { user, profile, isLoading } = useAuth();
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<string>("overview");
-  const navigate = useNavigate();
   
-  useEffect(() => {
-    if (!isLoading && !user) {
-      navigate("/login");
-    }
-  }, [user, isLoading, navigate]);
-
-  if (isLoading) {
-    return (
-      <AppLayout title="Dashboard">
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-anonpay-primary"></div>
-          <span className="ml-3">Loading dashboard...</span>
-        </div>
-      </AppLayout>
-    );
-  }
-  
-  if (!user || !profile) {
-    return null; // This shouldn't render as the useEffect will redirect to login
-  }
-  
-  // Check if user account is suspended or blocked
-  if (profile.account_status === 'suspended' || profile.account_status === 'blocked') {
-    return (
-      <AppLayout title="Account Restricted">
-        <div className="flex flex-col items-center justify-center h-64 text-center max-w-md mx-auto">
-          <div className="bg-red-100 text-red-800 p-4 rounded-md mb-4 w-full">
-            <h2 className="text-lg font-semibold mb-2">Account {profile.account_status}</h2>
-            <p>Your account has been {profile.account_status}. Please contact support for assistance.</p>
-          </div>
-        </div>
-      </AppLayout>
-    );
+  if (!user) {
+    return <div>Loading...</div>;
   }
   
   const renderContent = () => {

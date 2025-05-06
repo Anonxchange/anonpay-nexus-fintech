@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { ArrowUpRight, ArrowDownLeft, Clock, Plus } from "lucide-react";
 import DepositDialog from "./DepositDialog";
 import WithdrawDialog from "./WithdrawDialog";
-import { useToast } from "@/hooks/use-toast";
 
 interface WalletCardProps {
   balance: number;
@@ -23,32 +22,6 @@ const formatCurrency = (amount: number) => {
 const WalletCard: React.FC<WalletCardProps> = ({ balance, onFund }) => {
   const [depositOpen, setDepositOpen] = useState(false);
   const [withdrawOpen, setWithdrawOpen] = useState(false);
-  const { toast } = useToast();
-  
-  // Handle click on the History button
-  const handleHistoryClick = () => {
-    try {
-      const historyTab = document.querySelector('[value="history"]');
-      if (historyTab) {
-        console.log("Triggering click on history tab");
-        historyTab.dispatchEvent(
-          new MouseEvent('click', { bubbles: true })
-        );
-      } else {
-        console.error("History tab element not found");
-        toast({
-          variant: "destructive",
-          title: "Navigation Error",
-          description: "Could not find the history tab. Please try again."
-        });
-      }
-    } catch (error) {
-      console.error("Error navigating to history:", error);
-    }
-  };
-  
-  // Ensure we have a valid balance to display
-  const safeBalance = typeof balance === 'number' ? balance : 0;
   
   return (
     <>
@@ -57,7 +30,7 @@ const WalletCard: React.FC<WalletCardProps> = ({ balance, onFund }) => {
           <CardTitle className="text-lg font-medium">Wallet Balance</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-3xl font-bold mb-4">{formatCurrency(safeBalance)}</div>
+          <div className="text-3xl font-bold mb-4">{formatCurrency(balance)}</div>
           
           <div className="grid grid-cols-3 gap-2 text-white/80 text-xs">
             <div 
@@ -74,10 +47,7 @@ const WalletCard: React.FC<WalletCardProps> = ({ balance, onFund }) => {
               <ArrowUpRight className="h-4 w-4 mb-1" />
               <span>Withdraw</span>
             </div>
-            <div 
-              className="flex flex-col items-center bg-white/10 p-2 rounded-lg cursor-pointer hover:bg-white/20"
-              onClick={handleHistoryClick}
-            >
+            <div className="flex flex-col items-center bg-white/10 p-2 rounded-lg cursor-pointer hover:bg-white/20">
               <Clock className="h-4 w-4 mb-1" />
               <span>History</span>
             </div>

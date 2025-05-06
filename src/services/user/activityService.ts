@@ -1,21 +1,26 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { supabaseAdmin } from "@/integrations/supabase/adminClient";
 
 // Get user activity log
 export const getUserActivityLog = async (adminId: string, userId: string): Promise<any[]> => {
   try {
-    // First check if the user is an admin using the is_admin function
-    const { data: isAdmin, error: adminError } = await supabase
-      .rpc('is_admin', { user_id: adminId });
+    // First check if the user is an admin
+    const { data: adminData, error: adminError } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', adminId)
+      .single();
 
-    if (adminError || !isAdmin) {
+    // Safe access to role property
+    const role = adminData?.role || 'user';
+
+    if (adminError || role !== 'admin') {
       console.error('Error: Not authorized as admin', adminError);
       return [];
     }
     
-    // Use supabaseAdmin client to get all transactions for the user
-    const { data: transactions, error: transactionsError } = await supabaseAdmin
+    // Get all transactions for the user
+    const { data: transactions, error: transactionsError } = await supabase
       .from('transactions')
       .select('*')
       .eq('user_id', userId)
@@ -30,8 +35,8 @@ export const getUserActivityLog = async (adminId: string, userId: string): Promi
     // We'll create a properly structured empty array for consistency
     const kycSubmissions: any[] = [];
     
-    // Check if the table exists first using our RPC function
-    const { data: tableExists, error: checkError } = await supabaseAdmin
+    // Check if the table exists first using our new RPC function
+    const { data: tableExists, error: checkError } = await supabase
       .rpc('check_table_exists', { table_name: 'kyc_submissions' });
     
     if (checkError) {
@@ -41,8 +46,8 @@ export const getUserActivityLog = async (adminId: string, userId: string): Promi
     // Only try to fetch KYC submissions if the table exists
     if (tableExists) {
       try {
-        // Use our RPC function to fetch KYC submissions
-        const { data, error } = await supabaseAdmin
+        // Use our new RPC function to fetch KYC submissions
+        const { data, error } = await supabase
           .rpc('get_kyc_submissions_for_user', { user_id_param: userId });
           
         if (!error && data && Array.isArray(data)) {

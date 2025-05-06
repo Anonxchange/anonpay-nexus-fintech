@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useAdminData } from "./hooks/useAdminData";
 import AdminDashboard from "./dashboard/AdminDashboard";
@@ -16,8 +15,7 @@ const AdminPanel = ({ currentAdmin }: { currentAdmin: any }) => {
     transactions, 
     loading, 
     fetchAllData, 
-    handleKycAction,
-    userCount 
+    handleKycAction 
   } = useAdminData();
   
   const [searchParams] = useSearchParams();
@@ -107,7 +105,6 @@ const AdminPanel = ({ currentAdmin }: { currentAdmin: any }) => {
         loading={loading}
         onRefreshData={fetchAllData}
         currentAdmin={currentAdmin}
-        userCount={userCount}
       />
 
       {!loading && (
