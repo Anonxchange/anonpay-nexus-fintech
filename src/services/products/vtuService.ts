@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { VtuProduct, VtuProductVariant, EbillsVtuRequest, EbillsVtuResponse } from "./types";
 
@@ -90,16 +89,41 @@ export const buyVtuWithEbills = async (
   request: EbillsVtuRequest
 ): Promise<EbillsVtuResponse> => {
   try {
+    console.log("Calling Ebills VTU function with:", request);
+    
+    // Validate request parameters before sending
+    if (!request.network) {
+      throw new Error("Network provider is required");
+    }
+    if (!request.phone || !/^\d{10,15}$/.test(request.phone.toString())) {
+      throw new Error("Valid phone number is required (10-15 digits)");
+    }
+    if (!request.amount || isNaN(Number(request.amount)) || Number(request.amount) <= 0) {
+      throw new Error("Amount must be a positive number");
+    }
+
+    // Call the Supabase Edge Function
     const { data, error } = await supabase.functions.invoke('ebills-vtu', {
       body: request,
     });
 
     if (error) {
+      console.error("Supabase function error:", error);
       throw new Error(error.message || 'Failed to process VTU request');
     }
 
+    if (!data) {
+      throw new Error('No data returned from VTU service');
+    }
+
+    // Additional validation of the function response
+    if (!data.success) {
+      throw new Error(data.message || 'VTU request failed');
+    }
+
+    console.log("Ebills VTU function response:", data);
     return data;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error buying VTU product with Ebills:', error);
     return {
       success: false,
