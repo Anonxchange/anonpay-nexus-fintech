@@ -1,10 +1,9 @@
-import React, { useState } from "react";
+
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Profile } from "../../types/auth";
-import { useAuth } from "../../contexts/auth";
 import { useToast } from "@/components/ui/use-toast";
-import { KycStatus, EmailStatus } from "../../App";
+import { KycStatus, EmailStatus } from "../../types/auth";
 import StatusBadge from "@/components/ui/StatusBadge";
 import { 
   Table, 
@@ -26,13 +25,32 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { DatePicker } from "@/components/ui/date-picker";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { 
   Check, 
   X, 
   Search, 
   Upload, 
-  AlertCircle 
+  AlertCircle,
+  Users,
+  CreditCard,
+  Activity,
+  Wallet,
+  Clock,
+  UserCheck,
+  FileText,
+  Calendar
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 // Define the User type based on what's used in the component
 interface User {
@@ -43,6 +61,7 @@ interface User {
   kycStatus: KycStatus;
   walletBalance: number;
   name: string;
+  registrationDate?: Date;
 }
 
 interface AdminPanelProps {
@@ -58,7 +77,8 @@ const mockUsers: User[] = [
     emailStatus: "verified",
     kycStatus: "pending",
     walletBalance: 25000,
-    name: "John Doe"
+    name: "John Doe",
+    registrationDate: new Date("2023-03-15")
   },
   {
     id: "2",
@@ -67,7 +87,8 @@ const mockUsers: User[] = [
     emailStatus: "verified",
     kycStatus: "approved",
     walletBalance: 50000,
-    name: "Admin User"
+    name: "Admin User",
+    registrationDate: new Date("2023-01-10")
   },
   {
     id: "3",
@@ -76,7 +97,8 @@ const mockUsers: User[] = [
     emailStatus: "verified",
     kycStatus: "not_submitted",
     walletBalance: 0,
-    name: "New User"
+    name: "New User",
+    registrationDate: new Date("2023-05-20")
   },
   {
     id: "4",
@@ -85,7 +107,38 @@ const mockUsers: User[] = [
     emailStatus: "verified",
     kycStatus: "rejected",
     walletBalance: 5000,
-    name: "Rejected User"
+    name: "Rejected User",
+    registrationDate: new Date("2023-04-05")
+  },
+  {
+    id: "5",
+    email: "sarah@example.com",
+    role: "user",
+    emailStatus: "verified",
+    kycStatus: "approved",
+    walletBalance: 12500,
+    name: "Sarah Johnson",
+    registrationDate: new Date("2023-06-12")
+  },
+  {
+    id: "6",
+    email: "michael@example.com",
+    role: "user",
+    emailStatus: "unverified",
+    kycStatus: "not_submitted",
+    walletBalance: 0,
+    name: "Michael Wilson",
+    registrationDate: new Date("2023-07-18")
+  },
+  {
+    id: "7",
+    email: "emily@example.com",
+    role: "user",
+    emailStatus: "verified",
+    kycStatus: "pending",
+    walletBalance: 8000,
+    name: "Emily Brown",
+    registrationDate: new Date("2023-08-22")
   }
 ];
 
@@ -97,6 +150,7 @@ interface Transaction {
   amount: number;
   status: "pending" | "completed" | "rejected";
   createdAt: Date;
+  reference?: string;
 }
 
 const mockTransactions: Transaction[] = [
@@ -108,6 +162,7 @@ const mockTransactions: Transaction[] = [
     amount: 10000,
     status: "completed",
     createdAt: new Date("2023-05-01"),
+    reference: "REF123456"
   },
   {
     id: "t2",
@@ -117,6 +172,7 @@ const mockTransactions: Transaction[] = [
     amount: 5000,
     status: "pending",
     createdAt: new Date("2023-05-02"),
+    reference: "REF123457"
   },
   {
     id: "t3",
@@ -126,6 +182,7 @@ const mockTransactions: Transaction[] = [
     amount: 7500,
     status: "pending",
     createdAt: new Date("2023-05-03"),
+    reference: "REF123458"
   },
   {
     id: "t4",
@@ -135,7 +192,48 @@ const mockTransactions: Transaction[] = [
     amount: 1000,
     status: "completed",
     createdAt: new Date("2023-05-04"),
+    reference: "REF123459"
   },
+  {
+    id: "t5",
+    userId: "5",
+    userName: "Sarah Johnson",
+    type: "Wallet Funding",
+    amount: 15000,
+    status: "completed",
+    createdAt: new Date("2023-06-15"),
+    reference: "REF123460"
+  },
+  {
+    id: "t6",
+    userId: "5",
+    userName: "Sarah Johnson",
+    type: "Crypto Sell",
+    amount: 3500,
+    status: "completed",
+    createdAt: new Date("2023-07-01"),
+    reference: "REF123461"
+  },
+  {
+    id: "t7",
+    userId: "7",
+    userName: "Emily Brown",
+    type: "Gift Card Buy",
+    amount: 2000,
+    status: "rejected",
+    createdAt: new Date("2023-08-25"),
+    reference: "REF123462"
+  },
+  {
+    id: "t8",
+    userId: "1",
+    userName: "John Doe",
+    type: "Data Bundle",
+    amount: 3000,
+    status: "completed",
+    createdAt: new Date("2023-09-05"),
+    reference: "REF123463"
+  }
 ];
 
 interface Rate {
@@ -144,6 +242,7 @@ interface Rate {
   buyRate: number;
   sellRate: number;
   lastUpdated: Date;
+  category: "crypto" | "giftcard";
 }
 
 const mockRates: Rate[] = [
@@ -153,6 +252,7 @@ const mockRates: Rate[] = [
     buyRate: 1560,
     sellRate: 1500,
     lastUpdated: new Date("2023-05-01"),
+    category: "crypto"
   },
   {
     id: "r2",
@@ -160,6 +260,7 @@ const mockRates: Rate[] = [
     buyRate: 1560,
     sellRate: 1500,
     lastUpdated: new Date("2023-05-01"),
+    category: "crypto"
   },
   {
     id: "r3",
@@ -167,6 +268,7 @@ const mockRates: Rate[] = [
     buyRate: 1050,
     sellRate: 800,
     lastUpdated: new Date("2023-05-01"),
+    category: "giftcard"
   },
   {
     id: "r4",
@@ -174,12 +276,45 @@ const mockRates: Rate[] = [
     buyRate: 1020,
     sellRate: 780,
     lastUpdated: new Date("2023-05-01"),
+    category: "giftcard"
   },
+  {
+    id: "r5",
+    name: "Google Play Gift Card",
+    buyRate: 980,
+    sellRate: 750,
+    lastUpdated: new Date("2023-05-01"),
+    category: "giftcard"
+  },
+  {
+    id: "r6",
+    name: "Steam Gift Card",
+    buyRate: 900,
+    sellRate: 700,
+    lastUpdated: new Date("2023-05-01"),
+    category: "giftcard"
+  },
+  {
+    id: "r7",
+    name: "Ethereum (ETH)",
+    buyRate: 1500,
+    sellRate: 1450,
+    lastUpdated: new Date("2023-05-01"),
+    category: "crypto"
+  },
+  {
+    id: "r8",
+    name: "Binance Coin (BNB)",
+    buyRate: 1450,
+    sellRate: 1400,
+    lastUpdated: new Date("2023-05-01"),
+    category: "crypto"
+  }
 ];
 
 const AdminPanel: React.FC<AdminPanelProps> = ({ currentAdmin }) => {
   const { toast } = useToast();
-  const { user } = useAuth();
+  const navigate = useNavigate();
   const [users, setUsers] = useState<User[]>(mockUsers);
   const [transactions, setTransactions] = useState<Transaction[]>(mockTransactions);
   const [rates, setRates] = useState<Rate[]>(mockRates);
@@ -189,6 +324,31 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ currentAdmin }) => {
   const [fundAmount, setFundAmount] = useState("");
   const [updatedRate, setUpdatedRate] = useState<{ buyRate: string; sellRate: string }>({ buyRate: "", sellRate: "" });
   const [selectedRate, setSelectedRate] = useState<Rate | null>(null);
+
+  // Filters for transactions
+  const [transactionFilters, setTransactionFilters] = useState({
+    userId: "",
+    type: "",
+    startDate: null as Date | null,
+    endDate: null as Date | null,
+    status: ""
+  });
+  
+  // Stats calculation
+  const totalUsers = users.length;
+  const pendingKYCs = users.filter(user => user.kycStatus === "pending").length;
+  const totalWalletBalance = users.reduce((acc, user) => acc + user.walletBalance, 0);
+  const todayTransactions = transactions.filter(
+    txn => txn.createdAt.toDateString() === new Date().toDateString()
+  ).length;
+  const weeklyTransactions = transactions.filter(
+    txn => {
+      const txnDate = new Date(txn.createdAt);
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      return txnDate >= sevenDaysAgo;
+    }
+  ).length;
   
   // Filter users based on search term
   const filteredUsers = users.filter(
@@ -196,6 +356,37 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ currentAdmin }) => {
       user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
+  
+  // Filter transactions based on filters
+  const filteredTransactions = transactions.filter(txn => {
+    let matches = true;
+    
+    if (transactionFilters.userId && txn.userId !== transactionFilters.userId) {
+      matches = false;
+    }
+    
+    if (transactionFilters.type && txn.type !== transactionFilters.type) {
+      matches = false;
+    }
+    
+    if (transactionFilters.status && txn.status !== transactionFilters.status) {
+      matches = false;
+    }
+    
+    if (transactionFilters.startDate && txn.createdAt < transactionFilters.startDate) {
+      matches = false;
+    }
+    
+    if (transactionFilters.endDate) {
+      const endDate = new Date(transactionFilters.endDate);
+      endDate.setHours(23, 59, 59, 999);
+      if (txn.createdAt > endDate) {
+        matches = false;
+      }
+    }
+    
+    return matches;
+  });
   
   // Format date
   const formatDate = (date: Date) => {
@@ -227,6 +418,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ currentAdmin }) => {
       title: `KYC ${status === "approved" ? "Approved" : "Rejected"}`,
       description: `The KYC for user has been ${status === "approved" ? "approved" : "rejected"}.`,
     });
+    
+    // Close the dialog
+    setSelectedUser(null);
   };
   
   // Handle wallet funding
@@ -248,6 +442,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ currentAdmin }) => {
         amount: amount,
         status: "completed",
         createdAt: new Date(),
+        reference: `REF${Date.now().toString().substring(7)}`
       },
       ...prev,
     ]);
@@ -270,6 +465,9 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ currentAdmin }) => {
       title: `Transaction ${status === "completed" ? "Approved" : "Rejected"}`,
       description: `The transaction has been ${status === "completed" ? "approved" : "rejected"}.`,
     });
+    
+    // Close the dialog
+    setSelectedTransaction(null);
   };
   
   // Handle rate update
@@ -308,15 +506,177 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ currentAdmin }) => {
     
     setSelectedRate(null);
   };
+
+  // Get unique transaction types for filter
+  const transactionTypes = [...new Set(transactions.map(t => t.type))];
+  
+  // Reset transaction filters
+  const resetTransactionFilters = () => {
+    setTransactionFilters({
+      userId: "",
+      type: "",
+      startDate: null,
+      endDate: null,
+      status: ""
+    });
+  };
   
   return (
-    <Tabs defaultValue="users" className="space-y-6">
-      <TabsList className="grid w-full grid-cols-4">
+    <Tabs defaultValue="dashboard" className="space-y-6">
+      <TabsList className="grid w-full grid-cols-5">
+        <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
         <TabsTrigger value="users">Users</TabsTrigger>
         <TabsTrigger value="transactions">Transactions</TabsTrigger>
         <TabsTrigger value="rates">Rates</TabsTrigger>
         <TabsTrigger value="settings">Settings</TabsTrigger>
       </TabsList>
+      
+      {/* Dashboard Tab */}
+      <TabsContent value="dashboard" className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <Card>
+            <CardContent className="p-6 flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-500">Total Users</p>
+                <h3 className="text-2xl font-bold mt-1">{totalUsers}</h3>
+              </div>
+              <div className="bg-blue-100 p-3 rounded-full">
+                <Users className="w-6 h-6 text-blue-600" />
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-6 flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-500">Pending KYCs</p>
+                <h3 className="text-2xl font-bold mt-1">{pendingKYCs}</h3>
+              </div>
+              <div className="bg-amber-100 p-3 rounded-full">
+                <UserCheck className="w-6 h-6 text-amber-600" />
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-6 flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-500">Total Wallet Balance</p>
+                <h3 className="text-xl font-bold mt-1">{formatCurrency(totalWalletBalance)}</h3>
+              </div>
+              <div className="bg-green-100 p-3 rounded-full">
+                <Wallet className="w-6 h-6 text-green-600" />
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-6 flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-500">Today's Transactions</p>
+                <h3 className="text-2xl font-bold mt-1">{todayTransactions}</h3>
+                <p className="text-xs text-gray-500 mt-1">{weeklyTransactions} this week</p>
+              </div>
+              <div className="bg-purple-100 p-3 rounded-full">
+                <Activity className="w-6 h-6 text-purple-600" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+        
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Recent Transactions</CardTitle>
+              <CardDescription>Latest 5 transactions across the platform</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>User</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {transactions.slice(0, 5).map((txn) => (
+                    <TableRow key={txn.id}>
+                      <TableCell>{txn.userName}</TableCell>
+                      <TableCell>{txn.type}</TableCell>
+                      <TableCell>{formatCurrency(txn.amount)}</TableCell>
+                      <TableCell>
+                        <StatusBadge 
+                          status={txn.status as any} 
+                          type="kyc"
+                        />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              <div className="mt-4 text-center">
+                <Button variant="link" onClick={() => navigate("/admin?tab=transactions")}>
+                  View All Transactions
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>Pending KYC Verifications</CardTitle>
+              <CardDescription>Users awaiting KYC approval</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Action</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {users
+                    .filter(user => user.kycStatus === "pending")
+                    .slice(0, 5)
+                    .map((user) => (
+                      <TableRow key={user.id}>
+                        <TableCell>{user.name}</TableCell>
+                        <TableCell>{user.email}</TableCell>
+                        <TableCell>{user.registrationDate ? formatDate(user.registrationDate) : "N/A"}</TableCell>
+                        <TableCell>
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => setSelectedUser(user)}
+                          >
+                            Review
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  {users.filter(user => user.kycStatus === "pending").length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center py-4">
+                        No pending KYC verifications
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+              <div className="mt-4 text-center">
+                <Button variant="link" onClick={() => navigate("/admin?tab=users")}>
+                  View All Users
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </TabsContent>
       
       {/* Users Tab */}
       <TabsContent value="users" className="space-y-4">
@@ -346,6 +706,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ currentAdmin }) => {
                   <TableHead>Email</TableHead>
                   <TableHead>KYC Status</TableHead>
                   <TableHead>Wallet Balance</TableHead>
+                  <TableHead>Registered</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -358,6 +719,7 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ currentAdmin }) => {
                       <StatusBadge status={user.kycStatus} />
                     </TableCell>
                     <TableCell>{formatCurrency(user.walletBalance)}</TableCell>
+                    <TableCell>{user.registrationDate ? formatDate(user.registrationDate) : "N/A"}</TableCell>
                     <TableCell>
                       <div className="flex space-x-2">
                         <Dialog>
@@ -400,6 +762,12 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ currentAdmin }) => {
                                   <div>
                                     <p className="text-sm font-medium">Wallet Balance</p>
                                     <p className="text-sm">{formatCurrency(selectedUser.walletBalance)}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-sm font-medium">Registration Date</p>
+                                    <p className="text-sm">
+                                      {selectedUser.registrationDate ? formatDate(selectedUser.registrationDate) : "N/A"}
+                                    </p>
                                   </div>
                                 </div>
                                 
@@ -453,6 +821,41 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ currentAdmin }) => {
                                     </Button>
                                   </div>
                                 </div>
+
+                                {/* Transaction History */}
+                                <div className="border rounded-md p-4">
+                                  <h3 className="font-medium mb-2">Transaction History</h3>
+                                  <div className="max-h-60 overflow-y-auto">
+                                    <Table>
+                                      <TableHeader>
+                                        <TableRow>
+                                          <TableHead>Type</TableHead>
+                                          <TableHead>Amount</TableHead>
+                                          <TableHead>Date</TableHead>
+                                        </TableRow>
+                                      </TableHeader>
+                                      <TableBody>
+                                        {transactions
+                                          .filter(txn => txn.userId === selectedUser.id)
+                                          .slice(0, 5)
+                                          .map((txn) => (
+                                            <TableRow key={txn.id}>
+                                              <TableCell>{txn.type}</TableCell>
+                                              <TableCell>{formatCurrency(txn.amount)}</TableCell>
+                                              <TableCell>{formatDate(txn.createdAt)}</TableCell>
+                                            </TableRow>
+                                          ))}
+                                        {transactions.filter(txn => txn.userId === selectedUser.id).length === 0 && (
+                                          <TableRow>
+                                            <TableCell colSpan={3} className="text-center py-2">
+                                              No transactions
+                                            </TableCell>
+                                          </TableRow>
+                                        )}
+                                      </TableBody>
+                                    </Table>
+                                  </div>
+                                </div>
                               </div>
                             )}
                           </DialogContent>
@@ -461,6 +864,13 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ currentAdmin }) => {
                     </TableCell>
                   </TableRow>
                 ))}
+                {filteredUsers.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-6">
+                      No users found matching your search
+                    </TableCell>
+                  </TableRow>
+                )}
               </TableBody>
             </Table>
           </CardContent>
@@ -473,13 +883,96 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ currentAdmin }) => {
           <CardHeader className="pb-3">
             <CardTitle>Transaction Management</CardTitle>
             <CardDescription>
-              Review and approve pending transactions
+              Review and manage all transactions
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {/* Filters */}
+            <div className="bg-gray-50 p-4 rounded-lg mb-4">
+              <h3 className="font-medium mb-3">Filter Transactions</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                <div>
+                  <Label htmlFor="user-filter" className="mb-1 block">User</Label>
+                  <Select
+                    value={transactionFilters.userId}
+                    onValueChange={(value) => setTransactionFilters({...transactionFilters, userId: value})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select user" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">All Users</SelectItem>
+                      {users.map(user => (
+                        <SelectItem key={user.id} value={user.id}>
+                          {user.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="type-filter" className="mb-1 block">Transaction Type</Label>
+                  <Select
+                    value={transactionFilters.type}
+                    onValueChange={(value) => setTransactionFilters({...transactionFilters, type: value})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">All Types</SelectItem>
+                      {transactionTypes.map(type => (
+                        <SelectItem key={type} value={type}>
+                          {type}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="status-filter" className="mb-1 block">Status</Label>
+                  <Select
+                    value={transactionFilters.status}
+                    onValueChange={(value) => setTransactionFilters({...transactionFilters, status: value})}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">All Statuses</SelectItem>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
+                      <SelectItem value="rejected">Rejected</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="mb-1 block">Start Date</Label>
+                  <DatePicker
+                    date={transactionFilters.startDate}
+                    setDate={(date) => setTransactionFilters({...transactionFilters, startDate: date})}
+                    className="w-full"
+                  />
+                </div>
+                <div>
+                  <Label className="mb-1 block">End Date</Label>
+                  <DatePicker
+                    date={transactionFilters.endDate}
+                    setDate={(date) => setTransactionFilters({...transactionFilters, endDate: date})}
+                    className="w-full"
+                  />
+                </div>
+              </div>
+              <div className="flex justify-end mt-4">
+                <Button variant="outline" onClick={resetTransactionFilters} className="mr-2">Reset</Button>
+                <Button>Apply Filters</Button>
+              </div>
+            </div>
+            
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>Reference</TableHead>
                   <TableHead>User</TableHead>
                   <TableHead>Type</TableHead>
                   <TableHead>Amount</TableHead>
@@ -489,22 +982,18 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ currentAdmin }) => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {transactions.map((txn) => (
+                {filteredTransactions.map((txn) => (
                   <TableRow key={txn.id}>
+                    <TableCell>{txn.reference || "N/A"}</TableCell>
                     <TableCell>{txn.userName}</TableCell>
                     <TableCell>{txn.type}</TableCell>
                     <TableCell>{formatCurrency(txn.amount)}</TableCell>
                     <TableCell>{formatDate(txn.createdAt)}</TableCell>
                     <TableCell>
-                      <div className={`badge ${
-                        txn.status === "completed"
-                          ? "badge-approved"
-                          : txn.status === "rejected"
-                          ? "badge-rejected"
-                          : "badge-pending"
-                      }`}>
-                        {txn.status.charAt(0).toUpperCase() + txn.status.slice(1)}
-                      </div>
+                      <StatusBadge 
+                        status={txn.status as any} 
+                        type="kyc"
+                      />
                     </TableCell>
                     <TableCell>
                       {txn.status === "pending" ? (
@@ -527,12 +1016,20 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ currentAdmin }) => {
                                 <div className="space-y-4">
                                   <div className="grid grid-cols-2 gap-4">
                                     <div>
+                                      <p className="text-sm font-medium">Reference</p>
+                                      <p className="text-sm">{selectedTransaction.reference || "N/A"}</p>
+                                    </div>
+                                    <div>
                                       <p className="text-sm font-medium">Transaction ID</p>
                                       <p className="text-sm">{selectedTransaction.id}</p>
                                     </div>
                                     <div>
                                       <p className="text-sm font-medium">User</p>
                                       <p className="text-sm">{selectedTransaction.userName}</p>
+                                    </div>
+                                    <div>
+                                      <p className="text-sm font-medium">User ID</p>
+                                      <p className="text-sm">{selectedTransaction.userId}</p>
                                     </div>
                                     <div>
                                       <p className="text-sm font-medium">Type</p>
@@ -585,11 +1082,74 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ currentAdmin }) => {
                           </Dialog>
                         </div>
                       ) : (
-                        <span className="text-gray-500">-</span>
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => setSelectedTransaction(txn)}
+                            >
+                              View
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>Transaction Details</DialogTitle>
+                            </DialogHeader>
+                            {selectedTransaction && (
+                              <div className="space-y-4">
+                                <div className="grid grid-cols-2 gap-4">
+                                  <div>
+                                    <p className="text-sm font-medium">Reference</p>
+                                    <p className="text-sm">{selectedTransaction.reference || "N/A"}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-sm font-medium">Transaction ID</p>
+                                    <p className="text-sm">{selectedTransaction.id}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-sm font-medium">User</p>
+                                    <p className="text-sm">{selectedTransaction.userName}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-sm font-medium">User ID</p>
+                                    <p className="text-sm">{selectedTransaction.userId}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-sm font-medium">Type</p>
+                                    <p className="text-sm">{selectedTransaction.type}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-sm font-medium">Amount</p>
+                                    <p className="text-sm">{formatCurrency(selectedTransaction.amount)}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-sm font-medium">Date</p>
+                                    <p className="text-sm">{formatDate(selectedTransaction.createdAt)}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-sm font-medium">Status</p>
+                                    <StatusBadge 
+                                      status={selectedTransaction.status as any} 
+                                      type="kyc"
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </DialogContent>
+                        </Dialog>
                       )}
                     </TableCell>
                   </TableRow>
                 ))}
+                {filteredTransactions.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-6">
+                      No transactions found matching your filters
+                    </TableCell>
+                  </TableRow>
+                )}
               </TableBody>
             </Table>
           </CardContent>
@@ -606,89 +1166,188 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ currentAdmin }) => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Asset</TableHead>
-                  <TableHead>Buy Rate (₦/$)</TableHead>
-                  <TableHead>Sell Rate (₦/$)</TableHead>
-                  <TableHead>Last Updated</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {rates.map((rate) => (
-                  <TableRow key={rate.id}>
-                    <TableCell>{rate.name}</TableCell>
-                    <TableCell>₦{rate.buyRate.toLocaleString()}</TableCell>
-                    <TableCell>₦{rate.sellRate.toLocaleString()}</TableCell>
-                    <TableCell>{formatDate(rate.lastUpdated)}</TableCell>
-                    <TableCell>
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button 
-                            size="sm" 
-                            variant="outline"
-                            onClick={() => {
-                              setSelectedRate(rate);
-                              setUpdatedRate({
-                                buyRate: rate.buyRate.toString(),
-                                sellRate: rate.sellRate.toString()
-                              });
-                            }}
-                          >
-                            Update
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent className="sm:max-w-md">
-                          <DialogHeader>
-                            <DialogTitle>Update Rate</DialogTitle>
-                            <DialogDescription>
-                              Change the buy and sell rates for {selectedRate?.name}
-                            </DialogDescription>
-                          </DialogHeader>
-                          {selectedRate && (
-                            <div className="space-y-4 py-4">
-                              <div className="space-y-2">
-                                <Label htmlFor="buy-rate">Buy Rate (₦/$)</Label>
-                                <Input
-                                  id="buy-rate"
-                                  value={updatedRate.buyRate}
-                                  onChange={(e) => 
-                                    setUpdatedRate({ ...updatedRate, buyRate: e.target.value })
-                                  }
-                                />
-                              </div>
-                              <div className="space-y-2">
-                                <Label htmlFor="sell-rate">Sell Rate (₦/$)</Label>
-                                <Input
-                                  id="sell-rate"
-                                  value={updatedRate.sellRate}
-                                  onChange={(e) => 
-                                    setUpdatedRate({ ...updatedRate, sellRate: e.target.value })
-                                  }
-                                />
-                              </div>
-                            </div>
-                          )}
-                          <DialogFooter>
-                            <Button
-                              onClick={() => {
-                                if (selectedRate) {
-                                  handleRateUpdate(selectedRate.id);
-                                }
-                              }}
-                            >
-                              Save Changes
-                            </Button>
-                          </DialogFooter>
-                        </DialogContent>
-                      </Dialog>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <Tabs defaultValue="crypto">
+              <TabsList className="mb-4">
+                <TabsTrigger value="crypto">Cryptocurrency</TabsTrigger>
+                <TabsTrigger value="giftcard">Gift Cards</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="crypto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Asset</TableHead>
+                      <TableHead>Buy Rate (₦/$)</TableHead>
+                      <TableHead>Sell Rate (₦/$)</TableHead>
+                      <TableHead>Last Updated</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {rates
+                      .filter(rate => rate.category === "crypto")
+                      .map((rate) => (
+                        <TableRow key={rate.id}>
+                          <TableCell>{rate.name}</TableCell>
+                          <TableCell>₦{rate.buyRate.toLocaleString()}</TableCell>
+                          <TableCell>₦{rate.sellRate.toLocaleString()}</TableCell>
+                          <TableCell>{formatDate(rate.lastUpdated)}</TableCell>
+                          <TableCell>
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  onClick={() => {
+                                    setSelectedRate(rate);
+                                    setUpdatedRate({
+                                      buyRate: rate.buyRate.toString(),
+                                      sellRate: rate.sellRate.toString()
+                                    });
+                                  }}
+                                >
+                                  Update
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent className="sm:max-w-md">
+                                <DialogHeader>
+                                  <DialogTitle>Update Rate</DialogTitle>
+                                  <DialogDescription>
+                                    Change the buy and sell rates for {selectedRate?.name}
+                                  </DialogDescription>
+                                </DialogHeader>
+                                {selectedRate && (
+                                  <div className="space-y-4 py-4">
+                                    <div className="space-y-2">
+                                      <Label htmlFor="buy-rate">Buy Rate (₦/$)</Label>
+                                      <Input
+                                        id="buy-rate"
+                                        value={updatedRate.buyRate}
+                                        onChange={(e) => 
+                                          setUpdatedRate({ ...updatedRate, buyRate: e.target.value })
+                                        }
+                                      />
+                                    </div>
+                                    <div className="space-y-2">
+                                      <Label htmlFor="sell-rate">Sell Rate (₦/$)</Label>
+                                      <Input
+                                        id="sell-rate"
+                                        value={updatedRate.sellRate}
+                                        onChange={(e) => 
+                                          setUpdatedRate({ ...updatedRate, sellRate: e.target.value })
+                                        }
+                                      />
+                                    </div>
+                                  </div>
+                                )}
+                                <DialogFooter>
+                                  <Button
+                                    onClick={() => {
+                                      if (selectedRate) {
+                                        handleRateUpdate(selectedRate.id);
+                                      }
+                                    }}
+                                  >
+                                    Save Changes
+                                  </Button>
+                                </DialogFooter>
+                              </DialogContent>
+                            </Dialog>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                  </TableBody>
+                </Table>
+              </TabsContent>
+              
+              <TabsContent value="giftcard">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Gift Card</TableHead>
+                      <TableHead>Buy Rate (₦/$)</TableHead>
+                      <TableHead>Sell Rate (₦/$)</TableHead>
+                      <TableHead>Last Updated</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {rates
+                      .filter(rate => rate.category === "giftcard")
+                      .map((rate) => (
+                        <TableRow key={rate.id}>
+                          <TableCell>{rate.name}</TableCell>
+                          <TableCell>₦{rate.buyRate.toLocaleString()}</TableCell>
+                          <TableCell>₦{rate.sellRate.toLocaleString()}</TableCell>
+                          <TableCell>{formatDate(rate.lastUpdated)}</TableCell>
+                          <TableCell>
+                            <Dialog>
+                              <DialogTrigger asChild>
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  onClick={() => {
+                                    setSelectedRate(rate);
+                                    setUpdatedRate({
+                                      buyRate: rate.buyRate.toString(),
+                                      sellRate: rate.sellRate.toString()
+                                    });
+                                  }}
+                                >
+                                  Update
+                                </Button>
+                              </DialogTrigger>
+                              <DialogContent className="sm:max-w-md">
+                                <DialogHeader>
+                                  <DialogTitle>Update Rate</DialogTitle>
+                                  <DialogDescription>
+                                    Change the buy and sell rates for {selectedRate?.name}
+                                  </DialogDescription>
+                                </DialogHeader>
+                                {selectedRate && (
+                                  <div className="space-y-4 py-4">
+                                    <div className="space-y-2">
+                                      <Label htmlFor="buy-rate">Buy Rate (₦/$)</Label>
+                                      <Input
+                                        id="buy-rate"
+                                        value={updatedRate.buyRate}
+                                        onChange={(e) => 
+                                          setUpdatedRate({ ...updatedRate, buyRate: e.target.value })
+                                        }
+                                      />
+                                    </div>
+                                    <div className="space-y-2">
+                                      <Label htmlFor="sell-rate">Sell Rate (₦/$)</Label>
+                                      <Input
+                                        id="sell-rate"
+                                        value={updatedRate.sellRate}
+                                        onChange={(e) => 
+                                          setUpdatedRate({ ...updatedRate, sellRate: e.target.value })
+                                        }
+                                      />
+                                    </div>
+                                  </div>
+                                )}
+                                <DialogFooter>
+                                  <Button
+                                    onClick={() => {
+                                      if (selectedRate) {
+                                        handleRateUpdate(selectedRate.id);
+                                      }
+                                    }}
+                                  >
+                                    Save Changes
+                                  </Button>
+                                </DialogFooter>
+                              </DialogContent>
+                            </Dialog>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                  </TableBody>
+                </Table>
+              </TabsContent>
+            </Tabs>
           </CardContent>
         </Card>
       </TabsContent>
@@ -764,6 +1423,37 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ currentAdmin }) => {
                   <Input
                     id="vtpass-endpoint"
                     defaultValue="https://vtpass.com/api/pay"
+                  />
+                </div>
+              </div>
+            </div>
+            
+            <div className="border rounded-md p-4">
+              <h3 className="text-lg font-medium mb-4">Admin Account</h3>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="admin-email">Admin Email</Label>
+                  <Input
+                    id="admin-email"
+                    defaultValue={ADMIN_EMAIL}
+                    readOnly
+                    className="bg-gray-100"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="admin-password">Change Admin Password</Label>
+                  <Input
+                    id="admin-password"
+                    type="password"
+                    placeholder="Enter new password"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="admin-password-confirm">Confirm New Password</Label>
+                  <Input
+                    id="admin-password-confirm"
+                    type="password"
+                    placeholder="Confirm new password"
                   />
                 </div>
               </div>

@@ -1,26 +1,46 @@
-import React from "react";
-import AppLayout from "../components/layout/AppLayout";
+
+import React, { useEffect, useState } from "react";
 import AdminPanel from "../components/admin/AdminPanel";
-import { useAuth } from "../contexts/auth";
+import AdminLayout from "../components/layout/AdminLayout";
 import { Navigate } from "react-router-dom";
 
+interface AdminUser {
+  email: string;
+  name: string;
+  role: string;
+  id: string;
+}
+
 const Admin: React.FC = () => {
-  const { user } = useAuth();
+  const [admin, setAdmin] = useState<AdminUser | null>(null);
+  const [loading, setLoading] = useState(true);
   
-  if (!user) {
+  useEffect(() => {
+    const checkAdmin = () => {
+      const adminData = localStorage.getItem("anonpay_admin");
+      if (adminData) {
+        setAdmin(JSON.parse(adminData));
+      }
+      setLoading(false);
+    };
+    
+    checkAdmin();
+  }, []);
+  
+  if (loading) {
     return <div>Loading...</div>;
   }
   
-  if (user.role !== "admin") {
-    return <Navigate to="/dashboard" replace />;
+  if (!admin) {
+    return <Navigate to="/admin-login" replace />;
   }
   
   return (
-    <AppLayout title="Admin Panel">
+    <AdminLayout title="Admin Dashboard">
       <div className="max-w-7xl mx-auto">
-        <AdminPanel currentAdmin={user} />
+        <AdminPanel currentAdmin={admin} />
       </div>
-    </AppLayout>
+    </AdminLayout>
   );
 };
 

@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
@@ -33,6 +34,8 @@ const Navbar: React.FC<NavbarProps> = () => {
     setIsMenuOpen(!isMenuOpen);
   };
 
+  const isAdmin = profile?.role === "admin";
+
   return (
     <div className="shadow-sm bg-white sticky top-0 z-50">
       <div className="container mx-auto py-4 px-4 flex items-center justify-between">
@@ -57,7 +60,7 @@ const Navbar: React.FC<NavbarProps> = () => {
                   </NavigationMenuLink>
                 </Link>
               </NavigationMenuItem>
-              {profile?.kyc_status === "admin" && (
+              {isAdmin && (
                 <NavigationMenuItem>
                   <Link to="/admin">
                     <NavigationMenuLink className={navigationMenuTriggerStyle()}>
@@ -90,7 +93,7 @@ const Navbar: React.FC<NavbarProps> = () => {
                   <Settings className="mr-2 h-4 w-4" />
                   <span>Settings</span>
                 </DropdownMenuItem>
-                {profile?.kyc_status === "admin" && (
+                {isAdmin && (
                   <DropdownMenuItem onClick={() => navigate("/admin")}>
                     <Shield className="mr-2 h-4 w-4" />
                     <span>Admin Panel</span>
@@ -127,7 +130,7 @@ const Navbar: React.FC<NavbarProps> = () => {
               <Link to="/dashboard" className="block py-2 hover:bg-gray-100 rounded-md">
                 Dashboard
               </Link>
-              {profile?.kyc_status === "admin" && (
+              {isAdmin && (
                 <Link to="/admin" className="block py-2 hover:bg-gray-100 rounded-md">
                   Admin Panel
                 </Link>
@@ -142,7 +145,7 @@ const Navbar: React.FC<NavbarProps> = () => {
                   <button onClick={() => navigate("/dashboard?tab=settings")} className="block py-2 hover:bg-gray-100 rounded-md w-full text-left">
                     Settings
                   </button>
-                  {profile?.kyc_status === "admin" && (
+                  {isAdmin && (
                     <button onClick={() => navigate("/admin")} className="block py-2 hover:bg-gray-100 rounded-md w-full text-left">
                       Admin Panel
                     </button>

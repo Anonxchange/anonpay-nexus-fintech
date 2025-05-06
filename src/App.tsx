@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -25,8 +26,7 @@ import Privacy from "./pages/Privacy";
 // Components
 import SettingsPage from "./components/settings/SettingsPage";
 import { AuthProvider } from "./contexts/auth";
-
-export type KycStatus = "not_submitted" | "pending" | "approved" | "rejected";
+import AdminLogin from "./pages/AdminLogin";
 
 const queryClient = new QueryClient();
 
@@ -54,6 +54,37 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   
   if (!isAuthenticated) {
     window.location.href = "/login";
+    return null;
+  }
+  
+  return children;
+};
+
+// Create an admin-specific protected route
+const AdminProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loading, setLoading] = useState(true);
+  
+  useEffect(() => {
+    const checkAdminAuth = () => {
+      const admin = localStorage.getItem("anonpay_admin");
+      if (admin) {
+        setIsAuthenticated(true);
+      } else {
+        setIsAuthenticated(false);
+      }
+      setLoading(false);
+    };
+    
+    checkAdminAuth();
+  }, []);
+  
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+  
+  if (!isAuthenticated) {
+    window.location.href = "/admin-login";
     return null;
   }
   
@@ -95,11 +126,15 @@ const router = createBrowserRouter([
     ),
   },
   {
+    path: "/admin-login",
+    element: <AdminLogin />,
+  },
+  {
     path: "/admin",
     element: (
-      <ProtectedRoute>
+      <AdminProtectedRoute>
         <Admin />
-      </ProtectedRoute>
+      </AdminProtectedRoute>
     ),
   },
   {
