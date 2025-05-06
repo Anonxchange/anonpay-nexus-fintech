@@ -1,7 +1,8 @@
+
 import React from "react";
 import AppLayout from "../components/layout/AppLayout";
 import KycForm from "../components/kyc/KycForm";
-import { useAuth } from "../contexts/AuthContext";
+import { useAuth } from "../contexts/auth";
 import { useToast } from "@/components/ui/use-toast";
 import { useNavigate } from "react-router-dom";
 import { KycStatus } from "../App";

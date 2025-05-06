@@ -1,7 +1,7 @@
 
 import React from "react";
 import Navbar from "./Navbar";
-import { useAuth } from "../../contexts/AuthContext";
+import { useAuth } from "../../contexts/auth";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/components/ui/use-toast";
 import { Link } from "react-router-dom";

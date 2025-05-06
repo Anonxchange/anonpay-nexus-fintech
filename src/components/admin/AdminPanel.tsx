@@ -1,8 +1,8 @@
-
 import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Profile } from "../../contexts/AuthContext";
+import { Profile } from "../../types/auth";
+import { useAuth } from "../../contexts/auth";
 import { useToast } from "@/components/ui/use-toast";
 import { KycStatus, EmailStatus } from "../../App";
 import StatusBadge from "@/components/ui/StatusBadge";
@@ -179,6 +179,7 @@ const mockRates: Rate[] = [
 
 const AdminPanel: React.FC<AdminPanelProps> = ({ currentAdmin }) => {
   const { toast } = useToast();
+  const { user } = useAuth();
   const [users, setUsers] = useState<User[]>(mockUsers);
   const [transactions, setTransactions] = useState<Transaction[]>(mockTransactions);
   const [rates, setRates] = useState<Rate[]>(mockRates);

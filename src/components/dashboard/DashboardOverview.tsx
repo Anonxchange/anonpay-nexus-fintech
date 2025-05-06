@@ -7,7 +7,7 @@ import WalletCard from "./WalletCard";
 import TransactionHistory from "./TransactionHistory";
 import DepositDialog from "./DepositDialog";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "@/contexts/auth";
 import { Link } from "react-router-dom";
 import { Bitcoin, Gift, Phone, Search } from "lucide-react";
 import SettingsPage from "../settings/SettingsPage";

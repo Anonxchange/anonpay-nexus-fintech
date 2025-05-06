@@ -1,8 +1,7 @@
-
 import React from "react";
 import AppLayout from "../components/layout/AppLayout";
 import AdminPanel from "../components/admin/AdminPanel";
-import { useAuth } from "../contexts/AuthContext";
+import { useAuth } from "../contexts/auth";
 import { Navigate } from "react-router-dom";
 
 const Admin: React.FC = () => {
