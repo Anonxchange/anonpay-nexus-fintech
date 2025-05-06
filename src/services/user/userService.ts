@@ -66,7 +66,7 @@ export const getAllTransactions = async (): Promise<Transaction[]> => {
       
       return {
         ...transaction,
-        // Set user_name from profiles data or fallback to 'Unknown User'
+        // Use optional chaining to safely access profileData.name
         user_name: profileData?.name || 'Unknown User'
       };
     });

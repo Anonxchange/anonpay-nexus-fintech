@@ -1,38 +1,44 @@
 
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/auth";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
+  const { user } = useAuth();
+  const navigate = useNavigate();
   
   useEffect(() => {
-    const checkAuth = () => {
-      const user = localStorage.getItem("anonpay_user");
-      if (user) {
-        setIsAuthenticated(true);
-      } else {
-        setIsAuthenticated(false);
+    const checkAuth = async () => {
+      // If we have auth context data, process it
+      if (user === null) {
+        console.log("No authenticated user found, redirecting to login");
+        navigate("/login");
       }
+      
       setLoading(false);
     };
     
-    checkAuth();
-  }, []);
+    // Only check auth if loading is true (initial load)
+    if (loading) {
+      checkAuth();
+    }
+  }, [user, navigate, loading]);
   
   if (loading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-anonpay-primary"></div>
+      </div>
+    );
   }
   
-  if (!isAuthenticated) {
-    window.location.href = "/login";
-    return null;
-  }
-  
-  return children;
+  // We know user is authenticated at this point, render children
+  return <>{children}</>;
 };
 
 export default ProtectedRoute;

@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate, Link } from "react-router-dom";
@@ -42,11 +43,16 @@ const LoginForm: React.FC = () => {
     try {
       setIsLoading(true);
       await signIn(data.email, data.password);
-      toast({
-        title: "Login successful",
-        description: "Welcome back to AnonPay!",
-      });
-      navigate("/dashboard");
+      
+      // Add delay before navigation to give auth state time to update
+      setTimeout(() => {
+        toast({
+          title: "Login successful",
+          description: "Welcome back to AnonPay!",
+        });
+        navigate("/dashboard");
+      }, 500);
+      
     } catch (error: any) {
       console.error("Login error:", error);
       toast({
@@ -54,7 +60,6 @@ const LoginForm: React.FC = () => {
         title: "Login failed",
         description: error.message || "Invalid credentials. Please try again.",
       });
-    } finally {
       setIsLoading(false);
     }
   };
