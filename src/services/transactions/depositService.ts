@@ -8,6 +8,24 @@ export const processDeposit = async (
   reference: string
 ) => {
   try {
+    // First, create the transaction record
+    const { data: transaction, error: transactionError } = await supabase
+      .from('transactions')
+      .insert({
+        user_id: userId,
+        amount: amount,
+        type: "deposit",
+        reference: reference,
+        status: "completed"
+      })
+      .select()
+      .single();
+    
+    if (transactionError) {
+      throw new Error(`Failed to create transaction: ${transactionError.message}`);
+    }
+    
+    // Then, update the wallet balance using the RPC function
     const { data, error } = await supabase.rpc(
       "update_wallet_balance",
       {
@@ -22,7 +40,8 @@ export const processDeposit = async (
       throw new Error(`Failed to process deposit: ${error.message}`);
     }
     
-    return data;
+    console.log("Deposit processed successfully:", data);
+    return transaction;
   } catch (error) {
     console.error('Error in processDeposit:', error);
     throw error;

@@ -1,141 +1,151 @@
-import React, { useState, useEffect } from "react";
+
+import React, { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Card, CardContent } from "@/components/ui/card";
-import { Bitcoin, Wallet } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { getPaymentMethods, PaymentMethod } from "@/services/transactions";
+import { useAuth } from "@/contexts/auth";
+import { processDeposit } from "@/services/transactions";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import CryptoDepositForm from "../services/crypto/CryptoDepositForm";
+import { supabase } from "@/integrations/supabase/client";
 
 interface DepositDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
+const directDepositSchema = z.object({
+  amount: z.number()
+    .positive("Amount must be positive")
+    .min(100, "Minimum deposit is ₦100"),
+  reference: z.string().optional()
+});
+
+type DirectDepositValues = z.infer<typeof directDepositSchema>;
+
 const DepositDialog: React.FC<DepositDialogProps> = ({ open, onOpenChange }) => {
-  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
-  
-  useEffect(() => {
-    const fetchPaymentMethods = async () => {
-      try {
-        setLoading(true);
-        const methods = await getPaymentMethods();
-        setPaymentMethods(methods);
-      } catch (error) {
-        console.error("Failed to fetch payment methods:", error);
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "Failed to load payment methods. Please try again later."
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    if (open) {
-      fetchPaymentMethods();
+  const { user } = useAuth();
+
+  const form = useForm<DirectDepositValues>({
+    resolver: zodResolver(directDepositSchema),
+    defaultValues: {
+      amount: 1000,
+      reference: ""
     }
-  }, [open, toast]);
-  
-  const getMethodByCurrency = (currency: string) => {
-    return paymentMethods.find(method => method.currency.toLowerCase() === currency.toLowerCase());
+  });
+
+  const onSubmit = async (values: DirectDepositValues) => {
+    if (!user) {
+      toast({
+        variant: "destructive",
+        title: "Authentication Required",
+        description: "You must be logged in to make a deposit"
+      });
+      return;
+    }
+    
+    try {
+      setIsProcessing(true);
+      
+      // Reference ID for the transaction
+      const reference = values.reference || `dep_${Date.now().toString().slice(-6)}`;
+      
+      // Process the deposit through the service which updates Supabase
+      await processDeposit(user.id, values.amount, reference);
+      
+      toast({
+        title: "Deposit Successful",
+        description: `₦${values.amount.toLocaleString()} has been added to your wallet`
+      });
+      
+      // Close the dialog
+      onOpenChange(false);
+      
+      // Reset the form
+      form.reset();
+    } catch (error: any) {
+      console.error("Deposit error:", error);
+      toast({
+        variant: "destructive",
+        title: "Deposit Failed",
+        description: error.message || "Failed to process your deposit"
+      });
+    } finally {
+      setIsProcessing(false);
+    }
   };
-  
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    toast({
-      title: "Copied to clipboard",
-      description: "Address has been copied to your clipboard"
-    });
-  };
-  
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Deposit Crypto</DialogTitle>
+          <DialogTitle>Deposit Funds</DialogTitle>
           <DialogDescription>
-            Send cryptocurrency to the address below. Once confirmed, your wallet will be credited with the NGN equivalent.
+            Choose your preferred method to deposit funds into your wallet.
           </DialogDescription>
         </DialogHeader>
         
-        <Tabs defaultValue="btc" className="w-full">
+        <Tabs defaultValue="direct" className="mt-4">
           <TabsList className="grid grid-cols-2">
-            <TabsTrigger value="btc">
-              <Bitcoin className="mr-2 h-4 w-4" />
-              Bitcoin
-            </TabsTrigger>
-            <TabsTrigger value="eth">
-              <Wallet className="mr-2 h-4 w-4" />
-              Ethereum
-            </TabsTrigger>
+            <TabsTrigger value="direct">Direct</TabsTrigger>
+            <TabsTrigger value="crypto">Crypto</TabsTrigger>
           </TabsList>
           
-          <TabsContent value="btc">
-            <Card>
-              <CardContent className="pt-6">
-                {loading ? (
-                  <div className="flex justify-center">Loading...</div>
-                ) : (
-                  <>
-                    <div className="flex flex-col items-center mb-4">
-                      <div className="text-xs text-muted-foreground mb-2">Send BTC to this address:</div>
-                      <div className="bg-muted p-3 rounded-md text-sm font-mono break-all">
-                        {getMethodByCurrency("BTC")?.address || "Address not available"}
-                      </div>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="mt-2"
-                        onClick={() => copyToClipboard(getMethodByCurrency("BTC")?.address || "")}
-                      >
-                        Copy Address
-                      </Button>
-                    </div>
-                    <div className="text-xs text-muted-foreground text-center">
-                      <p>• Your wallet will be credited once the transaction is confirmed</p>
-                      <p>• The amount will be converted to NGN at the current rate</p>
-                      <p>• Minimum deposit: 0.0001 BTC</p>
-                    </div>
-                  </>
-                )}
-              </CardContent>
-            </Card>
+          <TabsContent value="direct" className="pt-4">
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="amount"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Amount (₦)</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="0.00" 
+                          type="number" 
+                          {...field} 
+                          onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="reference"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Reference (Optional)</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="Optional reference" 
+                          {...field} 
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <Button type="submit" className="w-full" disabled={isProcessing}>
+                  {isProcessing ? "Processing..." : "Deposit Funds"}
+                </Button>
+              </form>
+            </Form>
           </TabsContent>
           
-          <TabsContent value="eth">
-            <Card>
-              <CardContent className="pt-6">
-                {loading ? (
-                  <div className="flex justify-center">Loading...</div>
-                ) : (
-                  <>
-                    <div className="flex flex-col items-center mb-4">
-                      <div className="text-xs text-muted-foreground mb-2">Send ETH to this address:</div>
-                      <div className="bg-muted p-3 rounded-md text-sm font-mono break-all">
-                        {getMethodByCurrency("ETH")?.address || "Address not available"}
-                      </div>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="mt-2"
-                        onClick={() => copyToClipboard(getMethodByCurrency("ETH")?.address || "")}
-                      >
-                        Copy Address
-                      </Button>
-                    </div>
-                    <div className="text-xs text-muted-foreground text-center">
-                      <p>• Your wallet will be credited once the transaction is confirmed</p>
-                      <p>• The amount will be converted to NGN at the current rate</p>
-                      <p>• Minimum deposit: 0.01 ETH</p>
-                    </div>
-                  </>
-                )}
-              </CardContent>
-            </Card>
+          <TabsContent value="crypto" className="pt-4">
+            <CryptoDepositForm onSuccess={() => onOpenChange(false)} />
           </TabsContent>
         </Tabs>
       </DialogContent>

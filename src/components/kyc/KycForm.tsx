@@ -17,6 +17,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface KycFormProps {
   user: any;
@@ -30,6 +31,7 @@ const KycForm: React.FC<KycFormProps> = ({ user, onSubmit }) => {
   const [country, setCountry] = useState("");
   const [dob, setDob] = useState<Date | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,12 +59,44 @@ const KycForm: React.FC<KycFormProps> = ({ user, onSubmit }) => {
         
         if (error) {
           console.error('Error updating KYC status:', error);
+          toast({
+            variant: "destructive",
+            title: "Submission Failed",
+            description: "There was a problem submitting your KYC information."
+          });
         } else {
+          // Save the KYC details in a separate table for verification
+          const { error: kycError } = await supabase
+            .from('kyc_details')
+            .insert({
+              user_id: user.id,
+              full_name: fullName,
+              address: address,
+              city: city,
+              country: country,
+              date_of_birth: dob?.toISOString().split('T')[0],
+              status: 'pending'
+            });
+            
+          if (kycError) {
+            console.error('Error saving KYC details:', kycError);
+            toast({
+              variant: "warning",
+              title: "Partial Success",
+              description: "Your KYC status was updated, but some details may be missing."
+            });
+          }
+          
           // Call the onSubmit callback from parent component
           onSubmit(data);
         }
       } catch (error) {
         console.error('Error submitting KYC:', error);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "An unexpected error occurred. Please try again."
+        });
       }
     }
     

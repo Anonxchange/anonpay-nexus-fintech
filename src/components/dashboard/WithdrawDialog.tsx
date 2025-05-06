@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -28,7 +29,7 @@ type WithdrawalFormValues = z.infer<typeof withdrawalSchema>;
 const WithdrawDialog: React.FC<WithdrawDialogProps> = ({ open, onOpenChange }) => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const { user, profile } = useAuth();
+  const { user, profile, refreshProfile } = useAuth();
 
   const form = useForm<WithdrawalFormValues>({
     resolver: zodResolver(withdrawalSchema),
@@ -67,6 +68,11 @@ const WithdrawDialog: React.FC<WithdrawDialogProps> = ({ open, onOpenChange }) =
         values.bankName, 
         values.accountNumber
       );
+      
+      // Refresh profile to get updated wallet balance
+      if (refreshProfile) {
+        await refreshProfile();
+      }
       
       toast({
         title: "Withdrawal initiated",

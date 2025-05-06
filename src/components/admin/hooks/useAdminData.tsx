@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from "react";
 import { getAllProfiles, getAllTransactions, updateKycStatus } from "@/services/user/userService";
-import { Profile } from "@/types/auth";
+import { Profile, KycStatus } from "@/types/auth";
 import { Transaction } from "@/services/transactions/types";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
