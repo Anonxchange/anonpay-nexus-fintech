@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { TransactionsTabProps } from "./types";
 import {
@@ -37,9 +38,9 @@ const TransactionsTab: React.FC<TransactionsTabProps> = ({ transactions }) => {
     switch (status.toLowerCase()) {
       case "completed":
       case "success":
-        return "success";
+        return "default"; // Changed from "success" to "default"
       case "pending":
-        return "warning";
+        return "outline"; // Changed from "warning" to "outline"
       case "failed":
         return "destructive";
       default:
