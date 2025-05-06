@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -24,11 +23,11 @@ import {
 } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { updateKycStatus } from "@/services/user/userService";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/auth";
+import { User } from '@supabase/supabase-js';
 
 const kycFormSchema = z.object({
   fullName: z.string().min(2, {
@@ -50,11 +49,19 @@ const kycFormSchema = z.object({
 
 type KycFormValues = z.infer<typeof kycFormSchema>;
 
-const KycForm = () => {
-  const { user } = useAuth();
+interface KycFormProps {
+  user?: User;
+  onSubmit?: (data: KycFormValues) => Promise<void>;
+}
+
+const KycForm: React.FC<KycFormProps> = ({ user: propUser, onSubmit: propOnSubmit }) => {
+  const { user: authUser } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  
+  // Use the user from props if provided, otherwise use from auth context
+  const activeUser = propUser || authUser;
 
   const form = useForm<KycFormValues>({
     resolver: zodResolver(kycFormSchema),
@@ -67,8 +74,8 @@ const KycForm = () => {
     },
   });
 
-  async function onSubmit(data: KycFormValues) {
-    if (!user) {
+  async function handleSubmit(data: KycFormValues) {
+    if (!activeUser) {
       toast({
         title: "Authentication Required",
         description: "You must be logged in to submit your KYC",
@@ -81,6 +88,13 @@ const KycForm = () => {
     setIsSubmitting(true);
 
     try {
+      // If a custom onSubmit handler was provided, use that
+      if (propOnSubmit) {
+        await propOnSubmit(data);
+        return;
+      }
+      
+      // Otherwise use the default implementation
       // Update the user's profile with KYC information
       const { error } = await supabase
         .from('profiles')
@@ -89,7 +103,7 @@ const KycForm = () => {
           phone_number: data.phone,
           kyc_status: 'pending'
         })
-        .eq('id', user.id);
+        .eq('id', activeUser.id);
 
       if (error) {
         throw error;
@@ -123,7 +137,7 @@ const KycForm = () => {
         </CardDescription>
       </CardHeader>
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)}>
+        <form onSubmit={form.handleSubmit(handleSubmit)}>
           <CardContent className="space-y-4">
             <FormField
               control={form.control}

@@ -28,10 +28,10 @@ const DashboardOverview: React.FC<DashboardProps> = ({ user }) => {
           setLoading(true);
           // Refresh profile data to get the latest wallet balance
           if (refreshProfile) {
-            const updatedProfile = await refreshProfile();
-            if (updatedProfile && updatedProfile.wallet_balance !== undefined) {
-              setWalletBalance(updatedProfile.wallet_balance);
-            } else if (profile && profile.wallet_balance !== undefined) {
+            // Call refreshProfile but don't check its return value directly
+            await refreshProfile();
+            // Instead, use the updated profile from context after refresh
+            if (profile && profile.wallet_balance !== undefined) {
               setWalletBalance(profile.wallet_balance);
             }
           } else if (profile && profile.wallet_balance !== undefined) {
