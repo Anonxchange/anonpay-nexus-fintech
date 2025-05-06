@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { KycStatus, Profile } from "@/types/auth";
 import { Transaction } from "../transactions/types";
@@ -72,7 +71,10 @@ export const getAllProfiles = async (adminId: string): Promise<Profile[]> => {
       .eq('id', adminId)
       .single();
 
-    if (adminError || adminData?.role !== 'admin') {
+    // Safe access to role property
+    const role = adminData?.role || 'user';
+
+    if (adminError || role !== 'admin') {
       console.error('Error: Not authorized as admin');
       return [];
     }
@@ -92,7 +94,8 @@ export const getAllProfiles = async (adminId: string): Promise<Profile[]> => {
     return profiles.map(profile => ({
       ...profile,
       kyc_status: (profile.kyc_status as KycStatus) || 'not_submitted',
-      name: profile.name || "Unknown User" // Ensure name has a fallback
+      name: profile.name || "Unknown User", // Ensure name has a fallback
+      role: profile.role || 'user' // Ensure role has a fallback
     })) as Profile[];
   } catch (error) {
     console.error('Error fetching profiles:', error);
@@ -110,7 +113,10 @@ export const getAllTransactions = async (adminId: string): Promise<Transaction[]
       .eq('id', adminId)
       .single();
 
-    if (adminError || adminData?.role !== 'admin') {
+    // Safe access to role property
+    const role = adminData?.role || 'user';
+
+    if (adminError || role !== 'admin') {
       console.error('Error: Not authorized as admin');
       return [];
     }

@@ -46,12 +46,15 @@ const Admin: React.FC = () => {
               throw new Error("Failed to fetch user profile");
             }
             
-            if (profileData?.role === 'admin') {
+            // Safe access to properties using optional chaining
+            const role = profileData?.role || 'user';
+            
+            if (role === 'admin') {
               // Create admin data object
               const adminUser = {
                 email: user.email || '',
-                name: profileData.name || user.email || 'Admin User',
-                role: profileData.role,
+                name: profileData?.name || user.email || 'Admin User',
+                role: role,
                 id: user.id
               };
               

@@ -74,12 +74,15 @@ const AdminLogin: React.FC = () => {
             throw new Error('Failed to fetch user profile');
           }
           
-          if (profileData?.role === 'admin') {
+          // Safe access to properties
+          const role = profileData?.role || 'user';
+          
+          if (role === 'admin') {
             // Store admin data
             const adminData = {
               email: authData.user.email,
               role: "admin",
-              name: profileData.name || authData.user.email || "Admin User",
+              name: profileData?.name || authData.user.email || "Admin User",
               id: authData.user.id,
             };
             

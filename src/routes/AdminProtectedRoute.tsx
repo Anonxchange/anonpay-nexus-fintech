@@ -32,13 +32,16 @@ const AdminProtectedRoute: React.FC<AdminProtectedRouteProps> = ({ children }) =
               
               if (user && user.id === adminData.id) {
                 // Verify admin role
-                const { data: profile } = await supabase
+                const { data: profile, error } = await supabase
                   .from('profiles')
                   .select('role')
                   .eq('id', user.id)
                   .single();
                   
-                if (profile?.role === 'admin') {
+                // Safe access to properties
+                const role = profile?.role || 'user';
+                
+                if (role === 'admin') {
                   setIsAuthenticated(true);
                 } else {
                   throw new Error("User is not an admin");
@@ -69,12 +72,15 @@ const AdminProtectedRoute: React.FC<AdminProtectedRouteProps> = ({ children }) =
               .eq('id', user.id)
               .single();
               
-            if (!error && profile?.role === 'admin') {
+            // Safe access to properties
+            const role = profile?.role || 'user';
+            
+            if (!error && role === 'admin') {
               // Store admin data
               const adminData = {
                 email: user.email,
                 role: "admin",
-                name: profile.name || user.email || "Admin User",
+                name: profile?.name || user.email || "Admin User",
                 id: user.id,
               };
               

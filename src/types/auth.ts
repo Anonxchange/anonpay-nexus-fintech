@@ -11,7 +11,7 @@ export interface Profile {
   kyc_status: KycStatus;
   wallet_balance: number | null;
   phone_number: string | null;
-  role?: string;
+  role: string;
   created_at: string | null;
   updated_at: string | null;
   email_status?: EmailStatus;
