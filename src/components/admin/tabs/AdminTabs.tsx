@@ -1,143 +1,78 @@
 
 import React, { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { KycStatus, Profile } from "@/types/auth";
-import { Transaction } from "@/services/transactions/types";
 import UsersTab from "../users/UsersTab";
 import TransactionsTab from "../transactions/TransactionsTab";
 import KycTab from "../kyc/KycTab";
 import RatesTab from "../rates/RatesTab";
 import GiftCardManagementTab from "../giftcards/GiftCardManagementTab";
+import { useNavigate } from "react-router-dom";
+import { Profile, KycAction } from "@/types/auth";
+import { Transaction } from "@/services/transactions/types";
+import { Bell } from "lucide-react";
 
 interface AdminTabsProps {
   users: Profile[];
   transactions: Transaction[];
-  handleKycAction: (userId: string, action: "approve" | "reject") => Promise<void>;
-  activeTab?: string;
-  onTabChange?: (tab: string) => void;
+  handleKycAction: (userId: string, action: KycAction) => Promise<void>;
+  activeTab: string;
+  onTabChange: (tab: string) => void;
 }
 
-const AdminTabs: React.FC<AdminTabsProps> = ({ 
-  users, 
+const AdminTabs: React.FC<AdminTabsProps> = ({
+  users,
   transactions,
   handleKycAction,
-  activeTab = "users",
+  activeTab,
   onTabChange
 }) => {
-  const [searchTerm, setSearchTerm] = useState("");
+  const navigate = useNavigate();
 
+  const pendingKycCount = users.filter(user => user.kyc_status === 'pending').length;
+  
+  // Update URL when tab changes
   const handleTabChange = (value: string) => {
-    if (onTabChange) {
-      onTabChange(value);
-    }
+    onTabChange(value);
+    navigate(`/admin?tab=${value}`);
   };
 
-  const filteredUsers = users.filter(
-    (user) =>
-      user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.id.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const filteredTransactions = transactions.filter(
-    (transaction) =>
-      transaction.user_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      transaction.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (transaction.reference && transaction.reference.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
-
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-4">
-        <Input
-          placeholder="Search users, transactions, or references..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="max-w-sm"
-        />
-      </div>
+    <Tabs defaultValue={activeTab} onValueChange={handleTabChange}>
+      <TabsList className="grid grid-cols-5 mb-6">
+        <TabsTrigger value="users">Users</TabsTrigger>
+        <TabsTrigger value="transactions">Transactions</TabsTrigger>
+        <TabsTrigger value="kyc" className="relative">
+          KYC Verification
+          {pendingKycCount > 0 && (
+            <span className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
+              {pendingKycCount}
+            </span>
+          )}
+        </TabsTrigger>
+        <TabsTrigger value="rates">Exchange Rates</TabsTrigger>
+        <TabsTrigger value="giftcards">Gift Cards</TabsTrigger>
+      </TabsList>
 
-      <Tabs value={activeTab} onValueChange={handleTabChange}>
-        <TabsList>
-          <TabsTrigger value="users">Users ({users.length})</TabsTrigger>
-          <TabsTrigger value="transactions">Transactions ({transactions.length})</TabsTrigger>
-          <TabsTrigger value="kyc">
-            KYC Verification ({users.filter(u => u.kyc_status === "pending").length})
-          </TabsTrigger>
-          <TabsTrigger value="rates">Rates</TabsTrigger>
-          <TabsTrigger value="giftcards">Gift Cards</TabsTrigger>
-        </TabsList>
-        <TabsContent value="users" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Users</CardTitle>
-              <CardDescription>
-                Manage user accounts and view their details.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <UsersTab filteredUsers={filteredUsers} searchTerm={searchTerm} />
-            </CardContent>
-          </Card>
-        </TabsContent>
-        <TabsContent value="transactions" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Transactions</CardTitle>
-              <CardDescription>
-                View and manage all transactions on the platform.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <TransactionsTab filteredTransactions={filteredTransactions} searchTerm={searchTerm} />
-            </CardContent>
-          </Card>
-        </TabsContent>
-        <TabsContent value="kyc" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>KYC Verification</CardTitle>
-              <CardDescription>
-                Review and approve or reject KYC submissions.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <KycTab 
-                filteredUsers={users.filter(user => user.kyc_status === "pending")}
-                handleKycAction={handleKycAction}
-              />
-            </CardContent>
-          </Card>
-        </TabsContent>
-        <TabsContent value="rates" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Exchange Rates</CardTitle>
-              <CardDescription>
-                Manage platform exchange rates and conversion fees.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <RatesTab />
-            </CardContent>
-          </Card>
-        </TabsContent>
-        <TabsContent value="giftcards" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Gift Card Management</CardTitle>
-              <CardDescription>
-                Manage gift cards and review user submissions.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <GiftCardManagementTab />
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-    </div>
+      <TabsContent value="users">
+        <UsersTab users={users} />
+      </TabsContent>
+
+      <TabsContent value="transactions">
+        <TransactionsTab transactions={transactions} />
+      </TabsContent>
+
+      <TabsContent value="kyc">
+        <KycTab users={users.filter(user => user.kyc_status !== 'not_submitted')} onAction={handleKycAction} />
+      </TabsContent>
+
+      <TabsContent value="rates">
+        <RatesTab />
+      </TabsContent>
+
+      <TabsContent value="giftcards">
+        <GiftCardManagementTab />
+      </TabsContent>
+    </Tabs>
   );
 };
 

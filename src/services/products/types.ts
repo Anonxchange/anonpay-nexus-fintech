@@ -1,5 +1,6 @@
 
-// Gift Card Type
+// Define types for gift card product data
+
 export interface GiftCard {
   id: string;
   name: string;
@@ -8,28 +9,26 @@ export interface GiftCard {
   sellRate: number;
   imageUrl?: string;
   isActive: boolean;
-  currency?: string;
+  currency: string;
 }
 
-// VTU Product Type
 export interface VtuProduct {
   id: string;
   name: string;
   description?: string;
-  category: string;
+  category: 'airtime' | 'data' | 'electricity' | 'cable';
   provider: string;
-  minAmount?: number;
-  maxAmount?: number;
-  imageUrl?: string;
-  isAvailable: boolean;
+  logoUrl?: string;
+  isActive: boolean;
+  hasVariants: boolean;
+  variants?: VtuProductVariant[];
 }
 
-// VTU Bundle Type
-export interface VtuBundle {
+export interface VtuProductVariant {
   id: string;
   name: string;
-  amount: number;
+  price: number;
+  value: string | number;
   description?: string;
-  validity: string;
-  productId: string;
+  isActive: boolean;
 }
