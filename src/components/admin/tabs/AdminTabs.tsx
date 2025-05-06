@@ -11,20 +11,6 @@ import { Profile } from "@/types/auth";
 import { KycAction } from "@/services/products/types"; 
 import { Transaction } from "@/services/transactions/types";
 
-// Define interfaces that match the expected props of each component
-interface UsersTabProps {
-  users: Profile[];
-}
-
-interface TransactionsTabProps {
-  transactions: Transaction[];
-}
-
-interface KycTabProps {
-  users: Profile[];
-  onAction: (userId: string, action: KycAction) => Promise<void>;
-}
-
 interface AdminTabsProps {
   users: Profile[];
   transactions: Transaction[];
