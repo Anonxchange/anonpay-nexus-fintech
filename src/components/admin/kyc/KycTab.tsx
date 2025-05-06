@@ -7,6 +7,7 @@ import { Profile } from "@/types/auth";
 import { useToast } from "@/hooks/use-toast";
 import { CheckCircle, XCircle, Eye } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useKycActions } from "./useKycActions";
 
 interface KycTabProps {
   filteredUsers: Profile[];
@@ -18,33 +19,7 @@ const KycTab: React.FC<KycTabProps> = ({ filteredUsers, handleKycAction }) => {
     (user) => user.kyc_status === "pending"
   );
   
-  const [processingUser, setProcessingUser] = useState<string | null>(null);
-  const { toast } = useToast();
-  const navigate = useNavigate();
-
-  const handleAction = async (userId: string, action: "approve" | "reject") => {
-    try {
-      setProcessingUser(userId);
-      await handleKycAction(userId, action);
-      toast({
-        title: `KYC ${action === "approve" ? "Approved" : "Rejected"}`,
-        description: `User KYC has been ${action === "approve" ? "approved" : "rejected"} successfully.`,
-      });
-    } catch (error) {
-      console.error(`Error in ${action} KYC:`, error);
-      toast({
-        variant: "destructive",
-        title: "Action Failed",
-        description: `Failed to ${action} KYC. Please try again.`,
-      });
-    } finally {
-      setProcessingUser(null);
-    }
-  };
-
-  const handleViewUser = (userId: string) => {
-    navigate(`/admin/users/${userId}`);
-  };
+  const { processingUser, handleAction, handleViewUser } = useKycActions(handleKycAction);
 
   return (
     <div className="space-y-4">
