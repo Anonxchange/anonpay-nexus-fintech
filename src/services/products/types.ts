@@ -19,10 +19,11 @@ export interface VtuProduct {
   category: 'airtime' | 'data' | 'electricity' | 'cable';
   provider: string;
   logoUrl?: string;
+  imageUrl?: string; // Add imageUrl property
   isActive: boolean;
   hasVariants: boolean;
   variants?: VtuProductVariant[];
-  price?: number; // Add price property that was missing
+  price?: number;
 }
 
 export interface VtuProductVariant {
@@ -43,7 +44,7 @@ export interface GiftCardSubmission {
   card_name: string;
   card_code: string;
   amount: number;
-  status: "pending" | "approved" | "rejected"; // This is a union type, not just a string
+  status: "pending" | "approved" | "rejected";
   created_at: string;
   image_url?: string;
 }

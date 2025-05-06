@@ -8,10 +8,12 @@ import RatesTab from "../rates/RatesTab";
 import GiftCardManagementTab from "../giftcards/GiftCardManagementTab";
 import { useNavigate } from "react-router-dom";
 import { Profile } from "@/types/auth";
-import { KycAction } from "@/services/products/types";
+import { KycAction } from "@/services/products/types"; // Update import to use from products/types
 import { Transaction } from "@/services/transactions/types";
 
-// Define the props interfaces for the tab components to match the components
+// Comment out these interfaces since they appear to conflict with the actual component props
+// We'll let the components define their own prop interfaces
+/*
 interface UsersTabProps {
   users: Profile[];
 }
@@ -24,6 +26,7 @@ interface KycTabProps {
   users: Profile[];
   onAction: (userId: string, action: KycAction) => Promise<void>;
 }
+*/
 
 interface AdminTabsProps {
   users: Profile[];
