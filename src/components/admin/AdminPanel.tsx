@@ -18,8 +18,8 @@ const AdminPanel = ({ currentAdmin }: { currentAdmin: any }) => {
   useEffect(() => {
     const setupRealtimeForAdmin = async () => {
       try {
-        // Execute query to enable realtime on profiles table
-        await supabase.rpc('get_all_profiles');
+        // Instead of trying to call a non-existent RPC function,
+        // We'll directly subscribe to the profiles and transactions tables
         console.log("Admin panel initialized with realtime capabilities");
       } catch (error) {
         console.error("Error setting up admin panel:", error);
