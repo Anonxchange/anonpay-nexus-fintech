@@ -1,14 +1,14 @@
 
 import React, { useState, useEffect } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import DepositDialog from "./DepositDialog";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/auth";
-import TransactionHistory from "./TransactionHistory";
-import SettingsPage from "../settings/SettingsPage";
 import { supabase } from "@/integrations/supabase/client";
-import DashboardContent from "./DashboardContent";
+import DepositDialog from "./DepositDialog";
+import { useLocation, useNavigate } from "react-router-dom";
+import AccountTab from "./AccountTab";
+import KycTab from "./KycTab";
+import WithdrawalMethodTab from "./WithdrawalMethodTab";
+import SettingsPage from "../settings/SettingsPage";
 
 interface DashboardProps {
   user: any;
@@ -20,6 +20,12 @@ const DashboardOverview: React.FC<DashboardProps> = ({ user }) => {
   const { profile, refreshProfile } = useAuth();
   const [walletBalance, setWalletBalance] = useState(0);
   const [loading, setLoading] = useState(true);
+  const location = useLocation();
+  const navigate = useNavigate();
+  
+  // Extract tab from URL or set default
+  const searchParams = new URLSearchParams(location.search);
+  const currentTab = searchParams.get('tab') || 'account';
   
   useEffect(() => {
     const fetchUserData = async () => {
@@ -128,50 +134,14 @@ const DashboardOverview: React.FC<DashboardProps> = ({ user }) => {
     setFundDialogOpen(true);
   };
   
-  const handleViewAllTransactions = () => {
-    document.querySelector('[value="history"]')?.dispatchEvent(
-      new MouseEvent('click', { bubbles: true })
-    );
-  };
-
   if (loading) {
     return <div className="flex justify-center items-center h-64">Loading dashboard...</div>;
   }
 
+  // This component now defers to Dashboard.tsx for rendering the correct content
+  
   return (
     <>
-      <Tabs defaultValue="wallet" className="w-full space-y-4">
-        <TabsList>
-          <TabsTrigger value="wallet">Wallet</TabsTrigger>
-          <TabsTrigger value="history">History</TabsTrigger>
-          <TabsTrigger value="settings">Settings</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="wallet" className="space-y-4">
-          <DashboardContent 
-            walletBalance={walletBalance} 
-            onFundWallet={handleFundWallet}
-            onViewAllTransactions={handleViewAllTransactions}
-          />
-        </TabsContent>
-        
-        <TabsContent value="history">
-          <Card>
-            <CardHeader>
-              <CardTitle>Transaction History</CardTitle>
-              <CardDescription>A history of all your transactions</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <TransactionHistory showViewAll={false} />
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="settings">
-          <SettingsPage />
-        </TabsContent>
-      </Tabs>
-      
       <DepositDialog 
         open={fundDialogOpen} 
         onOpenChange={setFundDialogOpen} 
