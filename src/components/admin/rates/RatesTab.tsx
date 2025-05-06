@@ -1,6 +1,6 @@
 
 import React from "react";
-import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Table, TableBody, TableHead, TableHeader, TableRow, TableCell } from "@/components/ui/table";
 import { useRatesManagement } from "./useRatesManagement";
 import RateRow from "./RateRow";
 

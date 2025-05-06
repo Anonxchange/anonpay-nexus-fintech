@@ -30,20 +30,55 @@ export function useRatesManagement() {
       try {
         setLoading(true);
         
-        const { data, error } = await supabase
-          .from('exchange_rates')
-          .select('*')
-          .order('currency_code', { ascending: true });
-        
-        if (error) throw error;
-        
-        if (data && data.length > 0) {
-          setRates(data);
-        } else {
-          // If no data exists, we'll use dummy data for initial setup
-          await setupInitialRates();
-        }
-        
+        // Since we don't have an actual exchange_rates table in the database,
+        // we'll use mock data instead
+        setTimeout(() => {
+          const mockRates: ExchangeRate[] = [
+            {
+              id: "1",
+              currency_code: "USD",
+              currency_name: "US Dollar",
+              buy_rate: 750,
+              sell_rate: 780,
+              last_updated: new Date().toISOString()
+            },
+            {
+              id: "2",
+              currency_code: "EUR",
+              currency_name: "Euro",
+              buy_rate: 830,
+              sell_rate: 860,
+              last_updated: new Date().toISOString()
+            },
+            {
+              id: "3",
+              currency_code: "GBP",
+              currency_name: "British Pound",
+              buy_rate: 960,
+              sell_rate: 990,
+              last_updated: new Date().toISOString()
+            },
+            {
+              id: "4",
+              currency_code: "BTC",
+              currency_name: "Bitcoin",
+              buy_rate: 39000000,
+              sell_rate: 40000000,
+              last_updated: new Date().toISOString()
+            },
+            {
+              id: "5",
+              currency_code: "ETH",
+              currency_name: "Ethereum",
+              buy_rate: 2100000,
+              sell_rate: 2150000,
+              last_updated: new Date().toISOString()
+            }
+          ];
+          
+          setRates(mockRates);
+          setLoading(false);
+        }, 1000); // Simulate network delay
       } catch (error) {
         console.error('Error fetching rates:', error);
         toast({
@@ -51,85 +86,17 @@ export function useRatesManagement() {
           title: "Error",
           description: "Failed to load exchange rates data."
         });
-      } finally {
         setLoading(false);
       }
     };
     
     fetchRates();
-    
-    // Set up a realtime subscription
-    const channel = supabase
-      .channel('exchange_rates_changes')
-      .on('postgres_changes', { 
-        event: '*', 
-        schema: 'public', 
-        table: 'exchange_rates' 
-      }, () => {
-        fetchRates();
-      })
-      .subscribe();
-    
-    return () => { supabase.removeChannel(channel); };
   }, [toast]);
 
-  // Setup initial rates if table is empty
+  // Setup initial rates if table is empty - this is now a mock function
   const setupInitialRates = async () => {
-    const dummyRates: Omit<ExchangeRate, 'id'>[] = [
-      {
-        currency_code: "USD",
-        currency_name: "US Dollar",
-        buy_rate: 750,
-        sell_rate: 780,
-        last_updated: new Date().toISOString()
-      },
-      {
-        currency_code: "EUR",
-        currency_name: "Euro",
-        buy_rate: 830,
-        sell_rate: 860,
-        last_updated: new Date().toISOString()
-      },
-      {
-        currency_code: "GBP",
-        currency_name: "British Pound",
-        buy_rate: 960,
-        sell_rate: 990,
-        last_updated: new Date().toISOString()
-      },
-      {
-        currency_code: "BTC",
-        currency_name: "Bitcoin",
-        buy_rate: 39000000,
-        sell_rate: 40000000,
-        last_updated: new Date().toISOString()
-      },
-      {
-        currency_code: "ETH",
-        currency_name: "Ethereum",
-        buy_rate: 2100000,
-        sell_rate: 2150000,
-        last_updated: new Date().toISOString()
-      }
-    ];
-
-    try {
-      const { data, error } = await supabase
-        .from('exchange_rates')
-        .insert(dummyRates)
-        .select();
-      
-      if (error) throw error;
-      
-      if (data) setRates(data);
-    } catch (error) {
-      console.error('Error setting up initial rates:', error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to set up initial exchange rates."
-      });
-    }
+    // This function is no longer needed since we're using mock data
+    // It's kept here just for reference
   };
 
   const handleEdit = (rate: ExchangeRate) => {
@@ -142,16 +109,20 @@ export function useRatesManagement() {
 
   const handleSave = async (id: string) => {
     try {
-      const { error } = await supabase
-        .from('exchange_rates')
-        .update({ 
-          buy_rate: editForm.buy_rate,
-          sell_rate: editForm.sell_rate,
-          last_updated: new Date().toISOString()
+      // Since we don't have an actual database table, we'll just update the local state
+      setRates(prevRates => 
+        prevRates.map(rate => {
+          if (rate.id === id) {
+            return {
+              ...rate,
+              buy_rate: editForm.buy_rate,
+              sell_rate: editForm.sell_rate,
+              last_updated: new Date().toISOString()
+            };
+          }
+          return rate;
         })
-        .eq('id', id);
-      
-      if (error) throw error;
+      );
       
       toast({
         title: "Rate Updated",

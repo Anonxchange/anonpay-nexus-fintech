@@ -32,3 +32,17 @@ export interface VtuProductVariant {
   description?: string;
   isActive: boolean;
 }
+
+// Add GiftCardSubmission type definition
+export interface GiftCardSubmission {
+  id: string;
+  user_id: string;
+  user_name: string;
+  card_id: string;
+  card_name: string;
+  card_code: string;
+  amount: number;
+  status: "pending" | "approved" | "rejected"; // This is a union type, not just a string
+  created_at: string;
+  image_url?: string;
+}
