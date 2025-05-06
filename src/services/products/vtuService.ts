@@ -110,7 +110,7 @@ export const buyVtuProduct = async (
           {
             user_id: userId,
             amount: -amount, // negative amount for purchase
-            transaction_type: "vtu-purchase",
+            transaction_type: "purchase", // Using a standard type that should be allowed
             reference: `vtu:${provider}:airtime:${phoneNumber}`
           }
         );
@@ -127,7 +127,7 @@ export const buyVtuProduct = async (
       {
         user_id: userId,
         amount: -amount, // negative amount for purchase
-        transaction_type: "vtu-purchase",
+        transaction_type: "purchase", // Using a standard type that should be allowed
         reference: `vtu:${productId}:${phoneNumber}`
       }
     );
