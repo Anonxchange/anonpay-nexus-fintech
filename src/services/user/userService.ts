@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { Profile } from "@/types/auth";
 import { Transaction } from "../transactions/types";
@@ -27,20 +26,21 @@ export const getUserProfile = async (userId: string): Promise<Profile | null> =>
 // Get all profiles for admin view
 export const getAllProfiles = async (): Promise<Profile[]> => {
   try {
-    const { data, error } = await supabase
+    const { data: profiles, error } = await supabase
       .from('profiles')
       .select('*')
       .order('created_at', { ascending: false });
+
+    if (error) throw error;
     
-    if (error) {
-      console.error('Error fetching profiles:', error);
-      return [];
-    }
-    
-    return data as Profile[];
+    // Make sure to properly handle the profile name
+    return profiles.map(profile => ({
+      ...profile,
+      name: profile.name || "Unknown User" // Ensure name has a fallback
+    }));
   } catch (error) {
-    console.error('Error in getAllProfiles:', error);
-    return [];
+    console.error('Error fetching profiles:', error);
+    throw error;
   }
 };
 
