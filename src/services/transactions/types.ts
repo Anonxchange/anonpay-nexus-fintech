@@ -19,6 +19,9 @@ export interface PaymentMethod {
   type: string;
   icon: string;
   is_active: boolean;
+  method_type: string; // Added this to match database column
+  currency: string; // Added this to match database column
+  address: string; // Added this to match database column
 }
 
 export interface UserWallet {
@@ -42,3 +45,6 @@ export interface WithdrawalRequest {
   account_details?: string;
   reference?: string;
 }
+
+// Add the missing constant used in cryptoService.ts
+export const MANUAL_NAIRA_RATE = 1500; // Default value, should be adjusted as needed

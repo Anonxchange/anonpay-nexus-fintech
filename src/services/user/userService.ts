@@ -58,10 +58,13 @@ export const getAllTransactions = async (): Promise<Transaction[]> => {
     }
     
     // Format the data to include user_name
-    const formattedTransactions = data.map(transaction => ({
-      ...transaction,
-      user_name: transaction.profiles?.name || 'Unknown User'
-    }));
+    const formattedTransactions = data.map(transaction => {
+      const profileData = transaction.profiles as any;
+      return {
+        ...transaction,
+        user_name: profileData?.name || 'Unknown User'
+      };
+    });
     
     return formattedTransactions as Transaction[];
   } catch (error) {
