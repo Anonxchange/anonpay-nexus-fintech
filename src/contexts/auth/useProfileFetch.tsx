@@ -1,8 +1,7 @@
 
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Profile } from '../../types/auth';
-import { KycStatus } from '../../App';
+import { Profile, KycStatus } from '../../types/auth';
 
 export const useProfileFetch = () => {
   const [isProfileLoading, setIsProfileLoading] = useState(true);

@@ -2,7 +2,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { useNavigate } from 'react-router-dom';
 import { Profile, AuthContextType } from '../../types/auth';
 import { useAuthOperations } from './useAuthOperations';
 import { useProfileFetch } from './useProfileFetch';
@@ -23,7 +22,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   
-  const navigate = useNavigate();
   const { fetchProfile, refreshProfile: fetchUpdatedProfile } = useProfileFetch();
   const authOperations = useAuthOperations();
   
