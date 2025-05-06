@@ -3,6 +3,7 @@ import { User } from '@supabase/supabase-js';
 
 export type KycStatus = "not_submitted" | "pending" | "approved" | "rejected";
 export type EmailStatus = "verified" | "unverified";
+export type KycAction = "approve" | "reject"; // Add KycAction type
 
 export interface Profile {
   id: string;

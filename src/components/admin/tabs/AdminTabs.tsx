@@ -11,6 +11,20 @@ import { Profile, KycAction } from "@/types/auth";
 import { Transaction } from "@/services/transactions/types";
 import { Bell } from "lucide-react";
 
+// Define the props interfaces for the tab components to match the components
+interface UsersTabProps {
+  users: Profile[];
+}
+
+interface TransactionsTabProps {
+  transactions: Transaction[];
+}
+
+interface KycTabProps {
+  users: Profile[];
+  onAction: (userId: string, action: KycAction) => Promise<void>;
+}
+
 interface AdminTabsProps {
   users: Profile[];
   transactions: Transaction[];
@@ -20,10 +34,10 @@ interface AdminTabsProps {
 }
 
 const AdminTabs: React.FC<AdminTabsProps> = ({
-  users,
-  transactions,
-  handleKycAction,
-  activeTab,
+  users, 
+  transactions, 
+  handleKycAction, 
+  activeTab, 
   onTabChange
 }) => {
   const navigate = useNavigate();

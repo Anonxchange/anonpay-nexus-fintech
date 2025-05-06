@@ -1,7 +1,6 @@
 
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 
 export interface ExchangeRate {
   id: string;
@@ -92,12 +91,6 @@ export function useRatesManagement() {
     
     fetchRates();
   }, [toast]);
-
-  // Setup initial rates if table is empty - this is now a mock function
-  const setupInitialRates = async () => {
-    // This function is no longer needed since we're using mock data
-    // It's kept here just for reference
-  };
 
   const handleEdit = (rate: ExchangeRate) => {
     setEditingId(rate.id);

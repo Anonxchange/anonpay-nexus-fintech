@@ -22,6 +22,7 @@ export interface VtuProduct {
   isActive: boolean;
   hasVariants: boolean;
   variants?: VtuProductVariant[];
+  price?: number; // Add price property that was missing
 }
 
 export interface VtuProductVariant {
@@ -33,7 +34,7 @@ export interface VtuProductVariant {
   isActive: boolean;
 }
 
-// Add GiftCardSubmission type definition
+// Update GiftCardSubmission type to have a union type for status
 export interface GiftCardSubmission {
   id: string;
   user_id: string;

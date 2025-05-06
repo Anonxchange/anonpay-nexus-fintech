@@ -7,9 +7,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import { GiftCard } from "@/services/products/types";
 import { Upload } from "lucide-react";
+import { submitGiftCardForSale } from "@/services/products/giftcardService";
 
 interface GiftCardSellFormProps {
   user: any;
@@ -125,55 +125,35 @@ const GiftCardSellForm: React.FC<GiftCardSellFormProps> = ({ user, availableCard
       const amountValue = parseFloat(cardAmount);
       const localAmount = amountValue * card.sellRate;
       
-      // 1. Upload the image first
-      let imageUrl = null;
-      if (imageFile) {
-        const fileName = `${user.id}-${Date.now()}-${imageFile.name}`;
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('giftcards')
-          .upload(fileName, imageFile);
-          
-        if (uploadError) throw uploadError;
-        
-        // Get the public URL
-        const { data: urlData } = supabase.storage
-          .from('giftcards')
-          .getPublicUrl(fileName);
-          
-        imageUrl = urlData.publicUrl;
-      }
+      // Use the mocked function instead of directly calling Supabase
+      const success = await submitGiftCardForSale(
+        user.id,
+        selectedCard,
+        cardCode,
+        localAmount,
+        amountValue,
+        card.currency || 'USD',
+        additionalInfo,
+        imageFile
+      );
       
-      // 2. Create the submission
-      const { error: submissionError } = await supabase
-        .from('gift_card_submissions')
-        .insert({
-          user_id: user.id,
-          card_id: selectedCard,
-          card_code: cardCode,
-          amount: localAmount,
-          original_amount: amountValue,
-          currency: card.currency || 'USD',
-          additional_info: additionalInfo,
-          image_url: imageUrl,
-          status: 'pending'
+      if (success) {
+        toast({
+          title: "Gift card submitted",
+          description: "Your gift card has been submitted for review"
         });
         
-      if (submissionError) throw submissionError;
-      
-      // Success!
-      toast({
-        title: "Gift card submitted",
-        description: "Your gift card has been submitted for review"
-      });
-      
-      // Reset form and notify parent
-      setSelectedCard("");
-      setCardCode("");
-      setCardAmount("");
-      setAdditionalInfo("");
-      setImageFile(null);
-      setImagePreview(null);
-      onComplete();
+        // Reset form and notify parent
+        setSelectedCard("");
+        setCardCode("");
+        setCardAmount("");
+        setAdditionalInfo("");
+        setImageFile(null);
+        setImagePreview(null);
+        onComplete();
+      } else {
+        throw new Error("Failed to submit gift card");
+      }
       
     } catch (error: any) {
       console.error("Error submitting gift card:", error);

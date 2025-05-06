@@ -1,26 +1,11 @@
-
 import React, { useState, useEffect } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import { Edit2, Save, X, AlertCircle, CheckCircle, Eye } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { GiftCard } from "@/services/products/types";
-
-interface GiftCardSubmission {
-  id: string;
-  user_id: string;
-  user_name: string;
-  card_id: string;
-  card_name: string;
-  card_code: string;
-  amount: number;
-  status: "pending" | "approved" | "rejected";
-  created_at: string;
-  image_url?: string;
-}
+import { GiftCard, GiftCardSubmission } from "@/services/products/types";
 
 interface ExtendedGiftCard extends GiftCard {
   submissionCount?: number;
@@ -80,7 +65,8 @@ const GiftCardManagementTab: React.FC = () => {
       }
     ]);
     
-    setSubmissions([
+    // Use the properly typed submissions with the correct status type
+    const mockSubmissions: GiftCardSubmission[] = [
       {
         id: "1",
         user_id: "user1",
@@ -114,7 +100,9 @@ const GiftCardManagementTab: React.FC = () => {
         status: "rejected",
         created_at: new Date(Date.now() - 172800000).toISOString() // 2 days ago
       }
-    ]);
+    ];
+    
+    setSubmissions(mockSubmissions);
   }, []);
 
   const handleEdit = (card: GiftCard) => {
@@ -346,7 +334,7 @@ const GiftCardManagementTab: React.FC = () => {
                   {submission.status.charAt(0).toUpperCase() + submission.status.slice(1)}
                 </Badge>
               </TableCell>
-              <TableCell>{new Date(submission.created_at).toLocaleString()}</TableCell>
+              <TableCell>{new Date(submission.created_at).toLocaleDateString()}</TableCell>
               <TableCell>
                 <div className="flex space-x-2">
                   {submission.status === "pending" ? (
