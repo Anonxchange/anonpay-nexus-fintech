@@ -7,6 +7,8 @@ export const useAdminSubscriptions = (onDataChange: () => Promise<void>) => {
   const { toast } = useToast();
 
   useEffect(() => {
+    console.log("Setting up admin realtime subscriptions...");
+    
     // Set up real-time listeners for profiles and transactions tables
     const profilesChannel = supabase
       .channel('admin-profiles-changes')
@@ -31,6 +33,8 @@ export const useAdminSubscriptions = (onDataChange: () => Promise<void>) => {
         console.log(`Profiles channel status: ${status}`);
         if (status === 'SUBSCRIBED') {
           console.log('Successfully subscribed to profile changes');
+        } else if (status === 'CHANNEL_ERROR') {
+          console.error('Failed to subscribe to profile changes');
         }
       });
       
@@ -57,6 +61,8 @@ export const useAdminSubscriptions = (onDataChange: () => Promise<void>) => {
         console.log(`Transactions channel status: ${status}`);
         if (status === 'SUBSCRIBED') {
           console.log('Successfully subscribed to transaction changes');
+        } else if (status === 'CHANNEL_ERROR') {
+          console.error('Failed to subscribe to transaction changes');
         }
       });
     
@@ -70,6 +76,7 @@ export const useAdminSubscriptions = (onDataChange: () => Promise<void>) => {
     });
     
     return () => {
+      console.log('Cleaning up admin subscriptions...');
       // Clean up subscriptions when component unmounts
       supabase.removeChannel(profilesChannel);
       supabase.removeChannel(transactionsChannel);

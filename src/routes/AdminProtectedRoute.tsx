@@ -17,17 +17,21 @@ const AdminProtectedRoute: React.FC<AdminProtectedRouteProps> = ({ children }) =
   useEffect(() => {
     const checkAdminAuth = async () => {
       try {
+        console.log("Checking admin authentication status");
         // First check local storage
         const adminData = localStorage.getItem("anonpay_admin");
         if (adminData) {
           try {
             const adminObj = JSON.parse(adminData);
+            console.log("Found admin data in localStorage:", adminObj);
             
             // For local admin account
             if (adminObj.id === "admin-1") {
+              console.log("Local admin account verified");
               setIsAuthenticated(true);
             } else {
               // For Supabase authenticated admin, verify role
+              console.log("Verifying Supabase admin with ID:", adminObj.id);
               const { data: { user } } = await supabase.auth.getUser();
               
               if (user && user.id === adminObj.id) {
@@ -38,15 +42,24 @@ const AdminProtectedRoute: React.FC<AdminProtectedRouteProps> = ({ children }) =
                   .eq('id', user.id)
                   .single();
                   
+                if (error) {
+                  console.error("Error fetching profile:", error);
+                  throw new Error("Failed to verify admin status");
+                }
+                
                 // Safe access to properties
                 const role = profile?.role || 'user';
+                console.log("User role from database:", role);
                 
                 if (role === 'admin') {
+                  console.log("Admin role confirmed in database");
                   setIsAuthenticated(true);
                 } else {
+                  console.error("User does not have admin role in database");
                   throw new Error("User is not an admin");
                 }
               } else {
+                console.error("User ID mismatch or no user found");
                 throw new Error("Invalid admin data");
               }
             }
@@ -63,9 +76,11 @@ const AdminProtectedRoute: React.FC<AdminProtectedRouteProps> = ({ children }) =
           }
         } else {
           // Try to check if current Supabase user is an admin
+          console.log("No admin data in localStorage, checking current Supabase user");
           const { data: { user } } = await supabase.auth.getUser();
           
           if (user) {
+            console.log("Current Supabase user found:", user.id);
             // Check if user has admin role
             const { data: profile, error } = await supabase
               .from('profiles')
@@ -73,10 +88,17 @@ const AdminProtectedRoute: React.FC<AdminProtectedRouteProps> = ({ children }) =
               .eq('id', user.id)
               .single();
               
+            if (error) {
+              console.error("Error fetching profile:", error);
+              throw new Error("Failed to verify admin status");
+            }
+            
             // Safe access to properties
             const role = profile?.role || 'user';
+            console.log("User role from database:", role);
             
-            if (!error && role === 'admin') {
+            if (role === 'admin') {
+              console.log("Admin role confirmed for current user");
               // Store admin data
               const adminData = {
                 email: user.email,
@@ -88,10 +110,12 @@ const AdminProtectedRoute: React.FC<AdminProtectedRouteProps> = ({ children }) =
               localStorage.setItem("anonpay_admin", JSON.stringify(adminData));
               setIsAuthenticated(true);
             } else {
+              console.log("Current user is not an admin");
               setIsAuthenticated(false);
               navigate("/admin-login");
             }
           } else {
+            console.log("No authenticated user found");
             setIsAuthenticated(false);
             navigate("/admin-login");
           }

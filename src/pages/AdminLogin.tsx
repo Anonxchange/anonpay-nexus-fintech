@@ -18,6 +18,7 @@ const AdminLogin: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -32,10 +33,15 @@ const AdminLogin: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setErrorMessage("");
 
     try {
+      console.log("Attempting admin login for:", email);
+      
       // Try both methods: local admin credentials and Supabase auth
       if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
+        console.log("Local admin credentials matched");
+        
         // Store admin data using hardcoded credentials
         const adminData = {
           email: ADMIN_EMAIL,
@@ -54,16 +60,20 @@ const AdminLogin: React.FC = () => {
         navigate("/admin");
       } else {
         // Try to sign in with Supabase
+        console.log("Attempting Supabase login");
         const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
           email,
           password
         });
         
         if (authError) {
+          console.error("Supabase auth error:", authError);
           throw new Error(authError.message);
         }
         
         if (authData?.user) {
+          console.log("Supabase auth successful, checking admin role");
+          
           // Check if user has admin role
           const { data: profileData, error: profileError } = await supabase
             .from('profiles')
@@ -72,11 +82,13 @@ const AdminLogin: React.FC = () => {
             .single();
             
           if (profileError) {
+            console.error("Profile fetch error:", profileError);
             throw new Error('Failed to fetch user profile');
           }
           
           // Safe access to properties
           const role = profileData?.role || 'user';
+          console.log("User role:", role);
           
           if (role === 'admin') {
             // Store admin data
@@ -96,13 +108,17 @@ const AdminLogin: React.FC = () => {
             
             navigate("/admin");
           } else {
+            console.error("User does not have admin role");
             throw new Error('You do not have admin privileges');
           }
         } else {
+          console.error("No user data returned from Supabase");
           throw new Error('Invalid admin credentials');
         }
       }
     } catch (error: any) {
+      console.error("Admin login error:", error);
+      setErrorMessage(error.message || "Invalid admin credentials. Please try again.");
       toast({
         variant: "destructive",
         title: "Login failed",
@@ -130,6 +146,11 @@ const AdminLogin: React.FC = () => {
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
+            {errorMessage && (
+              <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-md text-sm">
+                {errorMessage}
+              </div>
+            )}
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
