@@ -3,6 +3,8 @@ import React from "react";
 import StatisticsCards from "./StatisticsCards";
 import { Profile } from "@/types/auth";
 import { Transaction } from "@/services/transactions/types";
+import { Button } from "@/components/ui/button";
+import { RefreshCw } from "lucide-react";
 
 interface AdminDashboardProps {
   users: Profile[];
@@ -38,12 +40,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </p>
         </div>
         <div>
-          <button 
+          <Button 
             onClick={onRefreshData} 
-            className="bg-anonpay-primary hover:bg-anonpay-primary/90 text-white px-3 py-2 rounded-md text-sm"
+            variant="outline"
+            className="flex items-center gap-2"
           >
+            <RefreshCw className="h-4 w-4" />
             Refresh Data
-          </button>
+          </Button>
         </div>
       </div>
 

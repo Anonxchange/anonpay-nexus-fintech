@@ -5,7 +5,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import StatusBadge from "@/components/ui/StatusBadge";
 import { Profile } from "@/types/auth";
 import { useToast } from "@/hooks/use-toast";
-import { CheckCircle, XCircle } from "lucide-react";
+import { CheckCircle, XCircle, Eye } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface KycTabProps {
   filteredUsers: Profile[];
@@ -19,6 +20,7 @@ const KycTab: React.FC<KycTabProps> = ({ filteredUsers, handleKycAction }) => {
   
   const [processingUser, setProcessingUser] = useState<string | null>(null);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const handleAction = async (userId: string, action: "approve" | "reject") => {
     try {
@@ -38,6 +40,10 @@ const KycTab: React.FC<KycTabProps> = ({ filteredUsers, handleKycAction }) => {
     } finally {
       setProcessingUser(null);
     }
+  };
+
+  const handleViewUser = (userId: string) => {
+    navigate(`/admin/users/${userId}`);
   };
 
   return (
@@ -64,6 +70,15 @@ const KycTab: React.FC<KycTabProps> = ({ filteredUsers, handleKycAction }) => {
                 </TableCell>
                 <TableCell>
                   <div className="flex space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleViewUser(user.id)}
+                      className="text-blue-600 hover:text-blue-700 border-blue-200 hover:border-blue-400"
+                    >
+                      <Eye className="h-4 w-4 mr-1" />
+                      View
+                    </Button>
                     <Button
                       variant="outline"
                       size="sm"

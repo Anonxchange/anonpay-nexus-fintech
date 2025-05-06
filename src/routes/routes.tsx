@@ -8,6 +8,7 @@ import Login from "@/pages/Login";
 import SignUp from "@/pages/SignUp";
 import Dashboard from "@/pages/Dashboard";
 import Admin from "@/pages/Admin";
+import AdminUserDetails from "@/pages/AdminUserDetails";
 import NotFound from "@/pages/NotFound";
 import ForgotPassword from "@/pages/ForgotPassword";
 import ResetPassword from "@/pages/ResetPassword";
@@ -74,6 +75,16 @@ const router = createBrowserRouter([
       <RootLayout>
         <AdminProtectedRoute>
           <Admin />
+        </AdminProtectedRoute>
+      </RootLayout>
+    ),
+  },
+  {
+    path: "/admin/users/:userId",
+    element: (
+      <RootLayout>
+        <AdminProtectedRoute>
+          <AdminUserDetails />
         </AdminProtectedRoute>
       </RootLayout>
     ),

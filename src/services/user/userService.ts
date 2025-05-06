@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { KycStatus, Profile } from "@/types/auth";
 import { Transaction } from "../transactions/types";
@@ -103,7 +104,7 @@ export const getAllProfiles = async (adminId: string): Promise<Profile[]> => {
   }
 };
 
-// Get all transactions for admin view - updated to use auth.uid() with RLS
+// Get all transactions for admin view
 export const getAllTransactions = async (adminId: string): Promise<Transaction[]> => {
   try {
     // First check if the user is an admin
@@ -192,5 +193,116 @@ export const updateUserProfile = async (userId: string, profileData: Partial<Pro
   } catch (error) {
     console.error('Error in updateUserProfile:', error);
     return false;
+  }
+};
+
+// Add advanced admin functions for managing users
+
+// Update user wallet balance directly (admin only)
+export const updateUserWalletBalance = async (adminId: string, userId: string, newBalance: number): Promise<boolean> => {
+  try {
+    // First check if the user is an admin
+    const { data: adminData, error: adminError } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', adminId)
+      .single();
+
+    // Safe access to role property
+    const role = adminData?.role || 'user';
+
+    if (adminError || role !== 'admin') {
+      console.error('Error: Not authorized as admin');
+      return false;
+    }
+    
+    const { error } = await supabase
+      .from('profiles')
+      .update({ 
+        wallet_balance: newBalance,
+        updated_at: new Date().toISOString() 
+      })
+      .eq('id', userId);
+    
+    if (error) {
+      console.error('Error updating user wallet balance:', error);
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Error in updateUserWalletBalance:', error);
+    return false;
+  }
+};
+
+// Delete user transaction (admin only)
+export const deleteUserTransaction = async (adminId: string, transactionId: string): Promise<boolean> => {
+  try {
+    // First check if the user is an admin
+    const { data: adminData, error: adminError } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', adminId)
+      .single();
+
+    // Safe access to role property
+    const role = adminData?.role || 'user';
+
+    if (adminError || role !== 'admin') {
+      console.error('Error: Not authorized as admin');
+      return false;
+    }
+    
+    const { error } = await supabase
+      .from('transactions')
+      .delete()
+      .eq('id', transactionId);
+    
+    if (error) {
+      console.error('Error deleting transaction:', error);
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Error in deleteUserTransaction:', error);
+    return false;
+  }
+};
+
+// Get detailed user profile by ID (admin only)
+export const getUserDetailsByAdmin = async (adminId: string, userId: string): Promise<Profile | null> => {
+  try {
+    // First check if the user is an admin
+    const { data: adminData, error: adminError } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', adminId)
+      .single();
+
+    // Safe access to role property
+    const role = adminData?.role || 'user';
+
+    if (adminError || role !== 'admin') {
+      console.error('Error: Not authorized as admin');
+      return null;
+    }
+    
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
+    
+    if (error) {
+      console.error('Error fetching user details:', error);
+      return null;
+    }
+    
+    return data as Profile;
+  } catch (error) {
+    console.error('Error in getUserDetailsByAdmin:', error);
+    return null;
   }
 };
