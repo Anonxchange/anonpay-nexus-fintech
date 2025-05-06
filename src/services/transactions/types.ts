@@ -1,27 +1,44 @@
 
-// Transaction types
-export type TransactionType = "deposit" | "withdrawal" | "fund";
-export type TransactionStatus = "pending" | "completed" | "failed";
-
-// Transaction interface
 export interface Transaction {
   id: string;
   user_id: string;
   amount: number;
-  type: TransactionType;
-  reference?: string;
-  status: TransactionStatus;
+  type: string;
+  reference: string;
+  status: string;
   created_at: string;
-  updated_at?: string;
+  user_name?: string;
+  profiles?: {
+    name: string;
+  };
 }
 
-// Payment method interface
 export interface PaymentMethod {
   id: string;
-  method_type: string;
-  currency: string;
-  address: string;
+  name: string;
+  type: string;
+  icon: string;
+  is_active: boolean;
 }
 
-// Constants
-export const MANUAL_NAIRA_RATE = 1590;
+export interface UserWallet {
+  id: string;
+  user_id: string;
+  balance: number;
+  currency: string;
+  last_updated: string;
+}
+
+export interface DepositRequest {
+  amount: number;
+  payment_method: string;
+  reference?: string;
+  currency?: string;
+}
+
+export interface WithdrawalRequest {
+  amount: number;
+  destination: string;
+  account_details?: string;
+  reference?: string;
+}

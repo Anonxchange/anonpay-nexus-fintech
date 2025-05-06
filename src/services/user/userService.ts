@@ -49,7 +49,7 @@ export const getAllTransactions = async (): Promise<Transaction[]> => {
   try {
     const { data, error } = await supabase
       .from('transactions')
-      .select('*, profiles(name)')
+      .select('*, profiles:user_id(name)')
       .order('created_at', { ascending: false });
     
     if (error) {
