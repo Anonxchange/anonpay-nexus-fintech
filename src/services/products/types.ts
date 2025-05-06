@@ -1,4 +1,5 @@
 
+
 // Define types for gift card product data
 
 export interface GiftCard {
@@ -35,6 +36,20 @@ export interface VtuProductVariant {
   isActive: boolean;
 }
 
+// Ebills Africa API interfaces
+export interface EbillsVtuRequest {
+  network: string;
+  phone: string;
+  amount: number;
+}
+
+export interface EbillsVtuResponse {
+  success: boolean;
+  message: string;
+  data?: any;
+  error?: string;
+}
+
 // Update GiftCardSubmission type to have a union type for status
 export interface GiftCardSubmission {
   id: string;
@@ -51,3 +66,4 @@ export interface GiftCardSubmission {
 
 // Add KycAction type to fix the import in AdminTabs.tsx
 export type KycAction = "approve" | "reject";
+

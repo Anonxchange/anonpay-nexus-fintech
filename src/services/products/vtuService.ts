@@ -1,6 +1,7 @@
 
+
 import { supabase } from "@/integrations/supabase/client";
-import { VtuProduct, VtuProductVariant } from "./types";
+import { VtuProduct, VtuProductVariant, EbillsVtuRequest, EbillsVtuResponse } from "./types";
 
 // Mock data for VTU products
 const mockVtuProducts: VtuProduct[] = [
@@ -85,6 +86,29 @@ export const getVtuProductsByCategory = async (category: string): Promise<VtuPro
   }
 };
 
+// Buy VTU product with Ebills Africa API
+export const buyVtuWithEbills = async (
+  request: EbillsVtuRequest
+): Promise<EbillsVtuResponse> => {
+  try {
+    const { data, error } = await supabase.functions.invoke('ebills-vtu', {
+      body: request,
+    });
+
+    if (error) {
+      throw new Error(error.message || 'Failed to process VTU request');
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error buying VTU product with Ebills:', error);
+    return {
+      success: false,
+      message: error.message || 'An error occurred while processing your request',
+    };
+  }
+};
+
 // Buy VTU product
 export const buyVtuProduct = async (
   userId: string, 
@@ -115,3 +139,4 @@ export const buyVtuProduct = async (
     return false;
   }
 };
+

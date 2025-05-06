@@ -7,8 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { VtuProduct } from "@/services/products/types";
-import { getVtuProducts, getVtuProductsByCategory, buyVtuProduct } from "@/services/products/vtuService";
-import { Phone, Wifi, Tv, Lightbulb, Loader2 } from "lucide-react";
+import { getVtuProducts, getVtuProductsByCategory, buyVtuProduct, buyVtuWithEbills } from "@/services/products/vtuService";
+import { Phone, Wifi, Tv, Lightbulb, Loader2, Check, AlertCircle } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 interface VtuServiceProps {
@@ -23,6 +23,14 @@ const networkProviders = [
   { id: "9mobile", name: "9Mobile", logo: "🟠" },
 ];
 
+// Network provider mapping for Ebills API
+const ebillsNetworkMap = {
+  mtn: "MTN",
+  airtel: "AIRTEL",
+  glo: "GLO",
+  "9mobile": "9MOBILE",
+};
+
 const VtuService: React.FC<VtuServiceProps> = ({ user }) => {
   const [category, setCategory] = useState("airtime");
   const [products, setProducts] = useState<VtuProduct[]>([]);
@@ -33,6 +41,13 @@ const VtuService: React.FC<VtuServiceProps> = ({ user }) => {
   const [processing, setProcessing] = useState(false);
   const [selectedProvider, setSelectedProvider] = useState("");
   const [currentStep, setCurrentStep] = useState(1); // Step 1: Provider, Step 2: Details
+  const [transactionStatus, setTransactionStatus] = useState<{
+    status: "idle" | "loading" | "success" | "error";
+    message: string;
+  }>({
+    status: "idle",
+    message: "",
+  });
   const { toast } = useToast();
   
   useEffect(() => {
@@ -42,6 +57,7 @@ const VtuService: React.FC<VtuServiceProps> = ({ user }) => {
     setSelectedProduct(null);
     setAmount("");
     setPhoneNumber("");
+    setTransactionStatus({ status: "idle", message: "" });
     
     const loadProducts = async () => {
       setLoading(true);
@@ -86,14 +102,15 @@ const VtuService: React.FC<VtuServiceProps> = ({ user }) => {
   
   const handleBackToProviders = () => {
     setCurrentStep(1);
+    setTransactionStatus({ status: "idle", message: "" });
   };
   
   const handleBuy = async () => {
-    if (!selectedProduct) {
+    if (!selectedProvider) {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Please select a product"
+        description: "Please select a network provider"
       });
       return;
     }
@@ -107,10 +124,10 @@ const VtuService: React.FC<VtuServiceProps> = ({ user }) => {
       return;
     }
     
-    let buyAmount = selectedProduct.price;
+    let buyAmount = selectedProduct?.price || 0;
     
     // For airtime, use user-input amount
-    if (selectedProduct.category === "airtime") {
+    if (category === "airtime") {
       const inputAmount = parseFloat(amount);
       if (isNaN(inputAmount) || inputAmount < 100) {
         toast({
@@ -124,29 +141,70 @@ const VtuService: React.FC<VtuServiceProps> = ({ user }) => {
     }
     
     setProcessing(true);
+    setTransactionStatus({ status: "loading", message: "Processing your request..." });
     
     try {
-      const success = await buyVtuProduct(user.id, selectedProduct.id, buyAmount, phoneNumber);
-      
-      if (success) {
-        toast({
-          title: "Purchase Successful",
-          description: `Your ${selectedProduct.name} purchase was successful`,
+      // Use the Ebills Africa API for airtime purchases
+      if (category === "airtime") {
+        const network = ebillsNetworkMap[selectedProvider] || selectedProvider.toUpperCase();
+        
+        const response = await buyVtuWithEbills({
+          network,
+          phone: phoneNumber,
+          amount: buyAmount
         });
+        
+        if (response.success) {
+          setTransactionStatus({
+            status: "success",
+            message: response.message || "Your airtime purchase was successful"
+          });
+          
+          toast({
+            title: "Purchase Successful",
+            description: response.message || "Your airtime purchase was successful",
+          });
+        } else {
+          throw new Error(response.message || "Transaction failed");
+        }
+      } else {
+        // Use the original implementation for other categories
+        const success = await buyVtuProduct(user.id, selectedProduct?.id || "", buyAmount, phoneNumber);
+        
+        if (success) {
+          setTransactionStatus({
+            status: "success",
+            message: `Your ${selectedProduct?.name} purchase was successful`
+          });
+          
+          toast({
+            title: "Purchase Successful",
+            description: `Your ${selectedProduct?.name} purchase was successful`,
+          });
+        } else {
+          throw new Error("Transaction failed");
+        }
+      }
+      
+      // Reset form on success
+      if (currentStep === 1) {
         setAmount("");
         setPhoneNumber("");
         setSelectedProduct(null);
         setSelectedProvider("");
-        setCurrentStep(1);
-      } else {
-        throw new Error("Transaction failed");
       }
     } catch (error) {
       console.error("Failed to buy VTU product:", error);
+      
+      setTransactionStatus({
+        status: "error",
+        message: error.message || "Failed to complete your purchase. Please try again."
+      });
+      
       toast({
         variant: "destructive",
         title: "Purchase Failed",
-        description: "Insufficient funds or network error"
+        description: error.message || "Failed to complete your purchase. Please try again."
       });
     } finally {
       setProcessing(false);
@@ -231,6 +289,7 @@ const VtuService: React.FC<VtuServiceProps> = ({ user }) => {
             size="sm" 
             onClick={handleBackToProviders}
             className="mr-2"
+            disabled={processing}
           >
             ← Back
           </Button>
@@ -246,6 +305,22 @@ const VtuService: React.FC<VtuServiceProps> = ({ user }) => {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
+          {/* Transaction Status */}
+          {transactionStatus.status !== "idle" && (
+            <div className={`p-4 rounded-md mb-4 ${
+              transactionStatus.status === "loading" ? "bg-blue-50 text-blue-700" :
+              transactionStatus.status === "success" ? "bg-green-50 text-green-700" :
+              "bg-red-50 text-red-700"
+            }`}>
+              <div className="flex items-center">
+                {transactionStatus.status === "loading" && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {transactionStatus.status === "success" && <Check className="mr-2 h-4 w-4" />}
+                {transactionStatus.status === "error" && <AlertCircle className="mr-2 h-4 w-4" />}
+                <p>{transactionStatus.message}</p>
+              </div>
+            </div>
+          )}
+
           <div className="space-y-2">
             <Label htmlFor="phone-number">Phone Number</Label>
             <Input
@@ -253,6 +328,7 @@ const VtuService: React.FC<VtuServiceProps> = ({ user }) => {
               placeholder="e.g., 08012345678"
               value={phoneNumber}
               onChange={(e) => setPhoneNumber(e.target.value)}
+              disabled={processing}
             />
           </div>
           
@@ -266,6 +342,7 @@ const VtuService: React.FC<VtuServiceProps> = ({ user }) => {
                 min="100"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
+                disabled={processing}
               />
             </div>
           )}
