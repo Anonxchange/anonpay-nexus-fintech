@@ -59,19 +59,56 @@ const Navbar: React.FC<NavbarProps> = () => {
           <NavigationMenu>
             <NavigationMenuList>
               <NavigationMenuItem>
+                <Link to="/about">
+                  <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                    About
+                  </NavigationMenuLink>
+                </Link>
+              </NavigationMenuItem>
+              <NavigationMenuItem>
+                <Link to="/services/rate-checker">
+                  <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                    Rates
+                  </NavigationMenuLink>
+                </Link>
+              </NavigationMenuItem>
+              <NavigationMenuItem>
+                <Link to="/contact">
+                  <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                    Contact
+                  </NavigationMenuLink>
+                </Link>
+              </NavigationMenuItem>
+              <NavigationMenuItem>
+                <Link to="/blog">
+                  <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                    Blog
+                  </NavigationMenuLink>
+                </Link>
+              </NavigationMenuItem>
+              <NavigationMenuItem>
+                <Link to="/contact">
+                  <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                    Support
+                  </NavigationMenuLink>
+                </Link>
+              </NavigationMenuItem>
+              <NavigationMenuItem>
                 <Link to="/services">
                   <NavigationMenuLink className={navigationMenuTriggerStyle()}>
                     Services
                   </NavigationMenuLink>
                 </Link>
               </NavigationMenuItem>
-              <NavigationMenuItem>
-                <Link to="/dashboard">
-                  <NavigationMenuLink className={navigationMenuTriggerStyle()}>
-                    Dashboard
-                  </NavigationMenuLink>
-                </Link>
-              </NavigationMenuItem>
+              {user && (
+                <NavigationMenuItem>
+                  <Link to="/dashboard">
+                    <NavigationMenuLink className={navigationMenuTriggerStyle()}>
+                      Dashboard
+                    </NavigationMenuLink>
+                  </Link>
+                </NavigationMenuItem>
+              )}
               {isAdmin && (
                 <NavigationMenuItem>
                   <Link to="/admin">
@@ -119,69 +156,158 @@ const Navbar: React.FC<NavbarProps> = () => {
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <>
+            <div className="flex items-center space-x-3">
               <Button variant="outline" onClick={() => navigate("/login")}>
                 Login
               </Button>
               <Button onClick={() => navigate("/signup")}>Sign Up</Button>
-            </>
+            </div>
           )}
         </div>
         
-        {/* Mobile Menu */}
+        {/* Mobile Menu Button */}
         <div className="md:hidden">
           <Button variant="ghost" onClick={toggleMenu}>
             {isMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </Button>
-          
-          {isMenuOpen && (
-            <div className="absolute top-full right-0 bg-white shadow-md rounded-md p-4 mt-2 w-48">
-              <Link to="/services" className="block py-2 hover:bg-gray-100 rounded-md">
+        </div>
+      </div>
+      
+      {/* Mobile Menu */}
+      {isMenuOpen && (
+        <div className="md:hidden bg-white shadow-lg border-t">
+          <div className="container mx-auto px-4 py-3">
+            <div className="space-y-2">
+              <Link 
+                to="/about"
+                className="block py-2 hover:bg-gray-100 rounded-md px-3"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                About
+              </Link>
+              <Link 
+                to="/services/rate-checker"
+                className="block py-2 hover:bg-gray-100 rounded-md px-3"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Rates
+              </Link>
+              <Link 
+                to="/contact"
+                className="block py-2 hover:bg-gray-100 rounded-md px-3"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Contact
+              </Link>
+              <Link 
+                to="/blog"
+                className="block py-2 hover:bg-gray-100 rounded-md px-3"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Blog
+              </Link>
+              <Link 
+                to="/contact"
+                className="block py-2 hover:bg-gray-100 rounded-md px-3"
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Support
+              </Link>
+              <Link 
+                to="/services"
+                className="block py-2 hover:bg-gray-100 rounded-md px-3"
+                onClick={() => setIsMenuOpen(false)}
+              >
                 Services
               </Link>
-              <Link to="/dashboard" className="block py-2 hover:bg-gray-100 rounded-md">
-                Dashboard
-              </Link>
+              {user && (
+                <Link 
+                  to="/dashboard"
+                  className="block py-2 hover:bg-gray-100 rounded-md px-3"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Dashboard
+                </Link>
+              )}
               {isAdmin && (
-                <Link to="/admin" className="block py-2 hover:bg-gray-100 rounded-md">
+                <Link 
+                  to="/admin"
+                  className="block py-2 hover:bg-gray-100 rounded-md px-3"
+                  onClick={() => setIsMenuOpen(false)}
+                >
                   Admin Panel
                 </Link>
               )}
               
-              {user ? (
-                <>
-                  <DropdownMenuSeparator />
-                  <button onClick={() => navigate("/dashboard")} className="block py-2 hover:bg-gray-100 rounded-md w-full text-left">
-                    My Account
-                  </button>
-                  <button onClick={() => navigate("/dashboard?tab=settings")} className="block py-2 hover:bg-gray-100 rounded-md w-full text-left">
-                    Settings
-                  </button>
-                  {isAdmin && (
-                    <button onClick={() => navigate("/admin")} className="block py-2 hover:bg-gray-100 rounded-md w-full text-left">
-                      Admin Panel
+              <div className="pt-3 border-t border-gray-100">
+                {user ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center px-3 py-2">
+                      <Avatar className="h-8 w-8 mr-3">
+                        <AvatarImage src={profile?.avatar_url || ""} alt={profile?.name || "User Avatar"} />
+                        <AvatarFallback>{profile?.name?.charAt(0).toUpperCase() || "U"}</AvatarFallback>
+                      </Avatar>
+                      <div className="font-medium">{profile?.name || user.email}</div>
+                    </div>
+                    <button 
+                      className="w-full text-left px-3 py-2 hover:bg-gray-100 rounded-md flex items-center"
+                      onClick={() => {
+                        navigate("/dashboard");
+                        setIsMenuOpen(false);
+                      }}
+                    >
+                      <User className="mr-2 h-4 w-4" />
+                      <span>My Account</span>
                     </button>
-                  )}
-                  <DropdownMenuSeparator />
-                  <button onClick={() => signOut()} className="block py-2 hover:bg-gray-100 rounded-md w-full text-left">
-                    Log out
-                  </button>
-                </>
-              ) : (
-                <>
-                  <DropdownMenuSeparator />
-                  <Link to="/login" className="block py-2 hover:bg-gray-100 rounded-md">
-                    Login
-                  </Link>
-                  <Link to="/signup" className="block py-2 hover:bg-gray-100 rounded-md">
-                    Sign Up
-                  </Link>
-                </>
-              )}
+                    <button 
+                      className="w-full text-left px-3 py-2 hover:bg-gray-100 rounded-md flex items-center"
+                      onClick={() => {
+                        navigate("/dashboard?tab=settings");
+                        setIsMenuOpen(false);
+                      }}
+                    >
+                      <Settings className="mr-2 h-4 w-4" />
+                      <span>Settings</span>
+                    </button>
+                    <button 
+                      className="w-full text-left px-3 py-2 hover:bg-gray-100 rounded-md flex items-center text-red-500"
+                      onClick={() => {
+                        signOut();
+                        setIsMenuOpen(false);
+                      }}
+                    >
+                      <LogOut className="mr-2 h-4 w-4" />
+                      <span>Log out</span>
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex flex-col space-y-2">
+                    <Button 
+                      variant="outline" 
+                      className="w-full justify-center"
+                      onClick={() => {
+                        navigate("/login");
+                        setIsMenuOpen(false);
+                      }}
+                    >
+                      Login
+                    </Button>
+                    <Button 
+                      className="w-full justify-center"
+                      onClick={() => {
+                        navigate("/signup");
+                        setIsMenuOpen(false);
+                      }}
+                    >
+                      Sign Up
+                    </Button>
+                  </div>
+                )}
+              </div>
             </div>
-          )}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };
