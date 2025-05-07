@@ -9,6 +9,39 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      kyc_submissions: {
+        Row: {
+          admin_notes: string | null
+          created_at: string
+          document_type: string
+          document_url: string
+          id: string
+          status: Database["public"]["Enums"]["kyc_status_type"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          created_at?: string
+          document_type: string
+          document_url: string
+          id?: string
+          status?: Database["public"]["Enums"]["kyc_status_type"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_notes?: string | null
+          created_at?: string
+          document_type?: string
+          document_url?: string
+          id?: string
+          status?: Database["public"]["Enums"]["kyc_status_type"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       payment_methods: {
         Row: {
           address: string
@@ -127,7 +160,7 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      kyc_status_type: "approved" | "pending" | "rejected" | "not_submitted"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -242,6 +275,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      kyc_status_type: ["approved", "pending", "rejected", "not_submitted"],
+    },
   },
 } as const
