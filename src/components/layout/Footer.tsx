@@ -86,9 +86,6 @@ const Footer = () => {
             <Link to="/contact" className="text-gray-600 text-sm hover:text-anonpay-primary">
               Support
             </Link>
-            <Link to="/admin-login" className="text-gray-600 text-sm hover:text-anonpay-primary">
-              Admin
-            </Link>
           </div>
         </div>
       </div>
