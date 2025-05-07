@@ -31,35 +31,20 @@ export const getUserActivityLog = async (adminId: string, userId: string): Promi
       return [];
     }
     
-    // For KYC submissions, we'll handle them separately
-    // We'll create a properly structured empty array for consistency
+    // Fetch KYC submissions from our newly created table
     const kycSubmissions: any[] = [];
     
-    // Instead of using RPC, which doesn't exist yet, we'll use a safe approach
-    // In the future, you could create the RPC function in Supabase
-    try {
-      // For now, we'll just log that KYC submissions functionality is not available
-      console.log('Note: KYC submissions functionality not fully implemented yet');
+    // Now that we have the table, we can query it directly
+    const { data: kycData, error: kycError } = await supabase
+      .from('kyc_submissions')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
       
-      // In the future, you could implement this by:
-      // 1. Creating a kyc_submissions table in Supabase
-      // 2. Adding it to the Database types in supabase/types.ts
-      // 3. Then querying it directly with:
-      /*
-      const { data: kycData, error: kycError } = await supabase
-        .from('kyc_submissions')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false });
-        
-      if (!kycError && kycData) {
-        kycSubmissions.push(...kycData);
-      }
-      */
-      
-    } catch (error) {
-      console.log('Error handling KYC submissions:', error);
-      // We'll continue without KYC data
+    if (!kycError && kycData) {
+      kycSubmissions.push(...kycData);
+    } else if (kycError) {
+      console.error('Error fetching KYC submissions:', kycError);
     }
     
     // Combine all activities with a type marker
