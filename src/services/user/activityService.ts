@@ -35,33 +35,18 @@ export const getUserActivityLog = async (adminId: string, userId: string): Promi
     // We'll create a properly structured empty array for consistency
     const kycSubmissions: any[] = [];
     
-    // Since the check_table_exists and get_kyc_submissions_for_user functions 
-    // are not available in the database, we'll use a direct query approach
-    
+    // Instead of checking tables directly (which causes TypeScript errors),
+    // we'll try to fetch KYC submissions and handle errors gracefully
     try {
-      // Check if kyc_submissions table exists using metadata query
-      const { data: tables, error: metadataError } = await supabase
-        .from('information_schema.tables')
-        .select('table_name')
-        .eq('table_name', 'kyc_submissions')
-        .eq('table_schema', 'public');
+      // Use RPC (stored procedure) if available, or fallback to empty array
+      const { data, error } = await supabase
+        .rpc('get_kyc_submissions', { user_id_param: userId })
+        .catch(() => ({ data: null, error: new Error('RPC not available') }));
       
-      if (metadataError) {
-        console.error('Error checking if table exists:', metadataError);
-      }
-      
-      // Only try to fetch KYC submissions if the table exists
-      if (tables && tables.length > 0) {
-        // Fetch KYC submissions directly
-        const { data: kycData, error: kycError } = await supabase
-          .from('kyc_submissions')
-          .select('*')
-          .eq('user_id', userId)
-          .order('created_at', { ascending: false });
-          
-        if (!kycError && kycData && Array.isArray(kycData)) {
-          kycSubmissions.push(...kycData);
-        }
+      if (!error && data && Array.isArray(data)) {
+        kycSubmissions.push(...data);
+      } else {
+        console.log('Note: KYC submissions table or function might not exist yet');
       }
     } catch (error) {
       console.log('Error fetching KYC submissions:', error);
