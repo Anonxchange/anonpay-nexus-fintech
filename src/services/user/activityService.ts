@@ -35,21 +35,30 @@ export const getUserActivityLog = async (adminId: string, userId: string): Promi
     // We'll create a properly structured empty array for consistency
     const kycSubmissions: any[] = [];
     
-    // Instead of checking tables directly (which causes TypeScript errors),
-    // we'll try to fetch KYC submissions and handle errors gracefully
+    // Instead of using RPC, which doesn't exist yet, we'll use a safe approach
+    // In the future, you could create the RPC function in Supabase
     try {
-      // Use RPC (stored procedure) if available, or fallback to empty array
-      const { data, error } = await supabase
-        .rpc('get_kyc_submissions', { user_id_param: userId })
-        .catch(() => ({ data: null, error: new Error('RPC not available') }));
+      // For now, we'll just log that KYC submissions functionality is not available
+      console.log('Note: KYC submissions functionality not fully implemented yet');
       
-      if (!error && data && Array.isArray(data)) {
-        kycSubmissions.push(...data);
-      } else {
-        console.log('Note: KYC submissions table or function might not exist yet');
+      // In the future, you could implement this by:
+      // 1. Creating a kyc_submissions table in Supabase
+      // 2. Adding it to the Database types in supabase/types.ts
+      // 3. Then querying it directly with:
+      /*
+      const { data: kycData, error: kycError } = await supabase
+        .from('kyc_submissions')
+        .select('*')
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false });
+        
+      if (!kycError && kycData) {
+        kycSubmissions.push(...kycData);
       }
+      */
+      
     } catch (error) {
-      console.log('Error fetching KYC submissions:', error);
+      console.log('Error handling KYC submissions:', error);
       // We'll continue without KYC data
     }
     
