@@ -2,6 +2,7 @@
 import { RealtimeChannel } from "@supabase/supabase-js";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { Notification } from "@/types/notification";
 
 /**
  * Custom hook to manage Supabase realtime channel subscriptions
@@ -59,17 +60,19 @@ export const handleSupabaseError = (error: any, fallbackMessage: string = "An er
  * @param userId The user ID
  * @returns Array of notifications
  */
-export const fetchUserNotifications = async (userId: string): Promise<any[]> => {
+export const fetchUserNotifications = async (userId: string): Promise<Notification[]> => {
   try {
+    // Use a direct query with .rpc() but cast it properly
     const { data, error } = await supabase
-      .rpc('get_user_notifications', { p_user_id: userId });
+      .rpc('get_user_notifications', { p_user_id: userId }) as { data: any, error: any };
     
     if (error) {
       console.error('Error fetching notifications via RPC:', error);
       return [];
     }
     
-    return data || [];
+    // Make sure we have an array to return
+    return Array.isArray(data) ? data as Notification[] : [];
   } catch (error) {
     console.error('Exception in fetchUserNotifications:', error);
     return [];

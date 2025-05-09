@@ -8,7 +8,7 @@ import { fetchUserNotifications } from "@/utils/supabaseHelpers";
 export const getUserNotifications = async (userId: string): Promise<Notification[]> => {
   try {
     const data = await fetchUserNotifications(userId);
-    return data as Notification[];
+    return data;
   } catch (error) {
     console.error('Error in getUserNotifications:', error);
     return [];
@@ -18,10 +18,10 @@ export const getUserNotifications = async (userId: string): Promise<Notification
 // Mark notification as read
 export const markNotificationAsRead = async (notificationId: string): Promise<boolean> => {
   try {
-    // Use direct SQL execution to avoid type issues
+    // Use direct SQL execution with type casting to avoid type issues
     const { error } = await supabase.rpc('mark_notification_read', { 
       notification_id: notificationId 
-    });
+    }) as { data: any, error: any };
     
     if (error) {
       console.error('Error marking notification as read:', error);
@@ -38,10 +38,10 @@ export const markNotificationAsRead = async (notificationId: string): Promise<bo
 // Mark all notifications as read
 export const markAllNotificationsAsRead = async (userId: string): Promise<boolean> => {
   try {
-    // Use direct SQL execution to avoid type issues
+    // Use direct SQL execution with type casting to avoid type issues
     const { error } = await supabase.rpc('mark_all_notifications_read', { 
       user_id_param: userId 
-    });
+    }) as { data: any, error: any };
     
     if (error) {
       console.error('Error marking all notifications as read:', error);

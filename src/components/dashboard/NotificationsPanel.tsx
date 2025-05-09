@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/auth";
 import { Bell, Check } from "lucide-react";
@@ -11,18 +10,9 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client"; // Added missing import
+import { supabase } from "@/integrations/supabase/client";
 import { getUserNotifications, markAllNotificationsAsRead, markNotificationAsRead, useNotifications } from "@/services/user/notificationService";
-
-interface Notification {
-  id: string;
-  title: string;
-  message: string;
-  created_at: string;
-  read: boolean;
-  action_link: string | null;
-  notification_type: string;
-}
+import { Notification } from "@/types/notification";
 
 const NotificationsPanel: React.FC = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);

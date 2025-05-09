@@ -1,6 +1,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { Notification } from "@/types/notification";
+import { fetchUserNotifications } from "@/utils/supabaseHelpers";
 
 export interface Activity {
   id: string;
@@ -54,29 +55,26 @@ export const getUserActivityLog = async (adminId: string, userId: string): Promi
       console.error('Error fetching KYC submissions:', kycError);
     }
     
-    // Fetch notifications - using custom RPC function to avoid type issues
-    const { data: notificationsData, error: notificationsError } = await supabase
-      .rpc('get_user_notifications', { p_user_id: userId });
+    // Fetch notifications using the utility function that handles the RPC
+    const notificationsData = await fetchUserNotifications(userId);
       
-    if (notificationsError) {
-      console.error('Error fetching notifications:', notificationsError);
-    }
-    
     // Combine all activities with appropriate type markers
     const allActivities = [
       ...(transactions || []).map(t => ({ ...t, activity_type: 'transaction' })),
       ...(kycData || []).map(k => ({ ...k, activity_type: 'kyc_submission' })),
-      ...(notificationsData || []).map((n: any) => ({ 
+      ...(notificationsData || []).map((n: Notification) => ({ 
         ...n, 
         activity_type: 'notification',
         type: n.notification_type || "general" 
       }))
     ];
     
-    // Sort by created_at date
-    return allActivities.filter(a => a.created_at).sort((a, b) => 
-      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-    );
+    // Sort by created_at date - filter out any items that don't have a created_at date
+    return allActivities
+      .filter(a => a && a.created_at) 
+      .sort((a, b) => 
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
   } catch (error) {
     console.error('Error in getUserActivityLog:', error);
     return [];
