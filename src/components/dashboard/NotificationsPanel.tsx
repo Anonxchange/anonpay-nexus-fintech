@@ -1,6 +1,7 @@
+
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/auth";
-import { Bell, Check } from "lucide-react";
+import { Bell } from "lucide-react";
 import { 
   Popover, 
   PopoverContent, 
@@ -153,7 +154,7 @@ const NotificationsPanel: React.FC = () => {
               {notifications.map((notification) => (
                 <div 
                   key={notification.id} 
-                  className={`p-4 border-l-4 ${getNotificationStyle(notification.notification_type)} ${!notification.read ? 'bg-muted/50' : ''} hover:bg-muted/20 cursor-pointer`}
+                  className={`p-4 border-l-4 ${getNotificationStyle(notification.notification_type || '')} ${!notification.read ? 'bg-muted/50' : ''} hover:bg-muted/20 cursor-pointer`}
                   onClick={() => handleNotificationClick(notification)}
                 >
                   <div className="flex justify-between items-start mb-1">

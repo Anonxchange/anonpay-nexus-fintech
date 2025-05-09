@@ -132,6 +132,39 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          action_link: string | null
+          created_at: string
+          id: string
+          message: string
+          notification_type: string | null
+          read: boolean
+          title: string
+          user_id: string
+        }
+        Insert: {
+          action_link?: string | null
+          created_at?: string
+          id?: string
+          message: string
+          notification_type?: string | null
+          read?: boolean
+          title: string
+          user_id: string
+        }
+        Update: {
+          action_link?: string | null
+          created_at?: string
+          id?: string
+          message?: string
+          notification_type?: string | null
+          read?: boolean
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       payment_methods: {
         Row: {
           address: string
@@ -290,8 +323,29 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_user_notifications: {
+        Args: { p_user_id: string }
+        Returns: {
+          action_link: string | null
+          created_at: string
+          id: string
+          message: string
+          notification_type: string | null
+          read: boolean
+          title: string
+          user_id: string
+        }[]
+      }
       is_admin: {
         Args: Record<PropertyKey, never> | { user_id: string }
+        Returns: boolean
+      }
+      mark_all_notifications_read: {
+        Args: { user_id_param: string }
+        Returns: boolean
+      }
+      mark_notification_read: {
+        Args: { notification_id: string }
         Returns: boolean
       }
       update_wallet_balance: {

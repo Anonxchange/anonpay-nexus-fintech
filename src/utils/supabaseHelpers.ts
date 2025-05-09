@@ -62,12 +62,15 @@ export const handleSupabaseError = (error: any, fallbackMessage: string = "An er
  */
 export const fetchUserNotifications = async (userId: string): Promise<Notification[]> => {
   try {
-    // Use a direct query with .rpc() but cast it properly
+    // Use the proper typing for the RPC call
     const { data, error } = await supabase
-      .rpc('get_user_notifications', { p_user_id: userId }) as { data: any, error: any };
+      .from('notifications')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
     
     if (error) {
-      console.error('Error fetching notifications via RPC:', error);
+      console.error('Error fetching notifications:', error);
       return [];
     }
     

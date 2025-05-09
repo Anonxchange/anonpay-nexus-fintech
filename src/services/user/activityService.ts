@@ -1,7 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { Notification } from "@/types/notification";
-import { fetchUserNotifications } from "@/utils/supabaseHelpers";
 
 export interface Activity {
   id: string;
@@ -55,9 +54,17 @@ export const getUserActivityLog = async (adminId: string, userId: string): Promi
       console.error('Error fetching KYC submissions:', kycError);
     }
     
-    // Fetch notifications using the utility function that handles the RPC
-    const notificationsData = await fetchUserNotifications(userId);
+    // Fetch notifications
+    const { data: notificationsData, error: notificationsError } = await supabase
+      .from('notifications')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
       
+    if (notificationsError) {
+      console.error('Error fetching notifications:', notificationsError);
+    }
+    
     // Combine all activities with appropriate type markers
     const allActivities = [
       ...(transactions || []).map(t => ({ ...t, activity_type: 'transaction' })),
