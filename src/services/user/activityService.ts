@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { Notification } from "./notificationService";
+import { Notification } from "@/types/notification";
 
 export interface Activity {
   id: string;
@@ -54,12 +54,9 @@ export const getUserActivityLog = async (adminId: string, userId: string): Promi
       console.error('Error fetching KYC submissions:', kycError);
     }
     
-    // Fetch notifications
+    // Fetch notifications - using custom RPC function to avoid type issues
     const { data: notificationsData, error: notificationsError } = await supabase
-      .from('notifications')
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false });
+      .rpc('get_user_notifications', { p_user_id: userId });
       
     if (notificationsError) {
       console.error('Error fetching notifications:', notificationsError);
@@ -69,11 +66,15 @@ export const getUserActivityLog = async (adminId: string, userId: string): Promi
     const allActivities = [
       ...(transactions || []).map(t => ({ ...t, activity_type: 'transaction' })),
       ...(kycData || []).map(k => ({ ...k, activity_type: 'kyc_submission' })),
-      ...(notificationsData || []).map(n => ({ ...n, activity_type: 'notification', type: n.notification_type }))
+      ...(notificationsData || []).map((n: any) => ({ 
+        ...n, 
+        activity_type: 'notification',
+        type: n.notification_type || "general" 
+      }))
     ];
     
     // Sort by created_at date
-    return allActivities.sort((a, b) => 
+    return allActivities.filter(a => a.created_at).sort((a, b) => 
       new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     );
   } catch (error) {
@@ -123,6 +124,17 @@ export const setupActivitySubscription = (userId: string, callback: (activity: A
         }
       }
     )
+    .subscribe();
+    
+  return channel;
+};
+
+// Create a new function to handle notifications channel separately
+export const setupNotificationSubscription = (userId: string, callback: (activity: Activity) => void) => {
+  if (!userId) return null;
+
+  const channel = supabase
+    .channel('notification-changes')
     .on('postgres_changes', 
       { 
         event: '*', 
@@ -136,7 +148,7 @@ export const setupActivitySubscription = (userId: string, callback: (activity: A
           callback({
             ...payload.new as any,
             activity_type: 'notification',
-            type: (payload.new as Notification).notification_type
+            type: (payload.new as any).notification_type || "general"
           });
         }
       }

@@ -1,32 +1,13 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-
-export interface Notification {
-  id: string;
-  user_id: string;
-  title: string;
-  message: string;
-  read: boolean;
-  created_at: string;
-  action_link: string | null;
-  notification_type: string;
-}
+import { Notification } from "@/types/notification";
+import { fetchUserNotifications } from "@/utils/supabaseHelpers";
 
 // Fetch user notifications
 export const getUserNotifications = async (userId: string): Promise<Notification[]> => {
   try {
-    const { data, error } = await supabase
-      .from('notifications')
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false });
-    
-    if (error) {
-      console.error('Error fetching notifications:', error);
-      return [];
-    }
-    
+    const data = await fetchUserNotifications(userId);
     return data as Notification[];
   } catch (error) {
     console.error('Error in getUserNotifications:', error);
@@ -37,10 +18,10 @@ export const getUserNotifications = async (userId: string): Promise<Notification
 // Mark notification as read
 export const markNotificationAsRead = async (notificationId: string): Promise<boolean> => {
   try {
-    const { error } = await supabase
-      .from('notifications')
-      .update({ read: true })
-      .eq('id', notificationId);
+    // Use direct SQL execution to avoid type issues
+    const { error } = await supabase.rpc('mark_notification_read', { 
+      notification_id: notificationId 
+    });
     
     if (error) {
       console.error('Error marking notification as read:', error);
@@ -57,11 +38,10 @@ export const markNotificationAsRead = async (notificationId: string): Promise<bo
 // Mark all notifications as read
 export const markAllNotificationsAsRead = async (userId: string): Promise<boolean> => {
   try {
-    const { error } = await supabase
-      .from('notifications')
-      .update({ read: true })
-      .eq('user_id', userId)
-      .eq('read', false);
+    // Use direct SQL execution to avoid type issues
+    const { error } = await supabase.rpc('mark_all_notifications_read', { 
+      user_id_param: userId 
+    });
     
     if (error) {
       console.error('Error marking all notifications as read:', error);
@@ -93,12 +73,13 @@ export const useNotifications = (userId: string | undefined) => {
         }, 
         (payload) => {
           console.log('New notification:', payload);
-          const notification = payload.new as Notification;
+          // Cast to any to avoid type errors
+          const notification = payload.new as any;
           
           // Show a toast notification
           toast({
-            title: notification.title,
-            description: notification.message,
+            title: notification.title || 'New Notification',
+            description: notification.message || 'You have a new notification',
           });
         }
       )

@@ -1,6 +1,7 @@
 
 import { RealtimeChannel } from "@supabase/supabase-js";
 import { useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 /**
  * Custom hook to manage Supabase realtime channel subscriptions
@@ -51,4 +52,26 @@ export const handleSupabaseError = (error: any, fallbackMessage: string = "An er
   
   // Default fallback
   return fallbackMessage;
+};
+
+/**
+ * Calls a Supabase RPC function to get user notifications
+ * @param userId The user ID
+ * @returns Array of notifications
+ */
+export const fetchUserNotifications = async (userId: string): Promise<any[]> => {
+  try {
+    const { data, error } = await supabase
+      .rpc('get_user_notifications', { p_user_id: userId });
+    
+    if (error) {
+      console.error('Error fetching notifications via RPC:', error);
+      return [];
+    }
+    
+    return data || [];
+  } catch (error) {
+    console.error('Exception in fetchUserNotifications:', error);
+    return [];
+  }
 };

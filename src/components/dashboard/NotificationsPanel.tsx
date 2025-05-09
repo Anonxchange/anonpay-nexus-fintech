@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client"; // Added missing import
 import { getUserNotifications, markAllNotificationsAsRead, markNotificationAsRead, useNotifications } from "@/services/user/notificationService";
 
 interface Notification {

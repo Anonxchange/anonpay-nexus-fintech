@@ -42,7 +42,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({
   
   return (
     <div className="flex flex-col min-h-screen">
-      <Navbar showAuth />
+      <Navbar />
       <main className={`flex-grow py-10 ${fullWidth ? '' : 'container mx-auto px-4'}`}>
         <div className="max-w-7xl w-full mx-auto">
           {title && title !== "AnonPay" && (
