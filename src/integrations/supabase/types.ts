@@ -9,6 +9,96 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      crypto_trades: {
+        Row: {
+          amount: number | null
+          created_at: string | null
+          crypto_type: string | null
+          id: string
+          status: string | null
+          trade_type: string | null
+          user_id: string | null
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string | null
+          crypto_type?: string | null
+          id?: string
+          status?: string | null
+          trade_type?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string | null
+          crypto_type?: string | null
+          id?: string
+          status?: string | null
+          trade_type?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      crypto_wallets: {
+        Row: {
+          balance: number | null
+          created_at: string | null
+          currency: string | null
+          id: string
+          user_id: string | null
+          wallet_address: string | null
+        }
+        Insert: {
+          balance?: number | null
+          created_at?: string | null
+          currency?: string | null
+          id?: string
+          user_id?: string | null
+          wallet_address?: string | null
+        }
+        Update: {
+          balance?: number | null
+          created_at?: string | null
+          currency?: string | null
+          id?: string
+          user_id?: string | null
+          wallet_address?: string | null
+        }
+        Relationships: []
+      }
+      giftcards: {
+        Row: {
+          card_currency: string | null
+          card_type: string | null
+          card_value: number | null
+          created_at: string | null
+          id: string
+          image_url: string | null
+          status: string | null
+          user_id: string | null
+        }
+        Insert: {
+          card_currency?: string | null
+          card_type?: string | null
+          card_value?: number | null
+          created_at?: string | null
+          id?: string
+          image_url?: string | null
+          status?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          card_currency?: string | null
+          card_type?: string | null
+          card_value?: number | null
+          created_at?: string | null
+          id?: string
+          image_url?: string | null
+          status?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       kyc_submissions: {
         Row: {
           admin_notes: string | null
@@ -135,6 +225,63 @@ export type Database = {
           type?: string
           updated_at?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      vtu_requests: {
+        Row: {
+          amount: number | null
+          created_at: string | null
+          id: string
+          network: string | null
+          phone_number: string | null
+          service_type: string | null
+          status: string | null
+          user_id: string | null
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string | null
+          id?: string
+          network?: string | null
+          phone_number?: string | null
+          service_type?: string | null
+          status?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string | null
+          id?: string
+          network?: string | null
+          phone_number?: string | null
+          service_type?: string | null
+          status?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      wallets: {
+        Row: {
+          balance: number | null
+          currency: string | null
+          id: string
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          balance?: number | null
+          currency?: string | null
+          id?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          balance?: number | null
+          currency?: string | null
+          id?: string
+          updated_at?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }

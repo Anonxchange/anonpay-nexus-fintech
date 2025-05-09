@@ -1,5 +1,17 @@
 
 import { supabase } from "@/integrations/supabase/client";
+import { Notification } from "./notificationService";
+
+export interface Activity {
+  id: string;
+  user_id: string;
+  type: string;
+  details: any;
+  status: string;
+  created_at: string;
+  updated_at: string | null;
+  activity_type: "transaction" | "kyc_submission" | "notification";
+}
 
 // Get user activity log
 export const getUserActivityLog = async (adminId: string, userId: string): Promise<any[]> => {
@@ -31,26 +43,33 @@ export const getUserActivityLog = async (adminId: string, userId: string): Promi
       return [];
     }
     
-    // Fetch KYC submissions from our newly created table
-    const kycSubmissions: any[] = [];
-    
-    // Now that we have the table, we can query it directly
+    // Fetch KYC submissions
     const { data: kycData, error: kycError } = await supabase
       .from('kyc_submissions')
       .select('*')
       .eq('user_id', userId)
       .order('created_at', { ascending: false });
       
-    if (!kycError && kycData) {
-      kycSubmissions.push(...kycData);
-    } else if (kycError) {
+    if (kycError) {
       console.error('Error fetching KYC submissions:', kycError);
     }
     
-    // Combine all activities with a type marker
+    // Fetch notifications
+    const { data: notificationsData, error: notificationsError } = await supabase
+      .from('notifications')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+      
+    if (notificationsError) {
+      console.error('Error fetching notifications:', notificationsError);
+    }
+    
+    // Combine all activities with appropriate type markers
     const allActivities = [
       ...(transactions || []).map(t => ({ ...t, activity_type: 'transaction' })),
-      ...(kycSubmissions || []).map(k => ({ ...k, activity_type: 'kyc_submission' }))
+      ...(kycData || []).map(k => ({ ...k, activity_type: 'kyc_submission' })),
+      ...(notificationsData || []).map(n => ({ ...n, activity_type: 'notification', type: n.notification_type }))
     ];
     
     // Sort by created_at date
@@ -61,4 +80,68 @@ export const getUserActivityLog = async (adminId: string, userId: string): Promi
     console.error('Error in getUserActivityLog:', error);
     return [];
   }
+};
+
+// Enable realtime activity updates
+export const setupActivitySubscription = (userId: string, callback: (activity: Activity) => void) => {
+  if (!userId) return null;
+
+  // Create a channel for realtime updates
+  const channel = supabase
+    .channel('activity-changes')
+    .on('postgres_changes', 
+      { 
+        event: '*', 
+        schema: 'public', 
+        table: 'transactions',
+        filter: `user_id=eq.${userId}` 
+      }, 
+      (payload) => {
+        console.log('Transaction change:', payload);
+        if (payload.new) {
+          callback({
+            ...payload.new as any,
+            activity_type: 'transaction'
+          });
+        }
+      }
+    )
+    .on('postgres_changes', 
+      { 
+        event: '*', 
+        schema: 'public', 
+        table: 'kyc_submissions',
+        filter: `user_id=eq.${userId}` 
+      }, 
+      (payload) => {
+        console.log('KYC submission change:', payload);
+        if (payload.new) {
+          callback({
+            ...payload.new as any,
+            activity_type: 'kyc_submission'
+          });
+        }
+      }
+    )
+    .on('postgres_changes', 
+      { 
+        event: '*', 
+        schema: 'public', 
+        table: 'notifications',
+        filter: `user_id=eq.${userId}` 
+      }, 
+      (payload) => {
+        console.log('Notification change:', payload);
+        if (payload.new) {
+          callback({
+            ...payload.new as any,
+            activity_type: 'notification',
+            type: (payload.new as Notification).notification_type
+          });
+        }
+      }
+    )
+    .subscribe();
+    
+  return channel;
 };
