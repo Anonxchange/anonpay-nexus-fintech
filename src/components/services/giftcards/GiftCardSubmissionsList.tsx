@@ -33,7 +33,7 @@ const GiftCardSubmissionsList: React.FC<GiftCardSubmissionsListProps> = ({
   const getBadgeVariant = (status: string) => {
     switch (status) {
       case "approved":
-        return "success";
+        return "default"; // Changed from success to default
       case "rejected":
         return "destructive";
       default:

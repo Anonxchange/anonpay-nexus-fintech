@@ -3,10 +3,10 @@ export interface GiftCard {
   id: string;
   name: string;
   description: string;
-  buy_rate: number; // The rate at which we buy from users
-  sell_rate: number; // The rate at which we sell to users
-  image_url: string;
-  is_active: boolean;
+  buy_rate: number; // Changed from buyRate to buy_rate
+  sell_rate: number; // Changed from sellRate to sell_rate
+  image_url: string; // Changed from imageUrl to image_url
+  is_active: boolean; // Changed from isActive to is_active
   currency: string;
   min_amount?: number;
   max_amount?: number;

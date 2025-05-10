@@ -66,9 +66,9 @@ const GiftCardTable: React.FC<GiftCardTableProps> = ({
                 <TableRow key={card.id}>
                   <TableCell className="font-medium">
                     <div className="flex items-center gap-2">
-                      {card.imageUrl && (
+                      {card.image_url && (
                         <img 
-                          src={card.imageUrl} 
+                          src={card.image_url} 
                           alt={card.name} 
                           className="h-6 w-6 object-contain"
                         />
@@ -91,7 +91,7 @@ const GiftCardTable: React.FC<GiftCardTableProps> = ({
                         }
                       />
                     ) : (
-                      card.buyRate
+                      card.buy_rate
                     )}
                   </TableCell>
                   <TableCell className="text-right">
@@ -108,7 +108,7 @@ const GiftCardTable: React.FC<GiftCardTableProps> = ({
                         }
                       />
                     ) : (
-                      card.sellRate
+                      card.sell_rate
                     )}
                   </TableCell>
                   <TableCell className="text-center">
@@ -125,12 +125,12 @@ const GiftCardTable: React.FC<GiftCardTableProps> = ({
                     ) : (
                       <span
                         className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          card.isActive
+                          card.is_active
                             ? "bg-green-100 text-green-800"
                             : "bg-gray-100 text-gray-800"
                         }`}
                       >
-                        {card.isActive ? "Active" : "Inactive"}
+                        {card.is_active ? "Active" : "Inactive"}
                       </span>
                     )}
                   </TableCell>

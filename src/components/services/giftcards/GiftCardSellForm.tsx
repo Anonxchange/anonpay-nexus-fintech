@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -27,6 +26,7 @@ import { Loader2 } from "lucide-react";
 import { GiftCard } from "@/services/products/types";
 import { submitGiftCard } from "@/services/products/giftcardService";
 import FileUpload from "../../common/FileUpload";
+import { supabase } from "@/integrations/supabase/client";
 
 interface GiftCardSellFormProps {
   user: any;

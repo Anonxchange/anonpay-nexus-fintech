@@ -160,7 +160,7 @@ const KycForm: React.FC<KycFormProps> = ({ user: propUser, onSubmit: propOnSubmi
       }
       
       // Otherwise use the default implementation
-      // Create KYC submission
+      // Create KYC submission - with proper field names for the database
       const { error: submissionError } = await supabase
         .from('kyc_submissions')
         .insert({
@@ -168,12 +168,13 @@ const KycForm: React.FC<KycFormProps> = ({ user: propUser, onSubmit: propOnSubmi
           full_name: data.fullName,
           date_of_birth: format(data.dateOfBirth, "yyyy-MM-dd"),
           address: data.address,
-          phone_number: data.phone,
+          phone: data.phone,
           id_type: data.idType,
           id_number: data.idNumber,
           document_url: documentFile,
           selfie_url: selfieFile,
-          status: 'pending'
+          status: 'pending',
+          document_type: data.idType // Add the document_type field
         });
 
       if (submissionError) {

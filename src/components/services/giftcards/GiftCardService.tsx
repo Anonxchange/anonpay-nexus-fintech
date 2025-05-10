@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getGiftCards, getUserGiftCardSubmissions } from '@/services/products/giftcardService';
-import { GiftCard } from '@/services/products/types';
+import { GiftCard, GiftCardSubmission } from '@/services/products/types';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from '@/contexts/auth';
 import { Dialog, DialogContent } from "@/components/ui/dialog";
@@ -13,23 +13,11 @@ interface GiftCardServiceProps {
   user: any;
 }
 
-interface Submission {
-  id: string;
-  cardId: string;
-  cardName: string;
-  amount: number;
-  originalAmount: number;
-  currency: string;
-  status: 'pending' | 'approved' | 'rejected';
-  createdAt: string;
-  imageUrl?: string;
-}
-
 const GiftCardService: React.FC<GiftCardServiceProps> = ({ user }) => {
   const { profile } = useAuth();
   const [activeTab, setActiveTab] = useState<string>("sell");
   const [giftCards, setGiftCards] = useState<GiftCard[]>([]);
-  const [submissions, setSubmissions] = useState<Submission[]>([]);
+  const [submissions, setSubmissions] = useState<GiftCardSubmission[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   

@@ -27,34 +27,40 @@ export const useGiftCardManagement = () => {
         id: "1",
         name: "iTunes Gift Card",
         description: "Apple iTunes Gift Card",
-        buyRate: 650,
-        sellRate: 700,
-        imageUrl: "https://example.com/itunes.png",
-        isActive: true,
+        buy_rate: 650,
+        sell_rate: 700,
+        image_url: "https://example.com/itunes.png",
+        is_active: true,
         currency: "USD",
-        submissionCount: 2
+        submissionCount: 2,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       },
       {
         id: "2",
         name: "Amazon Gift Card",
         description: "Amazon.com Gift Card",
-        buyRate: 700,
-        sellRate: 750,
-        imageUrl: "https://example.com/amazon.png",
-        isActive: true,
+        buy_rate: 700,
+        sell_rate: 750,
+        image_url: "https://example.com/amazon.png",
+        is_active: true,
         currency: "USD",
-        submissionCount: 0
+        submissionCount: 0,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       },
       {
         id: "3",
         name: "Steam Gift Card",
         description: "Steam Gaming Platform Gift Card",
-        buyRate: 600,
-        sellRate: 650,
-        imageUrl: "https://example.com/steam.png",
-        isActive: true,
+        buy_rate: 600,
+        sell_rate: 650,
+        image_url: "https://example.com/steam.png",
+        is_active: true,
         currency: "USD",
-        submissionCount: 1
+        submissionCount: 1,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       }
     ]);
     
@@ -67,7 +73,9 @@ export const useGiftCardManagement = () => {
         card_id: "1",
         card_name: "iTunes Gift Card",
         card_code: "ITNS-1234-5678",
+        receipt_image_url: "https://example.com/receipt1.jpg",
         amount: 5000,
+        currency: "USD",
         status: "pending",
         created_at: new Date().toISOString()
       },
@@ -78,7 +86,9 @@ export const useGiftCardManagement = () => {
         card_id: "3",
         card_name: "Steam Gift Card",
         card_code: "STEAM-9876-5432",
+        receipt_image_url: "https://example.com/receipt2.jpg",
         amount: 3500,
+        currency: "USD",
         status: "approved",
         created_at: new Date(Date.now() - 86400000).toISOString()  // 1 day ago
       },
@@ -89,7 +99,9 @@ export const useGiftCardManagement = () => {
         card_id: "1",
         card_name: "iTunes Gift Card",
         card_code: "ITNS-8765-4321",
+        receipt_image_url: "https://example.com/receipt3.jpg",
         amount: 7500,
+        currency: "USD",
         status: "rejected",
         created_at: new Date(Date.now() - 172800000).toISOString() // 2 days ago
       }
@@ -101,9 +113,9 @@ export const useGiftCardManagement = () => {
   const handleEdit = (card: ExtendedGiftCard) => {
     setEditingId(card.id);
     setEditForm({
-      buyRate: card.buyRate,
-      sellRate: card.sellRate,
-      isActive: card.isActive
+      buyRate: card.buy_rate,
+      sellRate: card.sell_rate,
+      isActive: card.is_active
     });
   };
 
@@ -114,9 +126,9 @@ export const useGiftCardManagement = () => {
         if (card.id === id) {
           return {
             ...card,
-            buyRate: editForm.buyRate,
-            sellRate: editForm.sellRate,
-            isActive: editForm.isActive
+            buy_rate: editForm.buyRate,
+            sell_rate: editForm.sellRate,
+            is_active: editForm.isActive
           };
         }
         return card;

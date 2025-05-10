@@ -1,9 +1,11 @@
+
 import React from "react";
 import { KycTabProps } from "./types";
 import { DataTable } from "@/components/ui/data-table";
 import { columns } from "./columns";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useKycActions } from "./useKycActions";
+import { User } from "./columns"; // Import the User type from columns
 
 const KycTab: React.FC<KycTabProps> = ({ users, onAction }) => {
   const { processingUser, handleAction, handleViewUser } = useKycActions(onAction);
@@ -25,7 +27,7 @@ const KycTab: React.FC<KycTabProps> = ({ users, onAction }) => {
               onView: handleViewUser,
               processingUser
             })} 
-            data={users} 
+            data={users as User[]} // Cast to User[] type
           />
         </CardContent>
       </Card>

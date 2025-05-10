@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,6 +11,26 @@ import { Badge } from "@/components/ui/badge";
 
 interface KycServiceProps {
   user: any;
+}
+
+// Define a database KycSubmission type to match what's coming from Supabase
+interface DbKycSubmission {
+  id: string;
+  user_id: string;
+  document_type: string;
+  document_url: string;
+  status: "pending" | "approved" | "rejected" | "not_submitted";
+  admin_notes?: string;
+  created_at: string;
+  updated_at: string;
+  // Add these fields based on the KycSubmission interface requirements
+  full_name: string;
+  date_of_birth: string;
+  address: string;
+  id_number: string;
+  id_type: string;
+  phone: string;
+  selfie_url: string;
 }
 
 const KycService: React.FC<KycServiceProps> = ({ user }) => {
@@ -36,7 +55,26 @@ const KycService: React.FC<KycServiceProps> = ({ user }) => {
             .single();
           
           if (!error && data) {
-            setKycSubmission(data as KycSubmission);
+            // Cast to the correct KycSubmission type
+            const dbSubmission = data as unknown as DbKycSubmission;
+            const mappedSubmission: KycSubmission = {
+              id: dbSubmission.id,
+              user_id: dbSubmission.user_id,
+              full_name: dbSubmission.full_name,
+              date_of_birth: dbSubmission.date_of_birth,
+              address: dbSubmission.address,
+              id_number: dbSubmission.id_number, 
+              id_type: dbSubmission.id_type,
+              phone: dbSubmission.phone,
+              document_url: dbSubmission.document_url,
+              selfie_url: dbSubmission.selfie_url,
+              status: dbSubmission.status as "pending" | "approved" | "rejected",
+              admin_notes: dbSubmission.admin_notes,
+              created_at: dbSubmission.created_at,
+              updated_at: dbSubmission.updated_at,
+            };
+            
+            setKycSubmission(mappedSubmission);
           }
         } catch (error) {
           console.error("Error fetching KYC submission:", error);
@@ -67,7 +105,26 @@ const KycService: React.FC<KycServiceProps> = ({ user }) => {
           .single();
         
         if (!error && data) {
-          setKycSubmission(data as KycSubmission);
+          // Cast to the correct KycSubmission type
+          const dbSubmission = data as unknown as DbKycSubmission;
+          const mappedSubmission: KycSubmission = {
+            id: dbSubmission.id,
+            user_id: dbSubmission.user_id,
+            full_name: dbSubmission.full_name,
+            date_of_birth: dbSubmission.date_of_birth,
+            address: dbSubmission.address,
+            id_number: dbSubmission.id_number, 
+            id_type: dbSubmission.id_type,
+            phone: dbSubmission.phone,
+            document_url: dbSubmission.document_url,
+            selfie_url: dbSubmission.selfie_url,
+            status: dbSubmission.status as "pending" | "approved" | "rejected",
+            admin_notes: dbSubmission.admin_notes,
+            created_at: dbSubmission.created_at,
+            updated_at: dbSubmission.updated_at,
+          };
+          
+          setKycSubmission(mappedSubmission);
         }
       } catch (error) {
         console.error("Error fetching KYC submission:", error);
