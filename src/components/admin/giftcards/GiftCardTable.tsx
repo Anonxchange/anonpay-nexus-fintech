@@ -1,11 +1,37 @@
 
 import React from "react";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Edit2, Save, X } from "lucide-react";
-import { GiftCardTableProps } from "./types";
+import { Switch } from "@/components/ui/switch";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Pencil, Save, X } from "lucide-react";
+import { ExtendedGiftCard } from "./types";
+
+interface GiftCardTableProps {
+  cards: ExtendedGiftCard[];
+  editingId: string | null;
+  editForm: {
+    buyRate: number;
+    sellRate: number;
+    isActive: boolean;
+  };
+  onEdit: (card: ExtendedGiftCard) => void;
+  onSave: (id: string) => void;
+  onCancel: () => void;
+  setEditForm: React.Dispatch<React.SetStateAction<{
+    buyRate: number;
+    sellRate: number;
+    isActive: boolean;
+  }>>;
+}
 
 const GiftCardTable: React.FC<GiftCardTableProps> = ({
   cards,
@@ -16,122 +42,149 @@ const GiftCardTable: React.FC<GiftCardTableProps> = ({
   onCancel,
   setEditForm,
 }) => {
-  if (cards.length === 0) {
-    return (
-      <div className="text-center py-8 bg-gray-50 rounded-lg border">
-        <p className="text-gray-500">No gift cards found</p>
-      </div>
-    );
-  }
-
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Card</TableHead>
-          <TableHead>Buy Rate (₦)</TableHead>
-          <TableHead>Sell Rate (₦)</TableHead>
-          <TableHead>Status</TableHead>
-          <TableHead>Actions</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {cards.map((card) => (
-          <TableRow key={card.id}>
-            <TableCell>
-              <div className="flex items-center space-x-3">
-                {card.imageUrl && (
-                  <img 
-                    src={card.imageUrl} 
-                    alt={card.name} 
-                    className="h-10 w-10 rounded-md object-cover"
-                  />
-                )}
-                <div>
-                  <p className="font-medium">{card.name}</p>
-                  <p className="text-sm text-gray-500">{card.description}</p>
-                  {card.submissionCount > 0 && (
-                    <Badge variant="outline" className="mt-1 bg-amber-50 text-amber-700 border-amber-200">
-                      {card.submissionCount} pending
-                    </Badge>
-                  )}
-                </div>
-              </div>
-            </TableCell>
-            <TableCell>
-              {editingId === card.id ? (
-                <Input
-                  type="number"
-                  value={editForm.buyRate}
-                  onChange={(e) => setEditForm({ ...editForm, buyRate: parseFloat(e.target.value) })}
-                  className="w-32"
-                />
-              ) : (
-                <>₦{card.buyRate.toLocaleString()}</>
+    <Card>
+      <CardHeader>
+        <CardTitle>Gift Card Rates Management</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Card Name</TableHead>
+                <TableHead>Currency</TableHead>
+                <TableHead className="text-right">Buy Rate (₦)</TableHead>
+                <TableHead className="text-right">Sell Rate (₦)</TableHead>
+                <TableHead className="text-center">Status</TableHead>
+                <TableHead className="text-center">Pending</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {cards.map((card) => (
+                <TableRow key={card.id}>
+                  <TableCell className="font-medium">
+                    <div className="flex items-center gap-2">
+                      {card.imageUrl && (
+                        <img 
+                          src={card.imageUrl} 
+                          alt={card.name} 
+                          className="h-6 w-6 object-contain"
+                        />
+                      )}
+                      {card.name}
+                    </div>
+                  </TableCell>
+                  <TableCell>{card.currency}</TableCell>
+                  <TableCell className="text-right">
+                    {editingId === card.id ? (
+                      <Input
+                        className="w-24 text-right"
+                        type="number"
+                        value={editForm.buyRate}
+                        onChange={(e) =>
+                          setEditForm({
+                            ...editForm,
+                            buyRate: parseFloat(e.target.value) || 0,
+                          })
+                        }
+                      />
+                    ) : (
+                      card.buyRate
+                    )}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {editingId === card.id ? (
+                      <Input
+                        className="w-24 text-right"
+                        type="number"
+                        value={editForm.sellRate}
+                        onChange={(e) =>
+                          setEditForm({
+                            ...editForm,
+                            sellRate: parseFloat(e.target.value) || 0,
+                          })
+                        }
+                      />
+                    ) : (
+                      card.sellRate
+                    )}
+                  </TableCell>
+                  <TableCell className="text-center">
+                    {editingId === card.id ? (
+                      <Switch
+                        checked={editForm.isActive}
+                        onCheckedChange={(checked) =>
+                          setEditForm({
+                            ...editForm,
+                            isActive: checked,
+                          })
+                        }
+                      />
+                    ) : (
+                      <span
+                        className={`px-2 py-1 rounded-full text-xs font-medium ${
+                          card.isActive
+                            ? "bg-green-100 text-green-800"
+                            : "bg-gray-100 text-gray-800"
+                        }`}
+                      >
+                        {card.isActive ? "Active" : "Inactive"}
+                      </span>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-center">
+                    {card.submissionCount > 0 ? (
+                      <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-amber-100 text-amber-700 text-xs">
+                        {card.submissionCount}
+                      </span>
+                    ) : (
+                      <span className="text-gray-400">-</span>
+                    )}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    {editingId === card.id ? (
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => onSave(card.id)}
+                        >
+                          <Save className="h-4 w-4 mr-1" /> Save
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={onCancel}
+                        >
+                          <X className="h-4 w-4 mr-1" /> Cancel
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onEdit(card)}
+                      >
+                        <Pencil className="h-4 w-4 mr-1" /> Edit
+                      </Button>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+              {cards.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={7} className="h-24 text-center">
+                    No gift cards found
+                  </TableCell>
+                </TableRow>
               )}
-            </TableCell>
-            <TableCell>
-              {editingId === card.id ? (
-                <Input
-                  type="number"
-                  value={editForm.sellRate}
-                  onChange={(e) => setEditForm({ ...editForm, sellRate: parseFloat(e.target.value) })}
-                  className="w-32"
-                />
-              ) : (
-                <>₦{card.sellRate.toLocaleString()}</>
-              )}
-            </TableCell>
-            <TableCell>
-              {editingId === card.id ? (
-                <select
-                  value={editForm.isActive ? "active" : "inactive"}
-                  onChange={(e) => setEditForm({ ...editForm, isActive: e.target.value === "active" })}
-                  className="px-2 py-1 border rounded"
-                >
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                </select>
-              ) : (
-                <Badge className={card.isActive ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}>
-                  {card.isActive ? "Active" : "Inactive"}
-                </Badge>
-              )}
-            </TableCell>
-            <TableCell>
-              {editingId === card.id ? (
-                <div className="flex space-x-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => onSave(card.id)}
-                    className="text-green-600 border-green-200"
-                  >
-                    <Save className="h-4 w-4 mr-1" /> Save
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={onCancel}
-                    className="text-red-600 border-red-200"
-                  >
-                    <X className="h-4 w-4 mr-1" /> Cancel
-                  </Button>
-                </div>
-              ) : (
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => onEdit(card)}
-                >
-                  <Edit2 className="h-4 w-4 mr-1" /> Edit
-                </Button>
-              )}
-            </TableCell>
-          </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+            </TableBody>
+          </Table>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 

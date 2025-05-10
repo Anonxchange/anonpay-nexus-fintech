@@ -1,145 +1,153 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { GiftCard } from "./types";
+import { GiftCard, GiftCardSubmission } from "./types";
 
-// Get all gift cards - mocked since table doesn't exist yet
+// Get available gift cards
 export const getGiftCards = async (): Promise<GiftCard[]> => {
   try {
-    // Mock data instead of trying to fetch from a non-existent table
-    const mockGiftCards: GiftCard[] = [
-      {
-        id: "1",
-        name: "iTunes",
-        description: "Apple iTunes Gift Card",
-        buyRate: 650,
-        sellRate: 700,
-        imageUrl: "https://example.com/itunes.png",
-        isActive: true,
-        currency: "USD"
-      },
-      {
-        id: "2",
-        name: "Amazon",
-        description: "Amazon.com Gift Card",
-        buyRate: 700,
-        sellRate: 750,
-        imageUrl: "https://example.com/amazon.png",
-        isActive: true,
-        currency: "USD"
-      },
-      {
-        id: "3",
-        name: "Steam",
-        description: "Steam Gaming Platform Gift Card",
-        buyRate: 600,
-        sellRate: 650,
-        imageUrl: "https://example.com/steam.png",
-        isActive: true,
-        currency: "USD"
-      }
-    ];
+    const { data, error } = await supabase
+      .from('gift_cards')
+      .select('*')
+      .eq('is_active', true)
+      .order('name');
     
-    return mockGiftCards;
+    if (error) {
+      console.error('Error fetching gift cards:', error);
+      return [];
+    }
+    
+    return data as GiftCard[];
   } catch (error) {
-    console.error('Error fetching gift cards:', error);
+    console.error('Error in getGiftCards:', error);
     return [];
   }
 };
 
-// Get gift card by ID - mocked
+// Get gift card by ID
 export const getGiftCardById = async (id: string): Promise<GiftCard | null> => {
   try {
-    // Mock data
-    const mockGiftCards = await getGiftCards();
-    const card = mockGiftCards.find(card => card.id === id);
+    const { data, error } = await supabase
+      .from('gift_cards')
+      .select('*')
+      .eq('id', id)
+      .single();
     
-    if (!card) return null;
+    if (error) {
+      console.error('Error fetching gift card:', error);
+      return null;
+    }
     
-    return card;
+    return data as GiftCard;
   } catch (error) {
-    console.error('Error fetching gift card:', error);
+    console.error('Error in getGiftCardById:', error);
     return null;
   }
 };
 
-// Buy gift card
-export const buyGiftCard = async (userId: string, cardId: string, amount: number): Promise<boolean> => {
-  try {
-    // Call Supabase RPC function to update wallet
-    const { data, error } = await supabase.rpc(
-      "update_wallet_balance",
-      {
-        user_id: userId,
-        amount: -amount, // negative amount for purchase
-        transaction_type: "gift-card-purchase",
-        reference: `gift-card:${cardId}`
-      }
-    );
-    
-    if (error) throw error;
-    
-    return true;
-  } catch (error) {
-    console.error('Error buying gift card:', error);
-    return false;
-  }
-};
-
-// Submit gift card for selling - uses mock implementation
-export const submitGiftCardForSale = async (
-  userId: string, 
-  cardId: string, 
-  cardCode: string,
+// Submit gift card for selling
+export const submitGiftCard = async (
+  userId: string,
+  cardId: string,
   amount: number,
-  originalAmount: number,
-  currency: string,
-  additionalInfo: string = "",
-  imageFile: File | null = null
-): Promise<boolean> => {
+  cardCode: string,
+  receipt_image_url: string,
+  comments: string = ""
+): Promise<{ success: boolean; message: string; submissionId?: string }> => {
   try {
-    // Mock implementation for now
-    console.log("Submitting gift card", {
-      userId, cardId, cardCode, amount, originalAmount, currency, additionalInfo
-    });
+    // First get the card details to include the name
+    const { data: cardData, error: cardError } = await supabase
+      .from('gift_cards')
+      .select('name, currency')
+      .eq('id', cardId)
+      .single();
     
-    // Mock successful submission
-    return true;
-  } catch (error) {
-    console.error('Error submitting gift card:', error);
-    return false;
+    if (cardError) {
+      console.error('Error fetching gift card details:', cardError);
+      return { success: false, message: 'Invalid gift card selected' };
+    }
+    
+    // Create submission record
+    const { data, error } = await supabase
+      .from('gift_card_submissions')
+      .insert({
+        user_id: userId,
+        card_id: cardId,
+        card_name: cardData.name,
+        card_code: cardCode,
+        amount: amount,
+        currency: cardData.currency,
+        receipt_image_url: receipt_image_url,
+        comments: comments,
+        status: 'pending'
+      })
+      .select('id')
+      .single();
+    
+    if (error) {
+      console.error('Error submitting gift card:', error);
+      return { success: false, message: `Failed to submit gift card: ${error.message}` };
+    }
+    
+    // Create notification for user
+    await supabase
+      .from('notifications')
+      .insert({
+        user_id: userId,
+        title: 'Gift Card Submission Received',
+        message: `Your ${cardData.name} gift card submission for ${amount} ${cardData.currency} is being processed.`,
+        notification_type: 'giftcard',
+        action_link: '/dashboard?tab=giftcard'
+      });
+    
+    return { 
+      success: true, 
+      message: 'Gift card submitted successfully and is under review',
+      submissionId: data.id
+    };
+  } catch (error: any) {
+    console.error('Error in submitGiftCard:', error);
+    return { success: false, message: error.message || 'An error occurred while submitting the gift card' };
   }
 };
 
-// Get user's gift card submissions - mocked
-export const getUserGiftCardSubmissions = async (userId: string) => {
+// Get user's gift card submissions
+export const getUserGiftCardSubmissions = async (userId: string): Promise<GiftCardSubmission[]> => {
   try {
-    // Mock data
-    return [
-      {
-        id: "1",
-        cardId: "1",
-        cardName: "iTunes Gift Card",
-        amount: 5000,
-        originalAmount: 50,
-        currency: "USD",
-        status: "pending" as const,
-        createdAt: new Date().toISOString(),
-        imageUrl: "https://example.com/card-image1.jpg"
-      },
-      {
-        id: "2",
-        cardId: "3",
-        cardName: "Steam Gift Card",
-        amount: 3200,
-        originalAmount: 20,
-        currency: "USD",
-        status: "approved" as const,
-        createdAt: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
-        imageUrl: "https://example.com/card-image2.jpg"
-      }
-    ];
+    const { data, error } = await supabase
+      .from('gift_card_submissions')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+    
+    if (error) {
+      console.error('Error fetching gift card submissions:', error);
+      return [];
+    }
+    
+    return data as GiftCardSubmission[];
   } catch (error) {
-    console.error('Error fetching user submissions:', error);
+    console.error('Error in getUserGiftCardSubmissions:', error);
     return [];
+  }
+};
+
+// Get gift card submission by ID
+export const getGiftCardSubmissionById = async (submissionId: string): Promise<GiftCardSubmission | null> => {
+  try {
+    const { data, error } = await supabase
+      .from('gift_card_submissions')
+      .select('*')
+      .eq('id', submissionId)
+      .single();
+    
+    if (error) {
+      console.error('Error fetching gift card submission:', error);
+      return null;
+    }
+    
+    return data as GiftCardSubmission;
+  } catch (error) {
+    console.error('Error in getGiftCardSubmissionById:', error);
+    return null;
   }
 };

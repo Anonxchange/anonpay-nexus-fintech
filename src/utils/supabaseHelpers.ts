@@ -56,18 +56,17 @@ export const handleSupabaseError = (error: any, fallbackMessage: string = "An er
 };
 
 /**
- * Calls a Supabase RPC function to get user notifications
+ * Fetches user notifications from the database
  * @param userId The user ID
  * @returns Array of notifications
  */
 export const fetchUserNotifications = async (userId: string): Promise<Notification[]> => {
   try {
-    // Use the proper typing for the RPC call
-    const { data, error } = await supabase
-      .from('notifications')
-      .select('*')
-      .eq('user_id', userId)
-      .order('created_at', { ascending: false });
+    // Use RPC function to get user notifications
+    const { data, error } = await supabase.rpc(
+      'get_user_notifications',
+      { p_user_id: userId }
+    );
     
     if (error) {
       console.error('Error fetching notifications:', error);
@@ -79,5 +78,53 @@ export const fetchUserNotifications = async (userId: string): Promise<Notificati
   } catch (error) {
     console.error('Exception in fetchUserNotifications:', error);
     return [];
+  }
+};
+
+/**
+ * Marks a notification as read
+ * @param notificationId The notification ID to mark as read
+ * @returns Whether the operation was successful
+ */
+export const markNotificationAsRead = async (notificationId: string): Promise<boolean> => {
+  try {
+    const { data, error } = await supabase.rpc(
+      'mark_notification_read',
+      { notification_id: notificationId }
+    );
+    
+    if (error) {
+      console.error('Error marking notification as read:', error);
+      return false;
+    }
+    
+    return !!data;
+  } catch (error) {
+    console.error('Exception in markNotificationAsRead:', error);
+    return false;
+  }
+};
+
+/**
+ * Marks all notifications as read for a user
+ * @param userId The user ID
+ * @returns Whether the operation was successful
+ */
+export const markAllNotificationsAsRead = async (userId: string): Promise<boolean> => {
+  try {
+    const { data, error } = await supabase.rpc(
+      'mark_all_notifications_read',
+      { user_id_param: userId }
+    );
+    
+    if (error) {
+      console.error('Error marking all notifications as read:', error);
+      return false;
+    }
+    
+    return !!data;
+  } catch (error) {
+    console.error('Exception in markAllNotificationsAsRead:', error);
+    return false;
   }
 };

@@ -1,10 +1,17 @@
 
 import React from "react";
-import { Button } from "@/components/ui/button";
 import { ColumnDef } from "@tanstack/react-table";
-import { Profile } from "@/types/auth";
-import { Eye, CheckCircle, XCircle } from "lucide-react";
-import StatusBadge from "@/components/ui/StatusBadge";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { CheckCircle, XCircle, Loader2, Eye } from "lucide-react";
+
+export type User = {
+  id: string;
+  name: string | null;
+  email: string;
+  kyc_status: string;
+  created_at: string;
+};
 
 interface ColumnsProps {
   onApprove: (userId: string) => void;
@@ -18,78 +25,101 @@ export const columns = ({
   onReject,
   onView,
   processingUser,
-}: ColumnsProps): ColumnDef<Profile>[] => [
+}: ColumnsProps): ColumnDef<User>[] => [
   {
     accessorKey: "name",
     header: "Name",
-    cell: ({ row }) => <div>{row.original.name || "Unknown"}</div>,
+    cell: ({ row }) => {
+      const value = row.getValue("name") as string;
+      return <div className="font-medium">{value || "N/A"}</div>;
+    },
   },
   {
     accessorKey: "email",
     header: "Email",
-    cell: ({ row }) => <div>{row.original.email || "N/A"}</div>,
   },
   {
     accessorKey: "kyc_status",
     header: "KYC Status",
-    cell: ({ row }) => (
-      <StatusBadge status={row.original.kyc_status || "not_submitted"} />
-    ),
+    cell: ({ row }) => {
+      const value = row.getValue("kyc_status") as string;
+      let badgeVariant:
+        | "default"
+        | "secondary"
+        | "destructive"
+        | "outline"
+        | null
+        | undefined;
+      
+      switch (value?.toLowerCase()) {
+        case "approved":
+          badgeVariant = "default";
+          break;
+        case "pending":
+          badgeVariant = "secondary";
+          break;
+        case "rejected":
+          badgeVariant = "destructive";
+          break;
+        default:
+          badgeVariant = "outline";
+      }
+      
+      return (
+        <Badge variant={badgeVariant}>
+          {value?.toUpperCase() || "NOT SUBMITTED"}
+        </Badge>
+      );
+    },
   },
   {
     accessorKey: "created_at",
-    header: "Submission Date",
-    cell: ({ row }) => (
-      <div>
-        {row.original.created_at
-          ? new Date(row.original.created_at).toLocaleDateString()
-          : "N/A"}
-      </div>
-    ),
+    header: "Joined",
+    cell: ({ row }) => {
+      const value = row.getValue("created_at") as string;
+      const date = new Date(value);
+      return <div>{date.toLocaleDateString()}</div>;
+    },
   },
   {
     id: "actions",
-    header: "Actions",
     cell: ({ row }) => {
-      const userId = row.original.id;
-      const isProcessing = processingUser === userId;
-      const status = row.original.kyc_status;
-
+      const user = row.original;
+      const isPending = user.kyc_status?.toLowerCase() === "pending";
+      const isCurrentlyProcessing = processingUser === user.id;
+      
       return (
-        <div className="flex items-center space-x-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => onView(userId)}
-            title="View Details"
-          >
-            <Eye className="h-4 w-4" />
-          </Button>
-
-          {status === "pending" && (
+        <div className="flex justify-end gap-2">
+          {isPending && (
             <>
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => onApprove(userId)}
-                disabled={isProcessing}
-                className="text-green-600 hover:text-green-700 border-green-200 hover:border-green-400"
+                onClick={() => onApprove(user.id)}
+                disabled={isCurrentlyProcessing}
               >
-                <CheckCircle className="h-4 w-4 mr-1" />
-                {isProcessing ? "..." : "Approve"}
+                {isCurrentlyProcessing ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <CheckCircle className="h-4 w-4 mr-1" />
+                )}
+                Approve
               </Button>
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => onReject(userId)}
-                disabled={isProcessing}
-                className="text-red-600 hover:text-red-700 border-red-200 hover:border-red-400"
+                className="border-destructive text-destructive hover:bg-destructive/10"
+                onClick={() => onReject(user.id)}
+                disabled={isCurrentlyProcessing}
               >
                 <XCircle className="h-4 w-4 mr-1" />
-                {isProcessing ? "..." : "Reject"}
+                Reject
               </Button>
             </>
           )}
+          <Button variant="ghost" size="sm" onClick={() => onView(user.id)}>
+            <Eye className="h-4 w-4" />
+          </Button>
         </div>
       );
     },

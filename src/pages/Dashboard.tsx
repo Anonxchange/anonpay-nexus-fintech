@@ -15,13 +15,15 @@ import {
   CreditCard as BankIcon, 
   User as UserIcon, 
   Settings, 
-  FileText as KycIcon 
+  FileText as KycIcon,
+  Gift as GiftCardIcon 
 } from "lucide-react";
 import AppLayout from "../components/layout/AppLayout";
 import DashboardOverview from "../components/dashboard/DashboardOverview";
 import MyAccount from "../components/dashboard/MyAccount";
 import KycService from "../components/dashboard/KycService";
 import AddBankAccount from "../components/dashboard/AddBankAccount";
+import GiftCardService from "../components/services/giftcards/GiftCardService";
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
@@ -41,6 +43,8 @@ const Dashboard: React.FC = () => {
         return <KycService user={user} />;
       case "bankaccount":
         return <AddBankAccount user={user} />;
+      case "giftcard":
+        return <GiftCardService user={user} />;
       default:
         return <DashboardOverview user={user} />;
     }
@@ -63,7 +67,7 @@ const Dashboard: React.FC = () => {
                     tooltip="Services"
                   >
                     <Settings className="mr-2" />
-                    <span>Services</span>
+                    <span>Overview</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
@@ -93,7 +97,17 @@ const Dashboard: React.FC = () => {
                     tooltip="Add Bank Account"
                   >
                     <BankIcon className="mr-2" />
-                    <span>Add Bank Account</span>
+                    <span>Bank Account</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton 
+                    onClick={() => setActiveTab("giftcard")} 
+                    isActive={activeTab === "giftcard"}
+                    tooltip="Gift Cards"
+                  >
+                    <GiftCardIcon className="mr-2" />
+                    <span>Gift Cards</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               </SidebarMenu>
