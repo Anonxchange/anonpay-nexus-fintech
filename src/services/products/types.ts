@@ -69,6 +69,10 @@ export interface VtuProduct {
   name: string;
   price: number;
   description?: string;
+  imageUrl?: string;
+  isActive?: boolean;
+  category?: string;
+  hasVariants?: boolean;
 }
 
 export interface PaymentResponse {

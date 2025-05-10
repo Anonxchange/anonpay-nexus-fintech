@@ -1,8 +1,15 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
+import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { Card, CardContent } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import {
   Form,
   FormControl,
@@ -12,21 +19,14 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
 import { GiftCard } from "@/services/products/types";
 import { submitGiftCard } from "@/services/products/giftcardService";
-import FileUpload from "../../common/FileUpload";
-import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { Loader2, Upload } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client"; // Add the import for supabase
 
 interface GiftCardSellFormProps {
   user: any;
@@ -35,231 +35,166 @@ interface GiftCardSellFormProps {
 }
 
 const formSchema = z.object({
-  cardId: z.string({
-    required_error: "Please select a gift card type",
+  cardId: z.string().min(1, { message: "Please select a gift card" }),
+  cardCode: z.string().min(5, { message: "Card code is required" }),
+  amount: z.string().min(1, { message: "Amount is required" }).refine((value) => {
+    const num = Number(value);
+    return !isNaN(num) && num > 0;
+  }, {
+    message: "Amount must be a valid number greater than zero"
   }),
-  amount: z.number({
-    required_error: "Amount is required",
-    invalid_type_error: "Amount must be a number",
-  })
-  .positive("Amount must be positive")
-  .min(5, "Amount must be at least $5"),
-  cardCode: z.string().min(5, {
-    message: "Card code must be at least 5 characters",
-  }),
+  currency: z.string().min(1),
+  receiptImage: z.any(),
   comments: z.string().optional(),
 });
 
-const GiftCardSellForm: React.FC<GiftCardSellFormProps> = ({ 
-  user, 
-  availableCards,
-  onComplete 
-}) => {
+const GiftCardSellForm: React.FC<GiftCardSellFormProps> = ({ user, availableCards, onComplete }) => {
+  const [uploading, setUploading] = useState(false);
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
   const { toast } = useToast();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [cardImageUploading, setCardImageUploading] = useState(false);
-  const [receiptUrl, setReceiptUrl] = useState<string | null>(null);
-  const [selectedCard, setSelectedCard] = useState<GiftCard | null>(null);
   
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
       cardId: "",
-      amount: 0,
       cardCode: "",
+      amount: "",
+      currency: "NGN",
+      receiptImage: null,
       comments: "",
     },
   });
   
-  const handleCardSelect = (cardId: string) => {
-    const card = availableCards.find(c => c.id === cardId);
-    setSelectedCard(card || null);
-    
-    // Reset validation errors for amount
-    form.trigger("amount");
+  const handleImageUpload = async (file: File) => {
+    setUploading(true);
+    try {
+      const timestamp = new Date().getTime();
+      const filePath = `giftcard-receipts/${user.id}/${timestamp}-${file.name}`;
+      
+      const { data, error } = await supabase.storage
+        .from('public')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+      
+      if (error) {
+        console.error("Error uploading image:", error);
+        toast({
+          variant: "destructive",
+          title: "Upload Failed",
+          description: "Failed to upload receipt image. Please try again."
+        });
+        return;
+      }
+      
+      const publicURL = supabase.storage.from('public').getPublicUrl(filePath);
+      setImageUrl(publicURL.data.publicUrl);
+      
+      toast({
+        title: "Upload Successful",
+        description: "Receipt image uploaded successfully."
+      });
+    } catch (error) {
+      console.error("Error during image upload:", error);
+      toast({
+        variant: "destructive",
+        title: "Upload Failed",
+        description: "There was an error uploading the image. Please try again."
+      });
+    } finally {
+      setUploading(false);
+    }
   };
   
-  const handleSubmit = async (values: z.infer<typeof formSchema>) => {
-    if (!receiptUrl) {
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    if (!imageUrl) {
       toast({
-        title: "Card Image Required",
-        description: "Please upload an image of your gift card or receipt",
         variant: "destructive",
+        title: "Missing Image",
+        description: "Please upload a receipt image."
       });
       return;
     }
     
-    setIsSubmitting(true);
-    
     try {
-      const response = await submitGiftCard(
+      setUploading(true);
+      
+      const selectedCard = availableCards.find(card => card.id === values.cardId);
+      if (!selectedCard) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Selected gift card not found."
+        });
+        return;
+      }
+      
+      const result = await submitGiftCard(
         user.id,
         values.cardId,
-        values.amount,
+        selectedCard.name,
         values.cardCode,
-        receiptUrl,
+        Number(values.amount),
+        values.currency,
+        imageUrl,
         values.comments
       );
       
-      if (response.success) {
+      if (result.success) {
         toast({
-          title: "Gift Card Submitted",
-          description: response.message,
+          title: "Submission Successful",
+          description: "Your gift card submission has been received."
         });
+        form.reset();
+        setImageUrl(null);
         onComplete();
       } else {
         toast({
-          title: "Submission Failed",
-          description: response.message,
           variant: "destructive",
+          title: "Submission Failed",
+          description: result.message || "Failed to submit gift card. Please try again."
         });
       }
     } catch (error: any) {
       console.error("Error submitting gift card:", error);
       toast({
-        title: "Submission Error",
-        description: error.message || "An error occurred while submitting your gift card",
         variant: "destructive",
+        title: "Submission Error",
+        description: error.message || "An error occurred while submitting. Please try again."
       });
     } finally {
-      setIsSubmitting(false);
+      setUploading(false);
     }
   };
   
-  const handleCardImageUpload = async (file: File) => {
-    setCardImageUploading(true);
-    
-    try {
-      if (!user) throw new Error("User not authenticated");
-      
-      // Create a unique filename
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}/gift-cards/${Date.now()}.${fileExt}`;
-      
-      // Check if storage bucket exists
-      const { data: buckets } = await supabase.storage.listBuckets();
-      const giftcardBucket = buckets?.find(bucket => bucket.name === 'giftcards');
-      
-      if (!giftcardBucket) {
-        // Create bucket if it doesn't exist
-        const { data, error } = await supabase.storage.createBucket('giftcards', {
-          public: false,
-          fileSizeLimit: 10485760, // 10MB
-          allowedMimeTypes: ['image/png', 'image/jpeg', 'image/jpg']
-        });
-        
-        if (error) throw error;
-      }
-      
-      const { data, error } = await supabase.storage
-        .from('giftcards')
-        .upload(fileName, file, {
-          cacheControl: '3600',
-          upsert: true
-        });
-
-      if (error) throw error;
-
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('giftcards')
-        .getPublicUrl(fileName);
-
-      setReceiptUrl(publicUrl);
-      toast({
-        title: "Image uploaded",
-        description: "Your gift card image has been uploaded successfully",
-      });
-    } catch (error: any) {
-      console.error("Gift card image upload error:", error);
-      toast({
-        title: "Upload Failed",
-        description: error.message || "Failed to upload image. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setCardImageUploading(false);
-    }
-  };
-
   return (
     <Card>
-      <CardContent className="pt-6">
+      <CardHeader>
+        <CardTitle>Sell Gift Card</CardTitle>
+        <CardDescription>Submit your gift card details to sell</CardDescription>
+      </CardHeader>
+      <CardContent>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
               name="cardId"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Gift Card Type</FormLabel>
-                  <Select 
-                    onValueChange={(value) => {
-                      field.onChange(value);
-                      handleCardSelect(value);
-                    }}
-                    defaultValue={field.value}
-                    disabled={isSubmitting}
-                  >
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select a gift card type" />
+                        <SelectValue placeholder="Select a gift card" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
                       {availableCards.map((card) => (
-                        <SelectItem key={card.id} value={card.id}>
-                          {card.name}
-                        </SelectItem>
+                        <SelectItem key={card.id} value={card.id}>{card.name}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            {selectedCard && (
-              <div className="bg-gray-50 p-4 rounded-md">
-                <h3 className="font-medium mb-2">Card Information</h3>
-                <div className="flex items-center gap-4">
-                  {selectedCard.image_url && (
-                    <img 
-                      src={selectedCard.image_url} 
-                      alt={selectedCard.name}
-                      className="h-12 w-12 object-contain"
-                    />
-                  )}
-                  <div className="flex-1">
-                    <p className="text-sm">{selectedCard.description}</p>
-                    <p className="text-sm font-semibold mt-1">
-                      Rate: {selectedCard.buy_rate} NGN per {selectedCard.currency}
-                    </p>
-                    {selectedCard.min_amount && selectedCard.max_amount && (
-                      <p className="text-xs text-gray-500 mt-1">
-                        Accepted range: {selectedCard.min_amount} - {selectedCard.max_amount} {selectedCard.currency}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <FormField
-              control={form.control}
-              name="amount"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Card Amount ({selectedCard?.currency || 'USD'})</FormLabel>
-                  <FormControl>
-                    <Input 
-                      type="number"
-                      placeholder="Enter amount" 
-                      {...field}
-                      onChange={e => field.onChange(parseFloat(e.target.value) || 0)}
-                      disabled={isSubmitting}
-                    />
-                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
@@ -272,74 +207,118 @@ const GiftCardSellForm: React.FC<GiftCardSellFormProps> = ({
                 <FormItem>
                   <FormLabel>Card Code</FormLabel>
                   <FormControl>
-                    <Input 
-                      placeholder="Enter gift card code/pin" 
-                      {...field}
-                      disabled={isSubmitting}
-                    />
+                    <Input placeholder="Enter card code" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
             
-            <div className="space-y-2">
-              <FormLabel>Card Image/Receipt</FormLabel>
-              <FileUpload 
-                onFileSelect={handleCardImageUpload}
-                isUploading={cardImageUploading}
-                fileUrl={receiptUrl}
-                acceptedFileTypes="image/png, image/jpeg, image/jpg"
-                maxSize={10 * 1024 * 1024} // 10MB
-              />
-              <p className="text-xs text-gray-500">
-                Upload a clear image of your gift card or receipt (PNG or JPG, max 10MB)
-              </p>
-            </div>
+            <FormField
+              control={form.control}
+              name="amount"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Amount</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter amount" type="number" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="currency"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Currency</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select currency" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="NGN">NGN</SelectItem>
+                      <SelectItem value="USD">USD</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            
+            <FormField
+              control={form.control}
+              name="receiptImage"
+              render={() => (
+                <FormItem>
+                  <FormLabel>Receipt Image</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          form.setValue("receiptImage", file);
+                          handleImageUpload(file);
+                        }
+                      }}
+                      disabled={uploading}
+                    />
+                  </FormControl>
+                  <FormDescription>Upload a clear image of the gift card receipt.</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             
             <FormField
               control={form.control}
               name="comments"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Additional Information (Optional)</FormLabel>
+                  <FormLabel>Comments</FormLabel>
                   <FormControl>
-                    <Textarea 
-                      placeholder="Add any additional information about the card"
+                    <Textarea
+                      placeholder="Any additional comments?"
                       className="resize-none"
                       {...field}
-                      disabled={isSubmitting}
                     />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
-
-            <Button 
-              type="submit" 
-              className="w-full" 
-              disabled={isSubmitting || cardImageUploading || !receiptUrl}
-            >
-              {isSubmitting ? (
+            
+            <Button type="submit" disabled={uploading}>
+              {uploading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Submitting...
+                  Please wait
                 </>
               ) : (
-                "Submit Gift Card"
+                <>
+                  <Upload className="mr-2 h-4 w-4" />
+                  Submit
+                </>
               )}
             </Button>
-            
-            <div className="text-sm text-gray-500">
-              <p>
-                By submitting, you confirm that this gift card is legally obtained and has not been used.
-                Our team will verify your submission and credit your wallet upon approval.
-              </p>
-            </div>
           </form>
         </Form>
       </CardContent>
+      <CardFooter>
+        {imageUrl && (
+          <img
+            src={imageUrl}
+            alt="Receipt Preview"
+            className="max-w-md rounded-md"
+          />
+        )}
+      </CardFooter>
     </Card>
   );
 };

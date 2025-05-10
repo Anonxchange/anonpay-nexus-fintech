@@ -1,8 +1,9 @@
 
+// Main export file to maintain backward compatibility
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Notification } from "@/types/notification";
-import { useCallback } from "react";
+import { useCallback, useState, useEffect } from "react";
 import { formatUserChannelName, useSupabaseChannel } from "@/utils/supabaseHelpers";
 
 // Fetch user notifications
@@ -134,10 +135,13 @@ export const useNotifications = (userId: string | undefined) => {
             title: notification.title,
             description: description,
             action: notification.action_link ? {
-              label: "View",
+              // Fix this part to use the correct Toast interface
               onClick: () => {
                 window.location.href = notification.action_link || "/dashboard";
-              }
+              },
+              // Delete the "label" property as it's not supported
+              // Or use appropriate properties depending on the Toast component API
+              children: "View"
             } : undefined
           });
         }

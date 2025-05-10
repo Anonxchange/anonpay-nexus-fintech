@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -23,7 +24,7 @@ interface DbKycSubmission {
   admin_notes?: string;
   created_at: string;
   updated_at: string;
-  // Add these fields based on the KycSubmission interface requirements
+  // These fields need to be added to the Supabase table
   full_name: string;
   date_of_birth: string;
   address: string;
@@ -55,26 +56,26 @@ const KycService: React.FC<KycServiceProps> = ({ user }) => {
             .single();
           
           if (!error && data) {
-            // Cast to the correct KycSubmission type
-            const dbSubmission = data as unknown as DbKycSubmission;
-            const mappedSubmission: KycSubmission = {
-              id: dbSubmission.id,
-              user_id: dbSubmission.user_id,
-              full_name: dbSubmission.full_name,
-              date_of_birth: dbSubmission.date_of_birth,
-              address: dbSubmission.address,
-              id_number: dbSubmission.id_number, 
-              id_type: dbSubmission.id_type,
-              phone: dbSubmission.phone,
-              document_url: dbSubmission.document_url,
-              selfie_url: dbSubmission.selfie_url,
-              status: dbSubmission.status as "pending" | "approved" | "rejected",
-              admin_notes: dbSubmission.admin_notes,
-              created_at: dbSubmission.created_at,
-              updated_at: dbSubmission.updated_at,
+            // Convert database record to KycSubmission type
+            // For now, create a mock object with required fields
+            const mockSubmission: KycSubmission = {
+              id: data.id,
+              user_id: data.user_id,
+              full_name: data.full_name || "Not provided",
+              date_of_birth: data.date_of_birth || "Not provided",
+              address: data.address || "Not provided",
+              id_number: data.id_number || "Not provided", 
+              id_type: data.id_type || "Not provided",
+              phone: data.phone || "Not provided",
+              document_url: data.document_url,
+              selfie_url: data.selfie_url || "Not provided",
+              status: data.status as "pending" | "approved" | "rejected",
+              admin_notes: data.admin_notes,
+              created_at: data.created_at,
+              updated_at: data.updated_at,
             };
             
-            setKycSubmission(mappedSubmission);
+            setKycSubmission(mockSubmission);
           }
         } catch (error) {
           console.error("Error fetching KYC submission:", error);
@@ -105,26 +106,25 @@ const KycService: React.FC<KycServiceProps> = ({ user }) => {
           .single();
         
         if (!error && data) {
-          // Cast to the correct KycSubmission type
-          const dbSubmission = data as unknown as DbKycSubmission;
-          const mappedSubmission: KycSubmission = {
-            id: dbSubmission.id,
-            user_id: dbSubmission.user_id,
-            full_name: dbSubmission.full_name,
-            date_of_birth: dbSubmission.date_of_birth,
-            address: dbSubmission.address,
-            id_number: dbSubmission.id_number, 
-            id_type: dbSubmission.id_type,
-            phone: dbSubmission.phone,
-            document_url: dbSubmission.document_url,
-            selfie_url: dbSubmission.selfie_url,
-            status: dbSubmission.status as "pending" | "approved" | "rejected",
-            admin_notes: dbSubmission.admin_notes,
-            created_at: dbSubmission.created_at,
-            updated_at: dbSubmission.updated_at,
+          // Create a mock KycSubmission with required fields
+          const mockSubmission: KycSubmission = {
+            id: data.id,
+            user_id: data.user_id,
+            full_name: data.full_name || "Not provided",
+            date_of_birth: data.date_of_birth || "Not provided",
+            address: data.address || "Not provided",
+            id_number: data.id_number || "Not provided", 
+            id_type: data.id_type || "Not provided",
+            phone: data.phone || "Not provided",
+            document_url: data.document_url,
+            selfie_url: data.selfie_url || "Not provided",
+            status: data.status as "pending" | "approved" | "rejected",
+            admin_notes: data.admin_notes,
+            created_at: data.created_at,
+            updated_at: data.updated_at,
           };
           
-          setKycSubmission(mappedSubmission);
+          setKycSubmission(mockSubmission);
         }
       } catch (error) {
         console.error("Error fetching KYC submission:", error);

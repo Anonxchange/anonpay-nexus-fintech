@@ -1,19 +1,8 @@
 
-export interface KycFormData {
-  fullName: string;
-  dateOfBirth: string;
-  address: string;
-  idNumber: string;
-  idType: "national_id" | "passport" | "drivers_license" | "voters_card" | "bvn";
-  phone: string;
-  documentUrl?: string;
-  selfieUrl?: string;
-}
-
 export interface KycSubmission {
   id: string;
   user_id: string;
-  full_name: string;
+  full_name: string; 
   date_of_birth: string;
   address: string;
   id_number: string;
@@ -27,7 +16,13 @@ export interface KycSubmission {
   updated_at: string;
 }
 
-export interface KycStatus {
-  status: "not_submitted" | "pending" | "approved" | "rejected";
-  message?: string;
+export interface KycFormData {
+  full_name: string;
+  date_of_birth: string;
+  address: string;
+  id_type: string;
+  id_number: string;
+  phone: string;
+  document_file: File | null;
+  selfie_file: File | null;
 }

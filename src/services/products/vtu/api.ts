@@ -1,6 +1,6 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { EbillsVtuResponse } from "../types";
+import { EbillsTopUpResponse } from "../types";
 
 // Integrate Ebills Africa API for airtime top-up
 interface TopUpParams {
@@ -12,7 +12,7 @@ interface TopUpParams {
 /**
  * Function to top up airtime using Ebills Africa API
  */
-export const topUpAirtime = async ({ phone, network, amount }: TopUpParams): Promise<EbillsVtuResponse> => {
+export const topUpAirtime = async ({ phone, network, amount }: TopUpParams): Promise<EbillsTopUpResponse> => {
   try {
     // 1. Authenticate and get JWT token
     const authRes = await fetch(

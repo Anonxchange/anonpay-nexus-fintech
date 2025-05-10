@@ -1,9 +1,7 @@
-import React, { useState, useEffect } from "react";
-import { zodResolver } from "@hookform/resolvers/zod";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
-import * as z from "zod";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import {
   Form,
   FormControl,
@@ -13,365 +11,188 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
-import { useToast } from "@/hooks/use-toast";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Card, CardContent } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
-import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/contexts/auth";
-import { User } from '@supabase/supabase-js';
-import { format } from "date-fns";
-import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { CalendarIcon, Loader2 } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useToast } from "@/hooks/use-toast";
+import { Loader2 } from "lucide-react";
 import { KycFormData } from "@/types/kyc";
-import FileUpload from "../common/FileUpload";
-
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-
-const kycFormSchema = z.object({
-  fullName: z.string().min(2, {
-    message: "Full name must be at least 2 characters.",
-  }),
-  dateOfBirth: z.date({
-    required_error: "Date of birth is required.",
-  }).refine(date => {
-    const today = new Date();
-    const birthDate = new Date(date);
-    const age = today.getFullYear() - birthDate.getFullYear();
-    return age >= 18;
-  }, {
-    message: "You must be at least 18 years old.",
-  }),
-  idType: z.enum(["national_id", "passport", "drivers_license", "voters_card", "bvn"], {
-    required_error: "You need to select an ID type.",
-  }),
-  idNumber: z.string().min(5, {
-    message: "ID number must be at least 5 characters.",
-  }),
-  address: z.string().min(5, {
-    message: "Address must be at least 5 characters.",
-  }),
-  phone: z.string().min(5, {
-    message: "Phone number must be at least 5 characters.",
-  }),
-  documentUrl: z.string().optional(),
-  selfieUrl: z.string().optional(),
-});
-
-type FormValues = z.infer<typeof kycFormSchema>;
 
 interface KycFormProps {
-  user?: User;
-  onSubmit?: (data: KycFormData) => Promise<void>;
-  onComplete?: () => void;
+  onComplete: () => void;
 }
 
-const KycForm: React.FC<KycFormProps> = ({ user: propUser, onSubmit: propOnSubmit, onComplete }) => {
-  const { user: authUser, profile, refreshProfile } = useAuth();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [documentUploading, setDocumentUploading] = useState(false);
-  const [selfieUploading, setSelfieUploading] = useState(false);
-  const [documentFile, setDocumentFile] = useState<string | null>(null);
-  const [selfieFile, setSelfieFile] = useState<string | null>(null);
-  const { toast } = useToast();
-  const navigate = useNavigate();
-  
-  // Use the user from props if provided, otherwise use from auth context
-  const activeUser = propUser || authUser;
+// Define the form schema with zod
+const formSchema = z.object({
+  full_name: z.string().min(2, "Full name is required"),
+  date_of_birth: z.string().min(2, "Date of birth is required"),
+  address: z.string().min(2, "Address is required"),
+  id_type: z.enum(["national_id", "passport", "drivers_license"]),
+  id_number: z.string().min(2, "ID number is required"),
+  phone: z.string().min(2, "Phone number is required"),
+});
 
-  const form = useForm<FormValues>({
-    resolver: zodResolver(kycFormSchema),
+const KycForm: React.FC<KycFormProps> = ({ onComplete }) => {
+  const [uploading, setUploading] = useState(false);
+  const [documentFile, setDocumentFile] = useState<File | null>(null);
+  const [selfieFile, setSelfieFile] = useState<File | null>(null);
+  const { toast } = useToast();
+
+  const form = useForm<KycFormData>({
+    resolver: zodResolver(formSchema),
     defaultValues: {
-      fullName: profile?.name || "",
-      idType: "national_id",
-      idNumber: "",
+      full_name: "",
+      date_of_birth: "",
       address: "",
-      phone: profile?.phone_number || "",
+      id_type: "national_id",
+      id_number: "",
+      phone: "",
+      document_file: null,
+      selfie_file: null,
     },
   });
 
-  async function handleSubmit(data: FormValues) {
-    if (!activeUser) {
-      toast({
-        title: "Authentication Required",
-        description: "You must be logged in to submit your KYC",
-        variant: "destructive",
-      });
-      navigate("/login");
-      return;
-    }
-
+  const onSubmit = async (data: KycFormData) => {
     if (!documentFile) {
       toast({
-        title: "Document Required",
-        description: "Please upload your identification document",
         variant: "destructive",
+        title: "Error",
+        description: "Please upload your ID document",
       });
       return;
     }
 
     if (!selfieFile) {
       toast({
-        title: "Selfie Required",
-        description: "Please upload your selfie for verification",
         variant: "destructive",
+        title: "Error",
+        description: "Please upload your selfie",
       });
       return;
     }
 
-    setIsSubmitting(true);
+    setUploading(true);
 
     try {
-      // Format data for submission
-      const formattedData: KycFormData = {
-        fullName: data.fullName,
-        dateOfBirth: format(data.dateOfBirth, "yyyy-MM-dd"),
-        idType: data.idType,
-        idNumber: data.idNumber,
-        address: data.address,
-        phone: data.phone,
-        documentUrl: documentFile,
-        selfieUrl: selfieFile,
-      };
+      // Get current user
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
-      // If a custom onSubmit handler was provided, use that
-      if (propOnSubmit) {
-        await propOnSubmit(formattedData);
-        // Call onComplete if provided
-        if (onComplete) {
-          onComplete();
-        }
-        return;
+      if (!user) {
+        throw new Error("User not authenticated");
       }
-      
-      // Otherwise use the default implementation
-      // Create KYC submission - with proper field names for the database
-      const { error: submissionError } = await supabase
-        .from('kyc_submissions')
-        .insert({
-          user_id: activeUser.id,
-          full_name: data.fullName,
-          date_of_birth: format(data.dateOfBirth, "yyyy-MM-dd"),
-          address: data.address,
-          phone: data.phone,
-          id_type: data.idType,
-          id_number: data.idNumber,
-          document_url: documentFile,
-          selfie_url: selfieFile,
-          status: 'pending',
-          document_type: data.idType // Add the document_type field
-        });
+
+      // First, upload the document file
+      const documentFileName = `${user.id}_${Date.now()}_document.${
+        documentFile.name.split(".").pop()
+      }`;
+      const { data: documentData, error: documentError } = await supabase.storage
+        .from("kyc_documents")
+        .upload(documentFileName, documentFile);
+
+      if (documentError) {
+        throw new Error(`Document upload failed: ${documentError.message}`);
+      }
+
+      // Get the document URL
+      const {
+        data: { publicUrl: documentUrl },
+      } = supabase.storage.from("kyc_documents").getPublicUrl(documentFileName);
+
+      // Then, upload the selfie file
+      const selfieFileName = `${user.id}_${Date.now()}_selfie.${
+        selfieFile.name.split(".").pop()
+      }`;
+      const { data: selfieData, error: selfieError } = await supabase.storage
+        .from("kyc_documents")
+        .upload(selfieFileName, selfieFile);
+
+      if (selfieError) {
+        throw new Error(`Selfie upload failed: ${selfieError.message}`);
+      }
+
+      // Get the selfie URL
+      const {
+        data: { publicUrl: selfieUrl },
+      } = supabase.storage.from("kyc_documents").getPublicUrl(selfieFileName);
+
+      // Submit KYC data to database
+      const { error: submissionError } = await supabase.from("kyc_submissions").insert({
+        user_id: user.id,
+        full_name: data.full_name,
+        date_of_birth: data.date_of_birth,
+        address: data.address,
+        id_type: data.id_type,
+        id_number: data.id_number,
+        phone: data.phone,
+        document_type: data.id_type,
+        document_url: documentUrl,
+        selfie_url: selfieUrl,
+        status: "pending"
+      });
 
       if (submissionError) {
-        throw submissionError;
+        throw new Error(`KYC submission failed: ${submissionError.message}`);
       }
 
-      // Update the user's profile with KYC information
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          name: data.fullName,
-          phone_number: data.phone,
-          kyc_status: 'pending'
-        })
-        .eq('id', activeUser.id);
+      // Update user profile status
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .update({ kyc_status: "pending" })
+        .eq("id", user.id);
 
-      if (error) {
-        throw error;
-      }
-
-      // Refresh profile data
-      if (refreshProfile) {
-        await refreshProfile();
+      if (profileError) {
+        throw new Error(`Profile update failed: ${profileError.message}`);
       }
 
       toast({
         title: "KYC Submitted",
-        description: "Your KYC information has been submitted successfully and is under review.",
-        variant: "default",
+        description:
+          "Your verification documents have been submitted successfully.",
       });
 
-      // Call onComplete if provided
-      if (onComplete) {
-        onComplete();
-      } else {
-        navigate("/dashboard");
-      }
+      onComplete();
     } catch (error: any) {
       console.error("KYC submission error:", error);
       toast({
-        title: "Error",
-        description: error.message || "Failed to submit KYC information. Please try again.",
         variant: "destructive",
+        title: "Submission Failed",
+        description: error.message || "Failed to submit KYC. Please try again.",
       });
     } finally {
-      setIsSubmitting(false);
-    }
-  }
-
-  const handleDocumentUpload = async (file: File) => {
-    setDocumentUploading(true);
-    
-    // Validate file size
-    if (file.size > MAX_FILE_SIZE) {
-      toast({
-        title: "File too large",
-        description: "Document file must be less than 5MB",
-        variant: "destructive",
-      });
-      setDocumentUploading(false);
-      return;
-    }
-
-    try {
-      if (!activeUser) throw new Error("User not authenticated");
-      
-      // Create a unique filename
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${activeUser.id}/documents/${Date.now()}.${fileExt}`;
-      
-      // Check if storage bucket exists
-      const { data: buckets } = await supabase.storage.listBuckets();
-      const kycBucket = buckets?.find(bucket => bucket.name === 'kyc');
-      
-      if (!kycBucket) {
-        // Create bucket if it doesn't exist
-        const { data, error } = await supabase.storage.createBucket('kyc', {
-          public: false,
-          fileSizeLimit: 5242880, // 5MB
-          allowedMimeTypes: ['image/png', 'image/jpeg', 'image/jpg', 'application/pdf']
-        });
-        
-        if (error) throw error;
-      }
-      
-      const { data, error } = await supabase.storage
-        .from('kyc')
-        .upload(fileName, file, {
-          cacheControl: '3600',
-          upsert: true
-        });
-
-      if (error) throw error;
-
-      // Get public URL (or signed URL for private files)
-      const { data: { publicUrl } } = supabase.storage
-        .from('kyc')
-        .getPublicUrl(fileName);
-
-      setDocumentFile(publicUrl);
-      toast({
-        title: "Document uploaded",
-        description: "Your document has been uploaded successfully",
-      });
-    } catch (error: any) {
-      console.error("Document upload error:", error);
-      toast({
-        title: "Upload Failed",
-        description: error.message || "Failed to upload document. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setDocumentUploading(false);
+      setUploading(false);
     }
   };
 
-  const handleSelfieUpload = async (file: File) => {
-    setSelfieUploading(true);
-    
-    // Validate file size
-    if (file.size > MAX_FILE_SIZE) {
-      toast({
-        title: "File too large",
-        description: "Selfie file must be less than 5MB",
-        variant: "destructive",
-      });
-      setSelfieUploading(false);
-      return;
+  const handleDocumentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setDocumentFile(e.target.files[0]);
     }
+  };
 
-    try {
-      if (!activeUser) throw new Error("User not authenticated");
-      
-      // Create a unique filename
-      const fileExt = file.name.split('.').pop();
-      const fileName = `${activeUser.id}/selfies/${Date.now()}.${fileExt}`;
-      
-      // Check if storage bucket exists
-      const { data: buckets } = await supabase.storage.listBuckets();
-      const kycBucket = buckets?.find(bucket => bucket.name === 'kyc');
-      
-      if (!kycBucket) {
-        // Create bucket if it doesn't exist
-        const { data, error } = await supabase.storage.createBucket('kyc', {
-          public: false,
-          fileSizeLimit: 5242880, // 5MB
-          allowedMimeTypes: ['image/png', 'image/jpeg', 'image/jpg']
-        });
-        
-        if (error) throw error;
-      }
-      
-      const { data, error } = await supabase.storage
-        .from('kyc')
-        .upload(fileName, file, {
-          cacheControl: '3600',
-          upsert: true
-        });
-
-      if (error) throw error;
-
-      // Get public URL (or signed URL for private files)
-      const { data: { publicUrl } } = supabase.storage
-        .from('kyc')
-        .getPublicUrl(fileName);
-
-      setSelfieFile(publicUrl);
-      toast({
-        title: "Selfie uploaded",
-        description: "Your selfie has been uploaded successfully",
-      });
-    } catch (error: any) {
-      console.error("Selfie upload error:", error);
-      toast({
-        title: "Upload Failed",
-        description: error.message || "Failed to upload selfie. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setSelfieUploading(false);
+  const handleSelfieChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setSelfieFile(e.target.files[0]);
     }
   };
 
   return (
-    <Card className="w-full max-w-2xl mx-auto">
-      <CardHeader>
-        <CardTitle>Know Your Customer (KYC)</CardTitle>
-        <CardDescription>
-          Complete your KYC verification to unlock all features of the platform.
-        </CardDescription>
-      </CardHeader>
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(handleSubmit)}>
-          <CardContent className="space-y-4">
+    <Card>
+      <CardContent>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
-              name="fullName"
+              name="full_name"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Full Name</FormLabel>
@@ -385,99 +206,16 @@ const KycForm: React.FC<KycFormProps> = ({ user: propUser, onSubmit: propOnSubmi
 
             <FormField
               control={form.control}
-              name="dateOfBirth"
-              render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel>Date of Birth</FormLabel>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <FormControl>
-                        <Button
-                          variant={"outline"}
-                          className={cn(
-                            "w-full pl-3 text-left font-normal",
-                            !field.value && "text-muted-foreground"
-                          )}
-                        >
-                          {field.value ? (
-                            format(field.value, "PPP")
-                          ) : (
-                            <span>Pick a date</span>
-                          )}
-                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                        </Button>
-                      </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={field.value}
-                        onSelect={field.onChange}
-                        disabled={(date) => {
-                          const today = new Date();
-                          const minDate = new Date();
-                          minDate.setFullYear(today.getFullYear() - 100); // 100 years ago
-                          return date > today || date < minDate;
-                        }}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                  <FormDescription>
-                    You must be at least 18 years old to use our services.
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="idType"
-              render={({ field }) => (
-                <FormItem className="space-y-3">
-                  <FormLabel>ID Type</FormLabel>
-                  <FormControl>
-                    <RadioGroup
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                      className="flex flex-col space-y-1"
-                    >
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="national_id" id="national_id" />
-                        <Label htmlFor="national_id">National ID</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="passport" id="passport" />
-                        <Label htmlFor="passport">Passport</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="drivers_license" id="drivers_license" />
-                        <Label htmlFor="drivers_license">Driver's License</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="voters_card" id="voters_card" />
-                        <Label htmlFor="voters_card">Voter's Card</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="bvn" id="bvn" />
-                        <Label htmlFor="bvn">BVN</Label>
-                      </div>
-                    </RadioGroup>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="idNumber"
+              name="date_of_birth"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>ID Number</FormLabel>
+                  <FormLabel>Date of Birth</FormLabel>
                   <FormControl>
-                    <Input placeholder="ID Number" {...field} />
+                    <Input
+                      placeholder="YYYY-MM-DD"
+                      type="date"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -491,7 +229,44 @@ const KycForm: React.FC<KycFormProps> = ({ user: propUser, onSubmit: propOnSubmi
                 <FormItem>
                   <FormLabel>Address</FormLabel>
                   <FormControl>
-                    <Input placeholder="Your residential address" {...field} />
+                    <Input placeholder="123 Main St" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="id_type"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>ID Type</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select ID type" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="national_id">National ID</SelectItem>
+                      <SelectItem value="passport">Passport</SelectItem>
+                      <SelectItem value="drivers_license">Driver's License</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="id_number"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>ID Number</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter ID number" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -505,69 +280,64 @@ const KycForm: React.FC<KycFormProps> = ({ user: propUser, onSubmit: propOnSubmi
                 <FormItem>
                   <FormLabel>Phone Number</FormLabel>
                   <FormControl>
-                    <Input placeholder="+1234567890" {...field} />
+                    <Input placeholder="+1-555-555-5555" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
-            <div className="space-y-2">
-              <Label>ID Document</Label>
-              <FileUpload 
-                onFileSelect={handleDocumentUpload} 
-                isUploading={documentUploading}
-                acceptedFileTypes="image/png, image/jpeg, application/pdf"
-                maxSize={MAX_FILE_SIZE}
-                fileUrl={documentFile}
-              />
-              {documentFile && (
-                <p className="text-sm text-green-600">Document uploaded successfully</p>
-              )}
-              <FormDescription>
-                Upload a clear image of your ID document (PNG, JPG, or PDF, max 5MB).
-              </FormDescription>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <FormItem>
+                  <FormLabel>ID Document</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="file"
+                      accept="image/*,application/pdf"
+                      onChange={handleDocumentChange}
+                      disabled={uploading}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Upload a clear image or PDF of your ID document.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              </div>
+
+              <div>
+                <FormItem>
+                  <FormLabel>Selfie</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleSelfieChange}
+                      disabled={uploading}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Upload a selfie of yourself holding your ID document.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              </div>
             </div>
 
-            <div className="space-y-2">
-              <Label>Selfie with ID</Label>
-              <FileUpload 
-                onFileSelect={handleSelfieUpload} 
-                isUploading={selfieUploading}
-                acceptedFileTypes="image/png, image/jpeg"
-                maxSize={MAX_FILE_SIZE}
-                fileUrl={selfieFile}
-              />
-              {selfieFile && (
-                <p className="text-sm text-green-600">Selfie uploaded successfully</p>
-              )}
-              <FormDescription>
-                Upload a clear selfie of yourself holding your ID document (PNG or JPG, max 5MB).
-              </FormDescription>
-            </div>
-
-            <Alert>
-              <AlertDescription>
-                Your information will be securely stored and used only for verification purposes as required by financial regulations.
-              </AlertDescription>
-            </Alert>
-          </CardContent>
-          <CardFooter>
-            <Button 
-              type="submit" 
-              disabled={isSubmitting || documentUploading || selfieUploading} 
-              className="w-full"
-            >
-              {isSubmitting ? (
+            <Button type="submit" disabled={uploading}>
+              {uploading ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" /> 
-                  Submitting...
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Please wait
                 </>
-              ) : "Submit KYC"}
+              ) : (
+                "Submit"
+              )}
             </Button>
-          </CardFooter>
-        </form>
-      </Form>
+          </form>
+        </Form>
+      </CardContent>
     </Card>
   );
 };

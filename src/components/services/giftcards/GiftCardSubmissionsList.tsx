@@ -1,109 +1,102 @@
 
 import React from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { GiftCardSubmission } from "@/services/products/types";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatDistanceToNow } from "date-fns";
-import { Eye, Image, AlertCircle } from "lucide-react";
+import { Eye } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface GiftCardSubmissionsListProps {
   submissions: GiftCardSubmission[];
-  onViewImage: (imageUrl: string) => void;
+  onViewImage: (url: string) => void;
 }
 
 const GiftCardSubmissionsList: React.FC<GiftCardSubmissionsListProps> = ({
   submissions,
   onViewImage,
 }) => {
-  if (submissions.length === 0) {
-    return (
-      <Card>
-        <CardContent className="flex flex-col items-center justify-center py-8 text-center">
-          <AlertCircle className="h-10 w-10 text-gray-400 mb-3" />
-          <h3 className="font-medium text-gray-900">No submissions yet</h3>
-          <p className="text-sm text-gray-500 max-w-md mt-1">
-            You haven't submitted any gift cards yet. Select a gift card to sell from the "Sell Gift Card" tab.
-          </p>
-        </CardContent>
-      </Card>
-    );
-  }
+  // Sort submissions by created_at, newest first
+  const sortedSubmissions = [...submissions].sort((a, b) =>
+    new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  );
 
-  const getBadgeVariant = (status: string) => {
+  const getSubmissionStatusBadge = (status: string) => {
     switch (status) {
-      case "approved":
-        return "default"; // Changed from success to default
-      case "rejected":
-        return "destructive";
+      case 'approved':
+        return <Badge variant="default">Approved</Badge>;
+      case 'rejected':
+        return <Badge variant="destructive">Rejected</Badge>;
       default:
-        return "outline";
+        return <Badge variant="outline">Pending</Badge>;
     }
   };
 
   return (
-    <div className="space-y-4">
-      {submissions.map((submission) => (
-        <Card key={submission.id} className="overflow-hidden">
-          <CardHeader className="pb-3">
-            <div className="flex justify-between items-center">
-              <CardTitle className="text-base font-medium">
-                {submission.card_name}
-              </CardTitle>
-              <Badge variant={getBadgeVariant(submission.status)}>
-                {submission.status.toUpperCase()}
-              </Badge>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-500">Amount:</span>
-                <span className="font-medium">
-                  {submission.amount} {submission.currency}
-                </span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-500">Submitted:</span>
-                <span>
-                  {formatDistanceToNow(new Date(submission.created_at), { addSuffix: true })}
-                </span>
-              </div>
-              
-              {submission.status === "approved" && (
-                <div className="bg-green-50 border border-green-200 rounded p-3 mt-2">
-                  <p className="text-sm text-green-700">
-                    Your wallet has been credited with the equivalent value in NGN.
-                  </p>
+    <Card>
+      <CardHeader>
+        <CardTitle>Your Gift Card Submissions</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {sortedSubmissions.length === 0 ? (
+          <p className="text-center py-8 text-muted-foreground">
+            You haven't submitted any gift cards yet.
+          </p>
+        ) : (
+          <div className="space-y-4">
+            {sortedSubmissions.map((submission) => (
+              <div
+                key={submission.id}
+                className="border rounded-md p-4 bg-card"
+              >
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="font-medium text-lg mb-1">
+                      {submission.card_name}
+                    </h3>
+                    <p className="text-sm text-muted-foreground mb-2">
+                      Submitted{" "}
+                      {formatDistanceToNow(new Date(submission.created_at), {
+                        addSuffix: true,
+                      })}
+                    </p>
+                    <div className="flex flex-col gap-1 text-sm">
+                      <p>
+                        <span className="font-medium">Amount:</span>{" "}
+                        {submission.currency} {submission.amount.toLocaleString()}
+                      </p>
+                      {submission.card_code && (
+                        <p>
+                          <span className="font-medium">Card Code:</span>{" "}
+                          {submission.card_code}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-end gap-2">
+                    {getSubmissionStatusBadge(submission.status)}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => onViewImage(submission.receipt_image_url)}
+                    >
+                      <Eye className="h-4 w-4 mr-1" /> View Receipt
+                    </Button>
+                  </div>
                 </div>
-              )}
-              
-              {submission.status === "rejected" && submission.admin_notes && (
-                <div className="bg-red-50 border border-red-200 rounded p-3 mt-2">
-                  <p className="text-sm font-medium text-red-700 mb-1">Reason for rejection:</p>
-                  <p className="text-sm text-red-700">{submission.admin_notes}</p>
-                </div>
-              )}
-              
-              <div className="flex justify-between items-center pt-2">
-                <p className="text-xs text-gray-500">
-                  Card Code: {submission.card_code.slice(0, 4)}...
-                </p>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => onViewImage(submission.receipt_image_url)}
-                  className="flex items-center text-xs"
-                >
-                  <Image className="h-3.5 w-3.5 mr-1" />
-                  View Image
-                </Button>
+
+                {submission.status === "rejected" && submission.admin_notes && (
+                  <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-md text-sm text-red-700">
+                    <p className="font-medium">Rejection reason:</p>
+                    <p>{submission.admin_notes}</p>
+                  </div>
+                )}
               </div>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
-    </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 };
 
