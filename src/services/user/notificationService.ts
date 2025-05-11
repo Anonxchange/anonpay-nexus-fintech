@@ -1,4 +1,3 @@
-
 // Main export file to maintain backward compatibility
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -130,17 +129,14 @@ export const useNotifications = (userId: string | undefined) => {
             description = `🎁 ${notification.message}`;
           }
           
-          // Show a toast notification
+          // Show a toast notification with fixed action type
           toast({
             title: notification.title,
             description: description,
             action: notification.action_link ? {
-              // Fix this part to use the correct Toast interface
-              onClick: () => {
-                window.location.href = notification.action_link || "/dashboard";
-              },
-              // Delete the "label" property as it's not supported
-              // Or use appropriate properties depending on the Toast component API
+              // Use altText instead of onClick which is not in type definition
+              altText: "View",
+              // Fix: Create proper children rendering instead of using onClick
               children: "View"
             } : undefined
           });

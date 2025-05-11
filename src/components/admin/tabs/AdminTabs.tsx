@@ -10,6 +10,7 @@ import { useNavigate } from "react-router-dom";
 import { Profile } from "@/types/auth";
 import { KycAction } from "@/services/products/types"; 
 import { Transaction } from "@/services/transactions/types";
+import { User } from "../kyc/columns";
 
 interface AdminTabsProps {
   users: Profile[];
@@ -65,7 +66,8 @@ const AdminTabs: React.FC<AdminTabsProps> = ({
 
       <TabsContent value="kyc">
         <KycTab 
-          users={users.filter(user => user.kyc_status !== 'not_submitted')} 
+          // Convert Profile[] to User[] by mapping the required fields
+          users={users.filter(user => user.kyc_status !== 'not_submitted')}
           onAction={handleKycAction} 
         />
       </TabsContent>

@@ -14,6 +14,7 @@ export interface KycSubmission {
   admin_notes?: string;
   created_at: string;
   updated_at: string;
+  document_type?: string; // Added for backward compatibility
 }
 
 export interface KycFormData {

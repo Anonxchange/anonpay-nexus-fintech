@@ -1,8 +1,8 @@
 
 import { KycAction } from "@/services/products/types";
-import { User } from "./columns";
+import { Profile } from "@/types/auth";
 
 export interface KycTabProps {
-  users: User[];
+  users: Profile[];
   onAction: (userId: string, action: KycAction) => Promise<void>;
 }

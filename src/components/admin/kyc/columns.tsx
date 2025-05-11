@@ -1,17 +1,16 @@
-
 import React from "react";
 import { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, XCircle, Loader2, Eye } from "lucide-react";
 
-export type User = {
+export interface User {
   id: string;
   name: string | null;
-  email: string;
-  kyc_status: string;
-  created_at: string;
-};
+  email?: string; // Make email optional to match Profile interface
+  kyc_status?: string;
+  created_at?: string;
+}
 
 interface ColumnsProps {
   onApprove: (userId: string) => void;

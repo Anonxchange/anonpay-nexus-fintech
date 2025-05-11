@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -58,7 +57,7 @@ const KycService: React.FC<KycServiceProps> = ({ user }) => {
           if (!error && data) {
             // Convert database record to KycSubmission type
             // For now, create a mock object with required fields
-            const mockSubmission: KycSubmission = {
+            const submission: KycSubmission = {
               id: data.id,
               user_id: data.user_id,
               full_name: data.full_name || "Not provided",
@@ -73,9 +72,10 @@ const KycService: React.FC<KycServiceProps> = ({ user }) => {
               admin_notes: data.admin_notes,
               created_at: data.created_at,
               updated_at: data.updated_at,
+              document_type: data.document_type,
             };
             
-            setKycSubmission(mockSubmission);
+            setKycSubmission(submission);
           }
         } catch (error) {
           console.error("Error fetching KYC submission:", error);
