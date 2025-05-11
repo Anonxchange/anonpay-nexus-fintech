@@ -16,14 +16,13 @@ const KYC: React.FC = () => {
     return <div>Loading...</div>;
   }
   
-  const handleKycSubmit = async (data: any) => {
+  const handleKycSubmit = async () => {
     // In a real app, we'd submit this data to a backend
     // For demo purposes, we'll just simulate the update in local storage
     
     const updatedUser = {
       ...user,
       kycStatus: "pending" as KycStatus,
-      name: data.fullName
     };
     
     localStorage.setItem("anonpay_user", JSON.stringify(updatedUser));
@@ -52,7 +51,7 @@ const KYC: React.FC = () => {
         </div>
         
         <div className="bg-white p-6 rounded-lg shadow-sm border">
-          <KycForm user={user} onSubmit={handleKycSubmit} />
+          <KycForm onComplete={handleKycSubmit} />
         </div>
       </div>
     </AppLayout>

@@ -29,7 +29,7 @@ const SubmissionsTable: React.FC<SubmissionsTableProps> = ({
   const getBadgeVariant = (status: string) => {
     switch (status) {
       case "approved":
-        return "default"; // Changed from "success" to "default" to match BadgeProps
+        return "success";
       case "rejected":
         return "destructive";
       default:

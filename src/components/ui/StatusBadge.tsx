@@ -12,7 +12,7 @@ const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
   const normalizedStatus = String(status).toLowerCase();
   
   // Define styling based on status
-  let variant: "default" | "secondary" | "destructive" | "outline" = "default";
+  let variant: "default" | "secondary" | "destructive" | "outline" | "success" = "default";
   let label = status;
   
   switch (normalizedStatus) {
@@ -20,7 +20,7 @@ const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
     case "active":
     case "completed":
     case "success":
-      variant = "default";
+      variant = "success";
       break;
       
     case "pending":

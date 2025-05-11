@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from "@/components/ui/use-toast";
 import { GiftCardSubmission } from "@/services/products/types";
 import { ExtendedGiftCard } from "./types";
 
