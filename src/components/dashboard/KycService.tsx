@@ -56,7 +56,6 @@ const KycService: React.FC<KycServiceProps> = ({ user }) => {
           
           if (!error && data) {
             // Convert database record to KycSubmission type
-            // For now, create a mock object with required fields
             const submission: KycSubmission = {
               id: data.id,
               user_id: data.user_id,
@@ -64,7 +63,7 @@ const KycService: React.FC<KycServiceProps> = ({ user }) => {
               date_of_birth: data.date_of_birth || "Not provided",
               address: data.address || "Not provided",
               id_number: data.id_number || "Not provided", 
-              id_type: data.id_type || "Not provided",
+              id_type: data.id_type || data.document_type || "Not provided",
               phone: data.phone || "Not provided",
               document_url: data.document_url,
               selfie_url: data.selfie_url || "Not provided",
@@ -114,7 +113,7 @@ const KycService: React.FC<KycServiceProps> = ({ user }) => {
             date_of_birth: data.date_of_birth || "Not provided",
             address: data.address || "Not provided",
             id_number: data.id_number || "Not provided", 
-            id_type: data.id_type || "Not provided",
+            id_type: data.id_type || data.document_type || "Not provided",
             phone: data.phone || "Not provided",
             document_url: data.document_url,
             selfie_url: data.selfie_url || "Not provided",

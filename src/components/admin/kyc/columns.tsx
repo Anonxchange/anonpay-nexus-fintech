@@ -7,7 +7,7 @@ import { CheckCircle, XCircle, Loader2, Eye } from "lucide-react";
 export interface User {
   id: string;
   name: string | null;
-  email?: string; // Make email optional to match Profile interface
+  email: string; // Required in User type
   kyc_status?: string;
   created_at?: string;
 }

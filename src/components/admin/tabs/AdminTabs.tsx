@@ -66,7 +66,7 @@ const AdminTabs: React.FC<AdminTabsProps> = ({
 
       <TabsContent value="kyc">
         <KycTab 
-          // Convert Profile[] to User[] by mapping the required fields
+          // Filter users with KYC submissions and ensure required fields for User type
           users={users.filter(user => user.kyc_status !== 'not_submitted')}
           onAction={handleKycAction} 
         />

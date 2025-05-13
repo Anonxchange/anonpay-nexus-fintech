@@ -134,9 +134,7 @@ export const useNotifications = (userId: string | undefined) => {
             title: notification.title,
             description: description,
             action: notification.action_link ? {
-              // Use altText instead of onClick which is not in type definition
-              altText: "View",
-              // Fix: Create proper children rendering instead of using onClick
+              // Use proper action props
               children: "View"
             } : undefined
           });
