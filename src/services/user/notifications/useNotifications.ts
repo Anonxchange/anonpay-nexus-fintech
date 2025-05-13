@@ -1,56 +1,127 @@
 
-import { useCallback } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
 import { Notification } from "@/types/notification";
-import { ToastActionElement } from "@/components/ui/toast";
+import { useToast } from "@/hooks/use-toast";
+import { toast as toastAction } from "@/components/ui/use-toast";
+import { ToastAction } from "@/components/ui/toast";
+import { markNotificationRead, markAllNotificationsRead } from "./notificationApi";
 
-// Custom hook for real-time notifications
-export const useNotifications = (userId: string | undefined) => {
+export const useNotifications = (userId?: string) => {
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   
-  // Create channel for notifications
-  const setupNotificationsSubscription = useCallback(() => {
-    if (!userId) return null;
-
+  useEffect(() => {
+    if (!userId) return;
+    
+    const fetchNotifications = async () => {
+      setLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('notifications')
+          .select('*')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false });
+        
+        if (error) {
+          throw error;
+        }
+        
+        const typedNotifications = data as Notification[];
+        setNotifications(typedNotifications || []);
+        setUnreadCount(typedNotifications.filter(n => !n.read).length);
+      } catch (error) {
+        console.error('Error fetching notifications:', error);
+        toast({
+          variant: "destructive",
+          title: "Failed to load notifications",
+          description: "Please refresh the page and try again.",
+          action: <ToastAction altText="Try again">Try again</ToastAction>
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchNotifications();
+    
+    // Set up realtime updates for notifications
     const channel = supabase
-      .channel('public:notifications')
+      .channel('notifications-channel')
       .on('postgres_changes', 
         { 
-          event: 'INSERT', 
+          event: '*', 
           schema: 'public', 
           table: 'notifications',
           filter: `user_id=eq.${userId}` 
         }, 
         (payload) => {
-          console.log('New notification:', payload);
-          // Cast to notification to get strongly typed data
-          const notification = payload.new as Notification;
+          const { eventType, new: newNotification, old: oldNotification } = payload;
           
-          // Build a rich notification
-          let description = notification.message;
-          if (notification.notification_type === 'transaction') {
-            description = `💰 ${notification.message}`;
-          } else if (notification.notification_type === 'kyc') {
-            description = `🪪 ${notification.message}`;
-          } else if (notification.notification_type === 'giftcard') {
-            description = `🎁 ${notification.message}`;
+          if (eventType === 'INSERT') {
+            setNotifications(prev => [newNotification as Notification, ...prev]);
+            setUnreadCount(prev => prev + 1);
+            
+            // Show toast for new notifications
+            toastAction({
+              title: newNotification.title || 'New Notification',
+              description: newNotification.message
+            });
+          } 
+          else if (eventType === 'UPDATE') {
+            setNotifications(prev => prev.map(n => 
+              n.id === newNotification.id ? {...n, ...newNotification as Notification} : n
+            ));
+            
+            // Update unread count if read status changed
+            if (oldNotification.read !== newNotification.read) {
+              setUnreadCount(prev => newNotification.read ? prev - 1 : prev + 1);
+            }
           }
-          
-          // Show a toast notification with fixed action type
-          toast({
-            title: notification.title,
-            description: description,
-            action: notification.action_link ? {
-              children: "View"
-            } as ToastActionElement : undefined
-          });
+          else if (eventType === 'DELETE') {
+            setNotifications(prev => prev.filter(n => n.id !== oldNotification.id));
+            if (!oldNotification.read) {
+              setUnreadCount(prev => prev > 0 ? prev - 1 : 0);
+            }
+          }
         }
       )
       .subscribe();
-      
-    return channel;
+    
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [userId, toast]);
   
-  return { setupNotificationsSubscription };
+  const handleMarkAsRead = async (id: string) => {
+    const success = await markNotificationRead(id);
+    if (success) {
+      setNotifications(prev => 
+        prev.map(n => n.id === id ? { ...n, read: true } : n)
+      );
+      setUnreadCount(prev => prev > 0 ? prev - 1 : 0);
+    }
+  };
+  
+  const handleMarkAllAsRead = async () => {
+    if (!userId) return;
+    
+    const success = await markAllNotificationsRead(userId);
+    if (success) {
+      setNotifications(prev => 
+        prev.map(n => ({ ...n, read: true }))
+      );
+      setUnreadCount(0);
+    }
+  };
+  
+  return {
+    notifications,
+    unreadCount,
+    loading,
+    markAsRead: handleMarkAsRead,
+    markAllAsRead: handleMarkAllAsRead
+  };
 };
