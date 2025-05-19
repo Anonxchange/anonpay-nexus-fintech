@@ -7,6 +7,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from '@/contexts/auth';
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import GiftCardSellForm from './GiftCardSellForm';
+import GiftCardBuyForm from './GiftCardBuyForm';
 import GiftCardSubmissionsList from './GiftCardSubmissionsList';
 
 interface GiftCardServiceProps {
@@ -15,7 +16,7 @@ interface GiftCardServiceProps {
 
 const GiftCardService: React.FC<GiftCardServiceProps> = ({ user }) => {
   const { profile } = useAuth();
-  const [activeTab, setActiveTab] = useState<string>("sell");
+  const [activeTab, setActiveTab] = useState<string>("buy");
   const [giftCards, setGiftCards] = useState<GiftCard[]>([]);
   const [submissions, setSubmissions] = useState<GiftCardSubmission[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -47,6 +48,11 @@ const GiftCardService: React.FC<GiftCardServiceProps> = ({ user }) => {
     setActiveTab("history");
   };
   
+  const handleCompletePurchase = () => {
+    fetchData();
+    setActiveTab("history");
+  };
+  
   const handleViewImage = (url: string) => {
     setImagePreviewUrl(url);
   };
@@ -56,15 +62,24 @@ const GiftCardService: React.FC<GiftCardServiceProps> = ({ user }) => {
       {!profile?.kyc_status || profile.kyc_status !== "approved" ? (
         <Alert variant="destructive">
           <AlertDescription>
-            You need to complete KYC verification before you can sell gift cards.
+            You need to complete KYC verification before you can trade gift cards.
           </AlertDescription>
         </Alert>
       ) : (
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="buy">Buy Gift Card</TabsTrigger>
             <TabsTrigger value="sell">Sell Gift Card</TabsTrigger>
-            <TabsTrigger value="history">Submission History</TabsTrigger>
+            <TabsTrigger value="history">Transaction History</TabsTrigger>
           </TabsList>
+          
+          <TabsContent value="buy" className="mt-4">
+            <GiftCardBuyForm 
+              user={user} 
+              availableCards={giftCards}
+              onComplete={handleCompletePurchase}
+            />
+          </TabsContent>
           
           <TabsContent value="sell" className="mt-4">
             <GiftCardSellForm 

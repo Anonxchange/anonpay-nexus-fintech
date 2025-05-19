@@ -13,6 +13,7 @@ import {
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { ChevronDown, LogOut, Settings, User } from 'lucide-react';
 import NotificationsPanel from '../dashboard/NotificationsPanel';
+import StatusBadge from './StatusBadge';
 
 const UserMenu: React.FC = () => {
   const { user, profile, signOut } = useAuth();
@@ -60,6 +61,12 @@ const UserMenu: React.FC = () => {
             <div className="flex flex-col">
               <span>{profile?.name || 'User'}</span>
               <span className="text-xs text-muted-foreground">{user.email}</span>
+              {profile?.kyc_status && (
+                <div className="mt-1">
+                  <span className="text-xs mr-1">KYC:</span>
+                  <StatusBadge status={profile.kyc_status} />
+                </div>
+              )}
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />

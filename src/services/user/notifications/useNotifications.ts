@@ -5,7 +5,7 @@ import { Notification } from "@/types/notification";
 import { useToast } from "@/hooks/use-toast";
 import { toast as toastAction } from "@/components/ui/use-toast";
 import { ToastAction } from "@/components/ui/toast";
-import { markNotificationAsRead as markNotificationRead, markAllNotificationsAsRead as markAllNotificationsRead } from "./notificationApi";
+import { markNotificationAsRead, markAllNotificationsAsRead } from "./notificationApi";
 
 export const useNotifications = (userId?: string) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -96,7 +96,7 @@ export const useNotifications = (userId?: string) => {
   }, [userId, toast]);
   
   const handleMarkAsRead = async (id: string) => {
-    const success = await markNotificationRead(id);
+    const success = await markNotificationAsRead(id);
     if (success) {
       setNotifications(prev => 
         prev.map(n => n.id === id ? { ...n, read: true } : n)
@@ -108,7 +108,7 @@ export const useNotifications = (userId?: string) => {
   const handleMarkAllAsRead = async () => {
     if (!userId) return;
     
-    const success = await markAllNotificationsRead(userId);
+    const success = await markAllNotificationsAsRead(userId);
     if (success) {
       setNotifications(prev => 
         prev.map(n => ({ ...n, read: true }))
