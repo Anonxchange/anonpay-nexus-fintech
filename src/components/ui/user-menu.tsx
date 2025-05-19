@@ -47,13 +47,20 @@ const UserMenu: React.FC = () => {
       
       <DropdownMenu>
         <DropdownMenuTrigger className="flex items-center gap-2 focus:outline-none">
-          <Avatar className="h-8 w-8">
-            {profile?.avatar_url ? (
-              <img src={profile.avatar_url} alt={profile.name || 'User'} />
-            ) : (
-              <AvatarFallback>{getInitials()}</AvatarFallback>
+          <div className="flex items-center">
+            <Avatar className="h-8 w-8">
+              {profile?.avatar_url ? (
+                <img src={profile.avatar_url} alt={profile.name || 'User'} />
+              ) : (
+                <AvatarFallback>{getInitials()}</AvatarFallback>
+              )}
+            </Avatar>
+            {profile?.kyc_status && (
+              <div className="ml-2">
+                <StatusBadge status={profile.kyc_status} />
+              </div>
             )}
-          </Avatar>
+          </div>
           <ChevronDown className="h-4 w-4" />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
