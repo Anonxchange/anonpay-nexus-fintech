@@ -5,7 +5,7 @@ import { Notification } from "@/types/notification";
 import { useToast } from "@/hooks/use-toast";
 import { toast as toastAction } from "@/components/ui/use-toast";
 import { ToastAction } from "@/components/ui/toast";
-import { markNotificationRead, markAllNotificationsRead } from "./notificationApi";
+import { markNotificationAsRead as markNotificationRead, markAllNotificationsAsRead as markAllNotificationsRead } from "./notificationApi";
 
 export const useNotifications = (userId?: string) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
