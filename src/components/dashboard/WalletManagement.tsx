@@ -131,7 +131,6 @@ const WalletManagement: React.FC<WalletManagementProps> = ({ user }) => {
       <WithdrawDialog 
         open={withdrawDialogOpen} 
         onOpenChange={setWithdrawDialogOpen} 
-        currentBalance={balance}
       />
     </div>
   );
