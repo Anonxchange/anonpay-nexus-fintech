@@ -10,9 +10,9 @@ export const useProfileFetch = () => {
     try {
       setIsProfileLoading(true);
       const { data, error } = await supabase
-        .from('profiles')
+        .from('user_profiles')
         .select('*')
-        .eq('id', userId)
+        .eq('user_id', userId)
         .single();
 
       if (error) {
@@ -27,16 +27,16 @@ export const useProfileFetch = () => {
       } else {
         // Ensure the data conforms to the Profile type
         const profileData: Profile = {
-          id: data.id,
-          name: data.name || null,
-          avatar_url: data.avatar_url,
-          phone_number: data.phone_number,
+          id: userId, // Map user_id to id
+          name: data.role || null,
+          avatar_url: null, // user_profiles doesn't have this
+          phone_number: null, // user_profiles doesn't have this
           kyc_status: data.kyc_status as KycStatus || 'not_submitted',
-          wallet_balance: data.wallet_balance || 0,
+          wallet_balance: data.balance || 0,
           role: data.role || 'user',
           created_at: data.created_at,
           updated_at: data.updated_at,
-          account_status: data.account_status as AccountStatus || 'active'
+          account_status: 'active' as AccountStatus // Default since user_profiles doesn't have this
         };
         return profileData;
       }
@@ -52,13 +52,12 @@ export const useProfileFetch = () => {
   const createProfile = async (userId: string): Promise<Profile | null> => {
     try {
       const { data, error } = await supabase
-        .from('profiles')
+        .from('user_profiles')
         .insert({ 
-          id: userId,
-          wallet_balance: 0,
+          user_id: userId,
+          balance: 0,
           kyc_status: 'not_submitted' as KycStatus,
           role: 'user',
-          account_status: 'active' as AccountStatus,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         })
@@ -70,7 +69,21 @@ export const useProfileFetch = () => {
         return null;
       }
 
-      return data as Profile;
+      // Map to Profile type
+      const profileData: Profile = {
+        id: userId,
+        name: data.role || null,
+        avatar_url: null,
+        phone_number: null,
+        kyc_status: 'not_submitted' as KycStatus,
+        wallet_balance: 0,
+        role: 'user',
+        created_at: data.created_at,
+        updated_at: data.updated_at,
+        account_status: 'active' as AccountStatus
+      };
+      
+      return profileData;
     } catch (error) {
       console.error('Error creating profile:', error);
       return null;
@@ -81,20 +94,28 @@ export const useProfileFetch = () => {
     if (userId) {
       try {
         const { data: profileData, error: profileError } = await supabase
-          .from("profiles")
+          .from("user_profiles")
           .select("*")
-          .eq("id", userId)
+          .eq("user_id", userId)
           .single();
 
         if (profileError) {
           console.error("Error fetching profile:", profileError);
           return null;
         } else {
-          // Ensure account_status is properly set
-          const profile = {
-            ...profileData,
-            account_status: profileData.account_status || 'active'
-          } as Profile;
+          // Map to Profile type
+          const profile: Profile = {
+            id: userId,
+            name: profileData.role || null,
+            avatar_url: null,
+            phone_number: null,
+            kyc_status: profileData.kyc_status as KycStatus || 'not_submitted',
+            wallet_balance: profileData.balance || 0,
+            role: profileData.role || 'user',
+            created_at: profileData.created_at,
+            updated_at: profileData.updated_at,
+            account_status: 'active' as AccountStatus
+          };
           return profile;
         }
       } catch (error) {

@@ -37,13 +37,13 @@ const DashboardOverview: React.FC<DashboardProps> = ({ user }) => {
           } else {
             // Fallback - fetch directly from database
             const { data, error } = await supabase
-              .from('profiles')
-              .select('wallet_balance')
-              .eq('id', user.id)
+              .from('user_profiles')
+              .select('balance')
+              .eq('user_id', user.id)
               .single();
               
             if (!error && data) {
-              setWalletBalance(data.wallet_balance || 0);
+              setWalletBalance(data.balance || 0);
             }
           }
         } catch (error) {
@@ -68,16 +68,16 @@ const DashboardOverview: React.FC<DashboardProps> = ({ user }) => {
         { 
           event: 'UPDATE', 
           schema: 'public', 
-          table: 'profiles',
-          filter: `id=eq.${user?.id}` 
+          table: 'user_profiles',
+          filter: `user_id=eq.${user?.id}` 
         }, 
         (payload) => {
           console.log('Profile updated:', payload);
-          if (payload.new && payload.new.wallet_balance !== undefined) {
-            setWalletBalance(payload.new.wallet_balance);
+          if (payload.new && payload.new.balance !== undefined) {
+            setWalletBalance(payload.new.balance);
             // Show toast notification for balance updates
-            const oldBalance = payload.old?.wallet_balance || 0;
-            const newBalance = payload.new.wallet_balance || 0;
+            const oldBalance = payload.old?.balance || 0;
+            const newBalance = payload.new.balance || 0;
             const difference = newBalance - oldBalance;
             
             if (difference > 0) {

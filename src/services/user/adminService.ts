@@ -8,9 +8,9 @@ export const getAllProfiles = async (adminId: string): Promise<Profile[]> => {
   try {
     // First check if the user is an admin using their ID
     const { data: adminData, error: adminError } = await supabase
-      .from('profiles')
+      .from('user_profiles')
       .select('role')
-      .eq('id', adminId)
+      .eq('user_id', adminId)
       .single();
 
     // Safe access to role property
@@ -23,7 +23,7 @@ export const getAllProfiles = async (adminId: string): Promise<Profile[]> => {
     
     // Get all profiles without filters
     const { data: profiles, error } = await supabase
-      .from('profiles')
+      .from('user_profiles')
       .select('*')
       .order('created_at', { ascending: false });
 
@@ -34,11 +34,16 @@ export const getAllProfiles = async (adminId: string): Promise<Profile[]> => {
     
     // Make sure to convert status fields and handle empty fields with proper defaults
     return profiles.map(profile => ({
-      ...profile,
+      id: profile.user_id as string,
+      name: profile.role || "Unknown User", // Using role as name since user_profiles doesn't have name
+      avatar_url: null, // user_profiles doesn't have this
+      phone_number: null, // user_profiles doesn't have this
       kyc_status: (profile.kyc_status as any) || 'not_submitted',
-      name: profile.name || "Unknown User", // Ensure name has a fallback
-      role: profile.role || 'user', // Ensure role has a fallback
-      account_status: profile.account_status || 'active' as AccountStatus // Ensure account_status has a fallback
+      wallet_balance: profile.balance || 0,
+      role: profile.role || 'user',
+      created_at: profile.created_at,
+      updated_at: profile.updated_at,
+      account_status: 'active' as AccountStatus // Default since user_profiles doesn't have this
     })) as Profile[];
   } catch (error) {
     console.error('Error fetching profiles:', error);
@@ -51,9 +56,9 @@ export const getAllTransactions = async (adminId: string): Promise<Transaction[]
   try {
     // First check if the user is an admin
     const { data: adminData, error: adminError } = await supabase
-      .from('profiles')
+      .from('user_profiles')
       .select('role')
-      .eq('id', adminId)
+      .eq('user_id', adminId)
       .single();
 
     // Safe access to role property
@@ -66,7 +71,7 @@ export const getAllTransactions = async (adminId: string): Promise<Transaction[]
     
     const { data, error } = await supabase
       .from('transactions')
-      .select('*, profiles:user_id(name, id, email, kyc_status, wallet_balance)')
+      .select('*, user_profiles:user_id(role, user_id, kyc_status, balance)')
       .order('created_at', { ascending: false });
     
     if (error) {
@@ -77,13 +82,13 @@ export const getAllTransactions = async (adminId: string): Promise<Transaction[]
     // Format the data to include user_name
     const formattedTransactions = data.map(transaction => {
       // Extract the profile data
-      const profileData = transaction.profiles || null;
+      const profileData = transaction.user_profiles || null;
       
       return {
         ...transaction,
-        // Safely get the name value
+        // Safely get the name value (using role since user_profiles doesn't have name)
         user_name: profileData && typeof profileData === 'object' ? 
-          (profileData as any).name || 'Unknown User' : 'Unknown User'
+          (profileData as any).role || 'Unknown User' : 'Unknown User'
       };
     });
     
@@ -100,9 +105,9 @@ export const getUserDetailsByAdmin = async (adminId: string, userId: string): Pr
   try {
     // First check if the user is an admin
     const { data: adminData, error: adminError } = await supabase
-      .from('profiles')
+      .from('user_profiles')
       .select('role')
-      .eq('id', adminId)
+      .eq('user_id', adminId)
       .single();
 
     // Safe access to role property
@@ -114,9 +119,9 @@ export const getUserDetailsByAdmin = async (adminId: string, userId: string): Pr
     }
     
     const { data, error } = await supabase
-      .from('profiles')
+      .from('user_profiles')
       .select('*')
-      .eq('id', userId)
+      .eq('user_id', userId)
       .single();
     
     if (error) {
@@ -124,13 +129,18 @@ export const getUserDetailsByAdmin = async (adminId: string, userId: string): Pr
       return null;
     }
     
-    // Make sure to properly set defaults for nullable values
+    // Make sure to properly set defaults for nullable values and map to Profile type
     return {
-      ...data,
+      id: data.user_id as string,
+      name: data.role || "Unknown User", // Using role since user_profiles doesn't have name
+      avatar_url: null, // user_profiles doesn't have this
+      phone_number: null, // user_profiles doesn't have this
       kyc_status: data.kyc_status || 'not_submitted',
-      account_status: data.account_status || 'active',
-      wallet_balance: data.wallet_balance || 0,
-      role: data.role || 'user'
+      wallet_balance: data.balance || 0,
+      role: data.role || 'user',
+      created_at: data.created_at,
+      updated_at: data.updated_at,
+      account_status: 'active' as AccountStatus // Default since user_profiles doesn't have this
     } as Profile;
   } catch (error) {
     console.error('Error in getUserDetailsByAdmin:', error);
@@ -143,9 +153,9 @@ export const updateUserWalletBalance = async (adminId: string, userId: string, n
   try {
     // First check if the user is an admin
     const { data: adminData, error: adminError } = await supabase
-      .from('profiles')
+      .from('user_profiles')
       .select('role')
-      .eq('id', adminId)
+      .eq('user_id', adminId)
       .single();
 
     // Safe access to role property
@@ -157,12 +167,12 @@ export const updateUserWalletBalance = async (adminId: string, userId: string, n
     }
     
     const { error } = await supabase
-      .from('profiles')
+      .from('user_profiles')
       .update({ 
-        wallet_balance: newBalance,
+        balance: newBalance,
         updated_at: new Date().toISOString() 
       })
-      .eq('id', userId);
+      .eq('user_id', userId);
     
     if (error) {
       console.error('Error updating user wallet balance:', error);
@@ -181,9 +191,9 @@ export const deleteUserTransaction = async (adminId: string, transactionId: stri
   try {
     // First check if the user is an admin
     const { data: adminData, error: adminError } = await supabase
-      .from('profiles')
+      .from('user_profiles')
       .select('role')
-      .eq('id', adminId)
+      .eq('user_id', adminId)
       .single();
 
     // Safe access to role property

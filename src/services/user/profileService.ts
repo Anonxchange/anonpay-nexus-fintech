@@ -6,9 +6,9 @@ import { KycStatus, Profile, AccountStatus } from "@/types/auth";
 export const getUserProfile = async (userId: string): Promise<Profile | null> => {
   try {
     const { data, error } = await supabase
-      .from('profiles')
+      .from('user_profiles')
       .select('*')
-      .eq('id', userId)
+      .eq('user_id', userId)
       .single();
     
     if (error) {
@@ -21,11 +21,19 @@ export const getUserProfile = async (userId: string): Promise<Profile | null> =>
       return null;
     }
     
-    // Ensure account_status has a default value if not present in the database
-    const profile = {
-      ...data,
-      account_status: data.account_status || 'active' as AccountStatus
-    } as Profile;
+    // Map to Profile type with defaults for fields that don't exist in user_profiles
+    const profile: Profile = {
+      id: userId,
+      name: data.role || null, // Using role since user_profiles doesn't have name
+      avatar_url: null, // user_profiles doesn't have this
+      phone_number: null, // user_profiles doesn't have this
+      kyc_status: data.kyc_status as KycStatus || 'not_submitted',
+      wallet_balance: data.balance || 0,
+      role: data.role || 'user',
+      created_at: data.created_at,
+      updated_at: data.updated_at,
+      account_status: 'active' as AccountStatus // Default since user_profiles doesn't have this
+    };
     
     return profile;
   } catch (error) {
@@ -45,20 +53,16 @@ export const createUserProfile = async (userId: string): Promise<Profile | null>
     }
     
     const newProfile = {
-      id: userId,
-      name: null,
-      avatar_url: null,
-      kyc_status: 'not_submitted' as KycStatus,
-      wallet_balance: 0,
-      phone_number: null,
+      user_id: userId,
       role: 'user',
-      account_status: 'active' as AccountStatus,
+      kyc_status: 'not_submitted' as KycStatus,
+      balance: 0,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     };
     
     const { data, error } = await supabase
-      .from('profiles')
+      .from('user_profiles')
       .insert(newProfile)
       .select('*')
       .single();
@@ -68,7 +72,21 @@ export const createUserProfile = async (userId: string): Promise<Profile | null>
       return null;
     }
     
-    return data as Profile;
+    // Map to Profile type
+    const profileData: Profile = {
+      id: userId,
+      name: data.role || null,
+      avatar_url: null,
+      phone_number: null,
+      kyc_status: 'not_submitted' as KycStatus,
+      wallet_balance: 0,
+      role: 'user',
+      created_at: data.created_at,
+      updated_at: data.updated_at,
+      account_status: 'active' as AccountStatus
+    };
+    
+    return profileData;
   } catch (error) {
     console.error('Error in createUserProfile:', error);
     return null;
@@ -86,20 +104,18 @@ export const updateUserProfile = async (userId: string, profileData: Partial<Pro
       return false;
     }
     
-    // Ensure we're only updating allowed fields
+    // Map Profile fields to user_profiles fields
     const sanitizedData = {
-      ...(profileData.name !== undefined && { name: profileData.name }),
-      ...(profileData.avatar_url !== undefined && { avatar_url: profileData.avatar_url }),
-      ...(profileData.phone_number !== undefined && { phone_number: profileData.phone_number }),
+      ...(profileData.role !== undefined && { role: profileData.role }),
       ...(profileData.kyc_status !== undefined && { kyc_status: profileData.kyc_status }),
-      ...(profileData.account_status !== undefined && { account_status: profileData.account_status }),
+      ...(profileData.wallet_balance !== undefined && { balance: profileData.wallet_balance }),
       updated_at: new Date().toISOString()
     };
     
     const { error } = await supabase
-      .from('profiles')
+      .from('user_profiles')
       .update(sanitizedData)
-      .eq('id', userId);
+      .eq('user_id', userId);
     
     if (error) {
       console.error('Error updating user profile:', error);

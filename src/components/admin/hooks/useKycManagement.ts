@@ -14,14 +14,14 @@ export const useKycManagement = (
     try {
       const status = action === "approve" ? "approved" : "rejected";
       
-      // Direct update to the profiles table
+      // Direct update to the user_profiles table
       const { error } = await supabase
-        .from('profiles')
+        .from('user_profiles')
         .update({ 
           kyc_status: status,
           updated_at: new Date().toISOString() 
         })
-        .eq('id', userId);
+        .eq('user_id', userId);
       
       if (error) {
         console.error('Error updating KYC status:', error);

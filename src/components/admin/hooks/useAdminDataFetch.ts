@@ -23,9 +23,9 @@ export const useAdminDataFetch = (
       
       const admin = JSON.parse(adminData);
       
-      // Direct fetch from profiles table for admin - without filters
+      // Direct fetch from user_profiles table for admin - without filters
       const { data: profilesData, error: profilesError } = await supabase
-        .from('profiles')
+        .from('user_profiles')
         .select('*')
         .order('created_at', { ascending: false });
       
@@ -55,7 +55,7 @@ export const useAdminDataFetch = (
       // Direct fetch from transactions table for admin with extended details
       const { data: transactionsData, error: transactionsError } = await supabase
         .from('transactions')
-        .select('*, profiles:user_id(name, id, email, kyc_status, wallet_balance, account_status)')
+        .select('*, user_profiles:user_id(balance, id, role, kyc_status)')
         .order('created_at', { ascending: false });
       
       if (transactionsError) {
@@ -66,21 +66,21 @@ export const useAdminDataFetch = (
       // Format profiles data and merge with auth users data
       const formattedProfiles = profilesData.map(profile => {
         // Find matching auth user to get email
-        const authUser = authUsers.find(user => user?.id === profile.id);
+        const authUser = authUsers.find(user => user?.id === profile.user_id);
         
         // Create a profile object with all required fields and fallbacks
         const formattedProfile: Profile = {
-          id: profile.id,
-          name: profile.name || authUser?.email || "Unknown User",
-          avatar_url: profile.avatar_url,
+          id: profile.user_id as string, // Map user_id to id
+          name: profile.role || authUser?.email || "Unknown User",
+          avatar_url: null, // user_profiles doesn't have avatar_url
           kyc_status: (profile.kyc_status as KycStatus) || 'not_submitted',
-          wallet_balance: profile.wallet_balance || 0,
-          phone_number: profile.phone_number,
+          wallet_balance: profile.balance || 0,
+          phone_number: null, // user_profiles doesn't have phone_number
           role: profile.role || 'user',
           email: authUser?.email || "No email available",
           created_at: profile.created_at || new Date().toISOString(),
           updated_at: profile.updated_at || new Date().toISOString(),
-          account_status: (profile.account_status as AccountStatus) || 'active',
+          account_status: 'active' as AccountStatus, // user_profiles doesn't have account_status
           kyc_submissions: []
         };
         
@@ -89,18 +89,16 @@ export const useAdminDataFetch = (
       
       // Format transactions data
       const formattedTransactions = transactionsData.map(transaction => {
-        const profileData = transaction.profiles || null;
+        const profileData = transaction.user_profiles || null;
         
         return {
           ...transaction,
           user_name: profileData && typeof profileData === 'object' ? 
-            (profileData as any).name || 'Unknown User' : 'Unknown User',
-          user_email: profileData && typeof profileData === 'object' ? 
-            (profileData as any).email : null,
+            (profileData as any).role || 'Unknown User' : 'Unknown User',
+          user_email: null, // No email in user_profiles
           user_kyc_status: profileData && typeof profileData === 'object' ? 
             (profileData as any).kyc_status : null,
-          user_account_status: profileData && typeof profileData === 'object' ? 
-            (profileData as any).account_status || 'active' : 'active'
+          user_account_status: 'active' // Default since it's not in user_profiles
         };
       });
       
