@@ -9,359 +9,330 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      crypto_trades: {
+      admins: {
         Row: {
-          amount: number | null
-          created_at: string | null
-          crypto_type: string | null
-          id: string
-          status: string | null
-          trade_type: string | null
-          user_id: string | null
-        }
-        Insert: {
-          amount?: number | null
-          created_at?: string | null
-          crypto_type?: string | null
-          id?: string
-          status?: string | null
-          trade_type?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          amount?: number | null
-          created_at?: string | null
-          crypto_type?: string | null
-          id?: string
-          status?: string | null
-          trade_type?: string | null
-          user_id?: string | null
-        }
-        Relationships: []
-      }
-      crypto_wallets: {
-        Row: {
-          balance: number | null
-          created_at: string | null
-          currency: string | null
-          id: string
-          user_id: string | null
-          wallet_address: string | null
-        }
-        Insert: {
-          balance?: number | null
-          created_at?: string | null
-          currency?: string | null
-          id?: string
-          user_id?: string | null
-          wallet_address?: string | null
-        }
-        Update: {
-          balance?: number | null
-          created_at?: string | null
-          currency?: string | null
-          id?: string
-          user_id?: string | null
-          wallet_address?: string | null
-        }
-        Relationships: []
-      }
-      giftcards: {
-        Row: {
-          card_currency: string | null
-          card_type: string | null
-          card_value: number | null
           created_at: string | null
           id: string
-          image_url: string | null
-          status: string | null
-          user_id: string | null
-        }
-        Insert: {
-          card_currency?: string | null
-          card_type?: string | null
-          card_value?: number | null
-          created_at?: string | null
-          id?: string
-          image_url?: string | null
-          status?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          card_currency?: string | null
-          card_type?: string | null
-          card_value?: number | null
-          created_at?: string | null
-          id?: string
-          image_url?: string | null
-          status?: string | null
-          user_id?: string | null
-        }
-        Relationships: []
-      }
-      kyc_submissions: {
-        Row: {
-          admin_notes: string | null
-          created_at: string
-          document_type: string
-          document_url: string
-          id: string
-          status: Database["public"]["Enums"]["kyc_status_type"]
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          admin_notes?: string | null
-          created_at?: string
-          document_type: string
-          document_url: string
-          id?: string
-          status?: Database["public"]["Enums"]["kyc_status_type"]
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          admin_notes?: string | null
-          created_at?: string
-          document_type?: string
-          document_url?: string
-          id?: string
-          status?: Database["public"]["Enums"]["kyc_status_type"]
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      notifications: {
-        Row: {
-          action_link: string | null
-          created_at: string
-          id: string
-          message: string
-          notification_type: string | null
-          read: boolean
-          title: string
-          user_id: string
-        }
-        Insert: {
-          action_link?: string | null
-          created_at?: string
-          id?: string
-          message: string
-          notification_type?: string | null
-          read?: boolean
-          title: string
-          user_id: string
-        }
-        Update: {
-          action_link?: string | null
-          created_at?: string
-          id?: string
-          message?: string
-          notification_type?: string | null
-          read?: boolean
-          title?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      payment_methods: {
-        Row: {
-          address: string
-          currency: string
-          id: string
-          is_active: boolean
-          method_type: string
-        }
-        Insert: {
-          address: string
-          currency: string
-          id?: string
-          is_active?: boolean
-          method_type: string
-        }
-        Update: {
-          address?: string
-          currency?: string
-          id?: string
-          is_active?: boolean
-          method_type?: string
-        }
-        Relationships: []
-      }
-      profiles: {
-        Row: {
-          account_status: string | null
-          avatar_url: string | null
-          created_at: string | null
-          id: string
-          kyc_status: string | null
-          name: string | null
-          phone_number: string | null
-          role: string | null
+          role: string
           updated_at: string | null
-          wallet_balance: number | null
+          user_id: string
         }
         Insert: {
-          account_status?: string | null
-          avatar_url?: string | null
-          created_at?: string | null
-          id: string
-          kyc_status?: string | null
-          name?: string | null
-          phone_number?: string | null
-          role?: string | null
-          updated_at?: string | null
-          wallet_balance?: number | null
-        }
-        Update: {
-          account_status?: string | null
-          avatar_url?: string | null
           created_at?: string | null
           id?: string
-          kyc_status?: string | null
-          name?: string | null
-          phone_number?: string | null
-          role?: string | null
+          role: string
           updated_at?: string | null
-          wallet_balance?: number | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          role?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admins_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kyc_requests: {
+        Row: {
+          full_name: string | null
+          id: string
+          id_image_url: string | null
+          id_number: string | null
+          id_type: string | null
+          status: string | null
+          submitted_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          full_name?: string | null
+          id?: string
+          id_image_url?: string | null
+          id_number?: string | null
+          id_type?: string | null
+          status?: string | null
+          submitted_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          full_name?: string | null
+          id?: string
+          id_image_url?: string | null
+          id_number?: string | null
+          id_type?: string | null
+          status?: string | null
+          submitted_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      logs: {
+        Row: {
+          action: string
+          created_at: string | null
+          id: string
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          id?: string
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      products: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+          price: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          price: number
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          price?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      rates: {
+        Row: {
+          buy_rate: number | null
+          category: string | null
+          id: string
+          name: string | null
+          sell_rate: number | null
+          type: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          buy_rate?: number | null
+          category?: string | null
+          id?: string
+          name?: string | null
+          sell_rate?: number | null
+          type?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          buy_rate?: number | null
+          category?: string | null
+          id?: string
+          name?: string | null
+          sell_rate?: number | null
+          type?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      settings: {
+        Row: {
+          created_at: string | null
+          id: string
+          key: string
+          updated_at: string | null
+          value: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          key: string
+          updated_at?: string | null
+          value: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          key?: string
+          updated_at?: string | null
+          value?: string
         }
         Relationships: []
       }
       transactions: {
         Row: {
           amount: number
-          created_at: string
+          created_at: string | null
+          currency: string
+          details: Json | null
           id: string
-          reference: string | null
-          status: string
+          payment_method: string
+          status: string | null
           type: string
-          updated_at: string | null
           user_id: string
         }
         Insert: {
           amount: number
-          created_at?: string
+          created_at?: string | null
+          currency: string
+          details?: Json | null
           id?: string
-          reference?: string | null
-          status: string
+          payment_method: string
+          status?: string | null
           type: string
-          updated_at?: string | null
           user_id: string
         }
         Update: {
           amount?: number
-          created_at?: string
+          created_at?: string | null
+          currency?: string
+          details?: Json | null
           id?: string
-          reference?: string | null
-          status?: string
+          payment_method?: string
+          status?: string | null
           type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_profiles: {
+        Row: {
+          balance: number | null
+          created_at: string | null
+          id: number
+          kyc_status: string | null
+          role: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          balance?: number | null
+          created_at?: string | null
+          id?: never
+          kyc_status?: string | null
+          role?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          balance?: number | null
+          created_at?: string | null
+          id?: never
+          kyc_status?: string | null
+          role?: string | null
           updated_at?: string | null
           user_id?: string
         }
         Relationships: []
       }
-      vtu_requests: {
+      users: {
         Row: {
-          amount: number | null
           created_at: string | null
+          email: string
           id: string
-          network: string | null
-          phone_number: string | null
-          service_type: string | null
-          status: string | null
-          user_id: string | null
+          password: string
+          role: string | null
+          updated_at: string | null
         }
         Insert: {
-          amount?: number | null
           created_at?: string | null
+          email: string
           id?: string
-          network?: string | null
-          phone_number?: string | null
-          service_type?: string | null
-          status?: string | null
-          user_id?: string | null
+          password: string
+          role?: string | null
+          updated_at?: string | null
         }
         Update: {
-          amount?: number | null
           created_at?: string | null
+          email?: string
           id?: string
-          network?: string | null
-          phone_number?: string | null
-          service_type?: string | null
-          status?: string | null
-          user_id?: string | null
+          password?: string
+          role?: string | null
+          updated_at?: string | null
         }
         Relationships: []
       }
       wallets: {
         Row: {
           balance: number | null
-          currency: string | null
+          created_at: string | null
           id: string
           updated_at: string | null
-          user_id: string | null
+          user_id: string
         }
         Insert: {
           balance?: number | null
-          currency?: string | null
+          created_at?: string | null
           id?: string
           updated_at?: string | null
-          user_id?: string | null
+          user_id: string
         }
         Update: {
           balance?: number | null
-          currency?: string | null
+          created_at?: string | null
           id?: string
           updated_at?: string | null
-          user_id?: string | null
+          user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "wallets_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      get_user_notifications: {
-        Args: { p_user_id: string }
-        Returns: {
-          action_link: string | null
-          created_at: string
-          id: string
-          message: string
-          notification_type: string | null
-          read: boolean
-          title: string
-          user_id: string
-        }[]
+      credit_wallet: {
+        Args: Record<PropertyKey, never> | { user_id: string; amount: number }
+        Returns: undefined
       }
-      is_admin: {
-        Args: Record<PropertyKey, never> | { user_id: string }
-        Returns: boolean
-      }
-      mark_all_notifications_read: {
-        Args: { user_id_param: string }
-        Returns: boolean
-      }
-      mark_notification_read: {
-        Args: { notification_id: string }
-        Returns: boolean
-      }
-      update_wallet_balance: {
-        Args:
-          | Record<PropertyKey, never>
-          | {
-              user_id: string
-              amount: number
-              transaction_type: string
-              reference: string
-            }
+      debit_wallet: {
+        Args: Record<PropertyKey, never> | { user_id: string; amount: number }
         Returns: undefined
       }
     }
     Enums: {
-      kyc_status_type: "approved" | "pending" | "rejected" | "not_submitted"
+      [_ in never]: never
     }
     CompositeTypes: {
       [_ in never]: never
@@ -476,8 +447,6 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {
-      kyc_status_type: ["approved", "pending", "rejected", "not_submitted"],
-    },
+    Enums: {},
   },
 } as const
