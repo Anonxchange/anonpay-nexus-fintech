@@ -1,67 +1,90 @@
 
-import { MANUAL_NAIRA_RATE } from './types';
 import { supabase } from "@/integrations/supabase/client";
 
-// Get crypto price in USD
-export const getCryptoPrice = async (crypto: string) => {
+// Get current price of cryptocurrency in USD
+export const getCryptoPrice = async (cryptoSymbol: string): Promise<number> => {
   try {
-    const response = await fetch(
-      `https://api.coingecko.com/api/v3/simple/price?ids=${crypto}&vs_currencies=usd`
-    );
+    // This would normally make an API call to a crypto price API
+    // For demo purposes, return a fixed price
+    const mockPrices: Record<string, number> = {
+      'btc': 63500,
+      'eth': 3400,
+      'usdt': 1,
+      'xrp': 0.58,
+    };
     
-    if (!response.ok) {
-      throw new Error(`API returned status: ${response.status}`);
-    }
-    
-    const data = await response.json();
-    return data[crypto]?.usd || 0;
+    return mockPrices[cryptoSymbol.toLowerCase()] || 0;
   } catch (error) {
-    console.error("Failed to fetch crypto price:", error);
-    return 0;
+    console.error('Error fetching crypto price:', error);
+    throw error;
   }
 };
 
-// Convert USD to Naira
-export const convertUsdToNaira = (usdAmount: number) => {
-  return usdAmount * MANUAL_NAIRA_RATE;
+// Convert USD amount to Naira
+export const convertUsdToNaira = (usdAmount: number): number => {
+  // Fixed exchange rate for demo purposes
+  const exchangeRate = 1500; // 1 USD = 1500 NGN
+  return usdAmount * exchangeRate;
 };
 
-// Process a detected crypto deposit
-export const processCryptoDeposit = async (
+// Process a crypto transaction
+export const processCryptoTransaction = async (
   userId: string,
-  amount: number,
-  currency: string,
-  walletAddress: string,
-  transactionHash: string
-) => {
+  cryptoSymbol: string,
+  cryptoAmount: number,
+  transactionType: 'buy' | 'sell'
+): Promise<{ success: boolean; message: string }> => {
   try {
-    // Get the price of the cryptocurrency in USD
-    const cryptoPrice = await getCryptoPrice(currency.toLowerCase());
+    // Get current price
+    const cryptoPrice = await getCryptoPrice(cryptoSymbol);
     
     // Calculate USD value
-    const usdValue = amount * cryptoPrice;
+    const usdValue = cryptoAmount * cryptoPrice;
     
     // Convert to Naira
     const nairaValue = convertUsdToNaira(usdValue);
     
-    // Call the Supabase edge function to process the deposit
-    const { data, error } = await supabase.functions.invoke('process-deposit', {
-      body: {
-        userId,
-        amount: nairaValue, // Use the converted Naira value
-        cryptoCurrency: currency,
-        walletAddress,
-        transactionHash
+    // For demo purposes, we'll just log the transaction to the database
+    const { error } = await supabase.from('transactions').insert({
+      user_id: userId,
+      amount: nairaValue,
+      currency: 'NGN',
+      type: transactionType === 'buy' ? 'crypto_purchase' : 'crypto_sale',
+      payment_method: 'wallet',
+      status: 'completed',
+      details: {
+        crypto_symbol: cryptoSymbol,
+        crypto_amount: cryptoAmount,
+        crypto_price_usd: cryptoPrice,
+        usd_value: usdValue,
+        naira_value: nairaValue,
       }
     });
     
-    if (error) {
-      throw new Error(`Failed to process crypto deposit: ${error.message}`);
-    }
+    if (error) throw new Error(error.message);
     
-    return data;
-  } catch (error) {
-    console.error('Error in processCryptoDeposit:', error);
-    throw error;
+    // Update wallet balance
+    const { error: walletError } = await supabase.rpc(
+      "update_wallet_balance",
+      {
+        user_id: userId,
+        amount: transactionType === 'buy' ? -nairaValue : nairaValue,
+        transaction_type: transactionType === 'buy' ? 'purchase' : 'sale',
+        reference: `crypto:${transactionType}:${cryptoSymbol}:${cryptoAmount}`
+      }
+    );
+    
+    if (walletError) throw new Error(walletError.message);
+    
+    return {
+      success: true,
+      message: `Successfully ${transactionType === 'buy' ? 'purchased' : 'sold'} ${cryptoAmount} ${cryptoSymbol.toUpperCase()}`
+    };
+  } catch (error: any) {
+    console.error('Error processing crypto transaction:', error);
+    return {
+      success: false,
+      message: error.message || `Failed to ${transactionType} crypto`
+    };
   }
 };

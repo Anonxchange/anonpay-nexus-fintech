@@ -8,6 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Bitcoin, Wallet, ArrowUpDown } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { processCryptoTransaction } from "@/services/transactions/cryptoService";
+import { useAuth } from "@/contexts/auth";
 
 interface CryptoServiceProps {
   user: any;
@@ -18,8 +20,10 @@ const CryptoService: React.FC<CryptoServiceProps> = ({ user }) => {
   const { toast } = useToast();
   const [amount, setAmount] = useState("");
   const [selectedCrypto, setSelectedCrypto] = useState("BTC");
+  const [processing, setProcessing] = useState(false);
+  const { refreshProfile } = useAuth();
 
-  const handleCryptoAction = () => {
+  const handleCryptoAction = async () => {
     if (!amount || parseFloat(amount) <= 0) {
       toast({
         title: "Invalid amount",
@@ -29,10 +33,45 @@ const CryptoService: React.FC<CryptoServiceProps> = ({ user }) => {
       return;
     }
 
-    toast({
-      title: `Crypto ${cryptoTab} request submitted`,
-      description: `Your request to ${cryptoTab} ${amount} ${selectedCrypto} has been received and is being processed.`,
-    });
+    setProcessing(true);
+    
+    try {
+      const result = await processCryptoTransaction(
+        user.id,
+        selectedCrypto,
+        parseFloat(amount),
+        cryptoTab === 'buy' ? 'buy' : 'sell'
+      );
+      
+      if (result.success) {
+        toast({
+          title: `Crypto ${cryptoTab} successful`,
+          description: result.message,
+        });
+        
+        // Reset the form
+        setAmount("");
+        
+        // Refresh user profile to get updated wallet balance
+        if (refreshProfile) {
+          refreshProfile();
+        }
+      } else {
+        toast({
+          title: `Crypto ${cryptoTab} failed`,
+          description: result.message,
+          variant: "destructive",
+        });
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || `An error occurred during the ${cryptoTab} operation`,
+        variant: "destructive",
+      });
+    } finally {
+      setProcessing(false);
+    }
   };
 
   return (
@@ -81,9 +120,13 @@ const CryptoService: React.FC<CryptoServiceProps> = ({ user }) => {
                 </div>
               </div>
               
-              <Button onClick={handleCryptoAction} className="w-full">
+              <Button 
+                onClick={handleCryptoAction} 
+                className="w-full"
+                disabled={processing}
+              >
                 <Wallet className="mr-2 h-4 w-4" />
-                Buy {selectedCrypto}
+                {processing ? "Processing..." : `Buy ${selectedCrypto}`}
               </Button>
             </div>
           </TabsContent>
@@ -121,9 +164,14 @@ const CryptoService: React.FC<CryptoServiceProps> = ({ user }) => {
                 </div>
               </div>
               
-              <Button onClick={handleCryptoAction} variant="destructive" className="w-full">
+              <Button 
+                onClick={handleCryptoAction} 
+                variant="destructive" 
+                className="w-full"
+                disabled={processing}
+              >
                 <Bitcoin className="mr-2 h-4 w-4" />
-                Sell {selectedCrypto}
+                {processing ? "Processing..." : `Sell ${selectedCrypto}`}
               </Button>
             </div>
           </TabsContent>
