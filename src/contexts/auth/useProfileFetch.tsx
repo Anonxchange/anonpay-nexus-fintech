@@ -9,6 +9,8 @@ export const useProfileFetch = () => {
   const fetchProfile = async (userId: string) => {
     try {
       setIsProfileLoading(true);
+      console.log("Fetching profile for user:", userId);
+      
       const { data, error } = await supabase
         .from('user_profiles')
         .select('*')
@@ -20,11 +22,14 @@ export const useProfileFetch = () => {
         
         // If the profile doesn't exist, create it
         if (error.code === 'PGRST116') {
+          console.log("Profile not found, creating new profile");
           const newProfile = await createProfile(userId);
           return newProfile;
         }
         return null;
       } else {
+        console.log("Profile data fetched:", data);
+        
         // Ensure the data conforms to the Profile type
         const profileData: Profile = {
           id: userId, // Map user_id to id
@@ -51,6 +56,8 @@ export const useProfileFetch = () => {
   // Create a new profile for a user if it doesn't exist
   const createProfile = async (userId: string): Promise<Profile | null> => {
     try {
+      console.log("Creating new profile for user:", userId);
+      
       const { data, error } = await supabase
         .from('user_profiles')
         .insert({ 
@@ -69,6 +76,8 @@ export const useProfileFetch = () => {
         return null;
       }
 
+      console.log("New profile created:", data);
+      
       // Map to Profile type
       const profileData: Profile = {
         id: userId,
@@ -93,6 +102,8 @@ export const useProfileFetch = () => {
   const refreshProfile = async (userId: string) => {
     if (userId) {
       try {
+        console.log("Refreshing profile for user:", userId);
+        
         const { data: profileData, error: profileError } = await supabase
           .from("user_profiles")
           .select("*")
@@ -103,6 +114,8 @@ export const useProfileFetch = () => {
           console.error("Error fetching profile:", profileError);
           return null;
         } else {
+          console.log("Refreshed profile data:", profileData);
+          
           // Map to Profile type
           const profile: Profile = {
             id: userId,

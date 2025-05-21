@@ -1,136 +1,92 @@
 
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { useToast } from "@/hooks/use-toast";
+import { Navigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface AdminProtectedRouteProps {
   children: React.ReactNode;
 }
 
 const AdminProtectedRoute: React.FC<AdminProtectedRouteProps> = ({ children }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
+  const [isAdmin, setIsAdmin] = useState(false);
   const { toast } = useToast();
-  
+
   useEffect(() => {
-    const checkAdminAuth = async () => {
+    const checkAdminStatus = async () => {
       try {
-        console.log("Checking admin authentication status");
-        // First check local storage
+        // First check if we have admin data in localStorage
         const adminData = localStorage.getItem("anonpay_admin");
+        
         if (adminData) {
-          try {
-            const adminObj = JSON.parse(adminData);
-            console.log("Found admin data in localStorage:", adminObj);
-            
-            // For local admin account
-            if (adminObj.id === "admin-1") {
-              console.log("Local admin account verified");
-              setIsAuthenticated(true);
-            } else {
-              // For Supabase authenticated admin, verify role
-              console.log("Verifying Supabase admin with ID:", adminObj.id);
-              const { data: { user } } = await supabase.auth.getUser();
-              
-              if (user && user.id === adminObj.id) {
-                // Verify admin role
-                const { data: profile, error } = await supabase
-                  .from('user_profiles')
-                  .select('role')
-                  .eq('user_id', user.id)
-                  .single();
-                  
-                if (error) {
-                  console.error("Error fetching profile:", error);
-                  throw new Error("Failed to verify admin status");
-                }
-                
-                // Safe access to properties
-                const role = profile?.role || 'user';
-                console.log("User role from database:", role);
-                
-                if (role === 'admin') {
-                  console.log("Admin role confirmed in database");
-                  setIsAuthenticated(true);
-                } else {
-                  console.error("User does not have admin role in database");
-                  throw new Error("User is not an admin");
-                }
-              } else {
-                console.error("User ID mismatch or no user found");
-                throw new Error("Invalid admin data");
-              }
-            }
-          } catch (error) {
-            console.error("Error parsing admin data:", error);
-            toast({
-              variant: "destructive",
-              title: "Authentication Error",
-              description: "Your admin session is invalid. Please log in again."
-            });
-            localStorage.removeItem("anonpay_admin");
-            setIsAuthenticated(false);
-            navigate("/admin-login");
-          }
-        } else {
-          // Try to check if current Supabase user is an admin
-          console.log("No admin data in localStorage, checking current Supabase user");
-          const { data: { user } } = await supabase.auth.getUser();
+          console.log("Admin data found in localStorage");
+          setIsAdmin(true);
+          setLoading(false);
+          return;
+        }
+        
+        // If not in localStorage, check current auth session
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session) {
+          console.log("No authenticated session");
+          setLoading(false);
+          return;
+        }
+        
+        const userId = session.user.id;
+        console.log("Checking admin status for user:", userId);
+        
+        // Check if user has admin role in user_profiles
+        const { data, error } = await supabase
+          .from('user_profiles')
+          .select('role')
+          .eq('user_id', userId)
+          .single();
+        
+        if (error) {
+          console.error("Error checking admin status:", error);
+          throw error;
+        }
+        
+        const role = data?.role;
+        console.log("User role:", role);
+        
+        if (role === 'admin') {
+          console.log("User is admin");
+          // Create and store admin data
+          const adminUser = {
+            email: session.user.email || '',
+            name: session.user.email || 'Admin User',
+            role: 'admin',
+            id: userId
+          };
           
-          if (user) {
-            console.log("Current Supabase user found:", user.id);
-            // Check if user has admin role
-            const { data: profile, error } = await supabase
-              .from('user_profiles')
-              .select('role')
-              .eq('user_id', user.id)
-              .single();
-              
-            if (error) {
-              console.error("Error fetching profile:", error);
-              throw new Error("Failed to verify admin status");
-            }
-            
-            // Safe access to properties
-            const role = profile?.role || 'user';
-            console.log("User role from database:", role);
-            
-            if (role === 'admin') {
-              console.log("Admin role confirmed for current user");
-              // Store admin data
-              const adminData = {
-                email: user.email,
-                role: "admin",
-                name: user.email || "Admin User",
-                id: user.id,
-              };
-              
-              localStorage.setItem("anonpay_admin", JSON.stringify(adminData));
-              setIsAuthenticated(true);
-            } else {
-              console.log("Current user is not an admin");
-              setIsAuthenticated(false);
-              navigate("/admin-login");
-            }
-          } else {
-            console.log("No authenticated user found");
-            setIsAuthenticated(false);
-            navigate("/admin-login");
-          }
+          localStorage.setItem("anonpay_admin", JSON.stringify(adminUser));
+          setIsAdmin(true);
+        } else {
+          console.log("User is not admin");
+          toast({
+            variant: "destructive",
+            title: "Access Denied",
+            description: "You don't have permission to access the admin panel."
+          });
         }
       } catch (error) {
-        console.error("Admin authentication error:", error);
-        setIsAuthenticated(false);
-        navigate("/admin-login");
+        console.error("Error in admin auth check:", error);
+        toast({
+          variant: "destructive",
+          title: "Authentication Error",
+          description: "Failed to verify admin access."
+        });
       } finally {
         setLoading(false);
       }
     };
     
-    checkAdminAuth();
-  }, [toast, navigate]);
+    checkAdminStatus();
+  }, [toast]);
   
   if (loading) {
     return (
@@ -140,8 +96,8 @@ const AdminProtectedRoute: React.FC<AdminProtectedRouteProps> = ({ children }) =
     );
   }
   
-  if (!isAuthenticated) {
-    return null;
+  if (!isAdmin) {
+    return <Navigate to="/admin-login" replace />;
   }
   
   return <>{children}</>;

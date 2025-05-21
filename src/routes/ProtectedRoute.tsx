@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { useAuth } from "../contexts/auth";
+import { useNavigate, Navigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -9,25 +9,32 @@ interface ProtectedRouteProps {
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const [loading, setLoading] = useState(true);
-  const { user } = useAuth();
+  const [authenticated, setAuthenticated] = useState(false);
   const navigate = useNavigate();
   
   useEffect(() => {
     const checkAuth = async () => {
-      // If we have auth context data, process it
-      if (user === null) {
-        console.log("No authenticated user found, redirecting to login");
-        navigate("/login");
+      try {
+        // Check for an existing session
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session) {
+          console.log("Session found, user is authenticated");
+          setAuthenticated(true);
+        } else {
+          console.log("No authenticated session found, redirecting to login");
+          navigate("/login", { replace: true });
+        }
+      } catch (error) {
+        console.error("Error checking authentication:", error);
+        navigate("/login", { replace: true });
+      } finally {
+        setLoading(false);
       }
-      
-      setLoading(false);
     };
     
-    // Only check auth if loading is true (initial load)
-    if (loading) {
-      checkAuth();
-    }
-  }, [user, navigate, loading]);
+    checkAuth();
+  }, [navigate]);
   
   if (loading) {
     return (
@@ -37,7 +44,12 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     );
   }
   
-  // We know user is authenticated at this point, render children
+  // If not authenticated, redirect to login
+  if (!authenticated) {
+    return <Navigate to="/login" replace />;
+  }
+  
+  // User is authenticated, render children
   return <>{children}</>;
 };
 

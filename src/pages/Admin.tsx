@@ -51,7 +51,7 @@ const Admin: React.FC = () => {
             }
             
             console.log("User profile data:", profileData);
-            // Safe access to properties using optional chaining
+            // Safe access to properties
             const role = profileData?.role || 'user';
             
             if (role === 'admin') {

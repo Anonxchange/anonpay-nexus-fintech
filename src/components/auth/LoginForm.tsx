@@ -14,9 +14,9 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { LogIn } from "lucide-react";
-import { useAuth } from "../../contexts/auth";
+import { supabase } from "@/integrations/supabase/client";
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
@@ -26,7 +26,6 @@ const loginSchema = z.object({
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 const LoginForm: React.FC = () => {
-  const { signIn } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -42,24 +41,41 @@ const LoginForm: React.FC = () => {
   const onSubmit = async (data: LoginFormValues) => {
     try {
       setIsLoading(true);
-      await signIn(data.email, data.password);
       
-      // Add delay before navigation to give auth state time to update
-      setTimeout(() => {
-        toast({
-          title: "Login successful",
-          description: "Welcome back to AnonPay!",
-        });
-        navigate("/dashboard");
-      }, 500);
+      console.log("Attempting login with:", data.email);
+      // Direct Supabase authentication
+      const { data: authData, error } = await supabase.auth.signInWithPassword({
+        email: data.email,
+        password: data.password,
+      });
+      
+      if (error) {
+        console.error("Supabase auth error:", error);
+        throw error;
+      }
+      
+      if (!authData.user) {
+        throw new Error("Login failed: No user data returned");
+      }
+      
+      console.log("Login successful, user:", authData.user.id);
+      
+      toast({
+        title: "Login successful",
+        description: "Welcome back to AnonPay!",
+      });
+      
+      // Immediate navigation to dashboard after successful login
+      navigate("/dashboard");
       
     } catch (error: any) {
-      console.error("Login error:", error);
+      console.error("Login failed:", error);
       toast({
         variant: "destructive",
         title: "Login failed",
         description: error.message || "Invalid credentials. Please try again.",
       });
+    } finally {
       setIsLoading(false);
     }
   };

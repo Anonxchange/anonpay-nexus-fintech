@@ -11,40 +11,68 @@ export const useAuthOperations = () => {
 
   const signUp = async (email: string, password: string) => {
     try {
+      setIsLoading(true);
+      console.log("Signing up with:", email);
+      
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
       });
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error signing up:', error.message);
+        throw error;
+      }
       
-      return;
+      console.log("Sign up successful:", data);
+      
+      // Create user_profile if needed (handled by Supabase trigger)
+      return data;
     } catch (error: any) {
       console.error('Error signing up:', error.message);
       throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const signIn = async (email: string, password: string) => {
     try {
+      setIsLoading(true);
+      console.log("Signing in with:", email);
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error signing in:', error.message);
+        throw error;
+      }
       
-      return;
+      console.log("Sign in successful:", data.user?.id);
+      
+      return data;
     } catch (error: any) {
       console.error('Error signing in:', error.message);
       throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const signOut = async () => {
     try {
+      setIsLoading(true);
+      
       await supabase.auth.signOut();
       navigate('/login');
+      
+      toast({
+        title: "Signed out",
+        description: "You have been successfully signed out.",
+      });
     } catch (error: any) {
       console.error('Error signing out:', error.message);
       toast({
@@ -52,11 +80,15 @@ export const useAuthOperations = () => {
         title: 'Error',
         description: `Failed to sign out: ${error.message}`,
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const resetPassword = async (email: string) => {
     try {
+      setIsLoading(true);
+      
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/reset-password`,
       });
@@ -75,11 +107,15 @@ export const useAuthOperations = () => {
         description: `Failed to send reset email: ${error.message}`,
       });
       throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const updatePassword = async (password: string) => {
     try {
+      setIsLoading(true);
+      
       const { error } = await supabase.auth.updateUser({ password });
       
       if (error) throw error;
@@ -97,21 +133,36 @@ export const useAuthOperations = () => {
         description: `Failed to update password: ${error.message}`,
       });
       throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const verifyEmail = async (userId: string) => {
-    // In a real app, this would make an API call to verify the email
-    // For now, we'll just simulate it by updating the user state
-    toast({
-      title: 'Email verified',
-      description: 'Your email has been verified successfully',
-    });
-    navigate('/dashboard');
+    try {
+      setIsLoading(true);
+      // In a real app, this would make an API call to verify the email
+      // For now, we'll just simulate it by updating the user state
+      toast({
+        title: 'Email verified',
+        description: 'Your email has been verified successfully',
+      });
+      navigate('/dashboard');
+    } catch (error: any) {
+      console.error('Error verifying email:', error.message);
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: `Failed to verify email: ${error.message}`,
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const resendVerificationEmail = async () => {
     try {
+      setIsLoading(true);
       // Create an edge function to handle email verification in a real application
       // For now, we'll just show a toast
       toast({
@@ -126,6 +177,8 @@ export const useAuthOperations = () => {
         description: `Failed to resend verification email: ${error.message}`,
       });
       throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 

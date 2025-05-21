@@ -24,18 +24,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   
   // Fetch profile function
   const handleFetchProfile = async (userId: string) => {
-    const profileData = await fetchProfile(userId);
-    if (profileData) {
-      setProfile(profileData);
+    try {
+      const profileData = await fetchProfile(userId);
+      if (profileData) {
+        setProfile(profileData);
+      }
+    } catch (error) {
+      console.error("Error fetching profile:", error);
     }
   };
 
   // Refresh profile function exposed to components
   const refreshProfile = async () => {
     if (user) {
-      const profileData = await fetchUpdatedProfile(user.id);
-      if (profileData) {
-        setProfile(profileData as Profile);
+      try {
+        const profileData = await fetchUpdatedProfile(user.id);
+        if (profileData) {
+          setProfile(profileData as Profile);
+        }
+      } catch (error) {
+        console.error("Error refreshing profile:", error);
       }
     }
   };

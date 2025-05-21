@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate, Link } from "react-router-dom";
@@ -14,9 +15,9 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { UserPlus } from "lucide-react";
-import { useAuth } from "../../contexts/auth";
+import { supabase } from "@/integrations/supabase/client";
 
 const signUpSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
@@ -33,7 +34,6 @@ const signUpSchema = z.object({
 type SignUpFormValues = z.infer<typeof signUpSchema>;
 
 const SignUpForm: React.FC = () => {
-  const { signUp } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -51,12 +51,31 @@ const SignUpForm: React.FC = () => {
   const onSubmit = async (data: SignUpFormValues) => {
     try {
       setIsLoading(true);
-      await signUp(data.email, data.password);
+      console.log("Signing up with:", data.email);
+      
+      // Register with Supabase
+      const { data: authData, error } = await supabase.auth.signUp({
+        email: data.email,
+        password: data.password,
+      });
+      
+      if (error) {
+        console.error("Signup error:", error);
+        throw error;
+      }
+      
+      console.log("Signup successful:", authData);
+      
       toast({
         title: "Account created",
         description: "Please verify your email to continue.",
       });
-      navigate("/verify-email");
+      
+      // Redirect to dashboard or verification page
+      navigate("/verify-email", { 
+        state: { email: data.email }
+      });
+      
     } catch (error: any) {
       console.error("Signup error:", error);
       toast({
@@ -128,9 +147,9 @@ const SignUpForm: React.FC = () => {
               <div className="space-y-1 leading-none">
                 <FormLabel>
                   I accept the{" "}
-                  <a href="#" className="text-anonpay-primary hover:underline">
+                  <Link to="/terms" className="text-anonpay-primary hover:underline">
                     terms and conditions
-                  </a>
+                  </Link>
                 </FormLabel>
                 <FormMessage />
               </div>
