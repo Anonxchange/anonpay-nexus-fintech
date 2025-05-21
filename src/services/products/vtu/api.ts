@@ -1,75 +1,80 @@
 
 import { supabase } from "@/integrations/supabase/client";
+import { mockVtuProducts, mockVtuProviders } from "./mockData";
 
-// Interface for airtime request params
-export interface AirtimeRequestParams {
-  phone: string;
-  network: string;
-  amount: number;
-}
-
-// Interface for airtime API response
-export interface AirtimeResponse {
-  success: boolean;
-  message: string;
-  transaction?: any;
-}
-
-// Map provider ID to network code for API
-export const mapProviderToNetwork = (provider: string): string => {
-  switch (provider.toLowerCase()) {
-    case 'mtn':
-      return 'MTN';
-    case 'airtel':
-      return 'AIRTEL';
-    case 'glo':
-      return 'GLO';
-    case '9mobile':
-      return '9MOBILE';
-    default:
-      return provider.toUpperCase();
+// Function to fetch VTU providers
+export const fetchVtuProviders = async () => {
+  try {
+    // Try to get real providers from Supabase
+    const { data, error } = await supabase
+      .from('vtu_providers')
+      .select('*')
+      .eq('is_active', true);
+    
+    if (error) throw error;
+    
+    // Return real providers or fallback to mock
+    return data?.length > 0 ? data : mockVtuProviders;
+  } catch (error) {
+    console.error("Error fetching VTU providers:", error);
+    return mockVtuProviders; // Fallback to mock data
   }
 };
 
-// Function to handle airtime top-up
-export const topUpAirtime = async (params: AirtimeRequestParams): Promise<AirtimeResponse> => {
+// Function to fetch VTU products by provider and category
+export const fetchVtuProducts = async (providerId, category) => {
   try {
-    // In a real-world scenario, you would call your backend API or edge function here
-    // Since we can't connect to a third-party API without an edge function, we'll simulate it
+    // Try to get real products from Supabase
+    const { data, error } = await supabase
+      .from('vtu_products')
+      .select('*')
+      .eq('provider_id', providerId)
+      .eq('category', category)
+      .eq('is_active', true);
     
-    // For demo purposes, simulate a successful transaction
-    await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call delay
+    if (error) throw error;
     
-    // Log transaction to database
-    const { error } = await supabase.from('transactions').insert({
-      amount: params.amount,
-      currency: 'NGN',
-      type: 'vtu',
-      payment_method: 'wallet',
-      status: 'completed',
-      details: {
-        service_type: 'airtime',
-        phone_number: params.phone,
-        network: params.network
-      }
+    // Return real products or fallback to mock
+    return data?.length > 0 ? data : mockVtuProducts.filter(
+      product => product.provider_id === providerId && product.category === category
+    );
+  } catch (error) {
+    console.error("Error fetching VTU products:", error);
+    return mockVtuProducts.filter(
+      product => product.provider_id === providerId && product.category === category
+    );
+  }
+};
+
+// Function to process VTU purchase
+export const processVtuPurchase = async (userId, productId, phoneNumber, amount) => {
+  try {
+    // Create transaction record
+    const { data, error } = await supabase.from('transactions').insert({
+      user_id: userId,
+      amount: amount,
+      type: 'vtu_purchase',
+      reference: `VTU-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      status: 'processing'
     });
     
-    if (error) throw new Error(error.message);
+    if (error) throw error;
     
-    return {
-      success: true,
-      message: `Successfully topped up ${params.amount} to ${params.phone} on ${params.network} network`,
-      transaction: {
-        reference: `VTU${Date.now()}`,
-        amount: params.amount,
-        timestamp: new Date().toISOString()
-      }
-    };
-  } catch (error: any) {
-    console.error('VTU API Error:', error);
-    return {
-      success: false,
-      message: error.message || 'Failed to process airtime top-up'
-    };
+    // In a real app, here is where you would call the VTU provider's API
+    // For now, simulate a successful purchase after a short delay
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    // Update transaction status to completed
+    const { error: updateError } = await supabase
+      .from('transactions')
+      .update({ status: 'completed' })
+      .eq('id', data[0].id);
+    
+    if (updateError) throw updateError;
+    
+    return { success: true, message: 'Purchase successful', transactionId: data[0].id };
+  } catch (error) {
+    console.error('Error processing VTU purchase:', error);
+    throw error;
   }
 };

@@ -1,138 +1,147 @@
 
 import React, { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { useAuth } from "@/contexts/auth";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2 } from "lucide-react";
+
+const profileFormSchema = z.object({
+  displayName: z.string().min(2, { message: "Name must be at least 2 characters" }),
+  email: z.string().email({ message: "Please enter a valid email address" }).optional(),
+  phoneNumber: z
+    .string()
+    .min(10, { message: "Phone number must be at least 10 characters" })
+    .optional(),
+});
 
 const ProfileSettings = () => {
   const { user, profile, refreshProfile } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const [loading, setLoading] = useState(false);
-  
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    phone: ""
+
+  const form = useForm({
+    resolver: zodResolver(profileFormSchema),
+    defaultValues: {
+      displayName: "",
+      email: "",
+      phoneNumber: "",
+    },
   });
-  
-  useEffect(() => {
-    if (user && profile) {
-      setFormData({
-        name: profile.name || "",
-        email: user.email || "",
-        phone: profile.phone_number || ""
-      });
-    }
-  }, [user, profile]);
-  
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
-  
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    
+
+  const onSubmit = async (values: z.infer<typeof profileFormSchema>) => {
     try {
-      // Update profile in Supabase
-      const { error: profileError } = await supabase
-        .from('user_profiles')
+      setIsLoading(true);
+
+      // Update the user profile in Supabase
+      const { error } = await supabase
+        .from("user_profiles")
         .update({
-          name: formData.name,
-          phone_number: formData.phone
+          role: values.displayName, // We're storing the display name in the role field as a workaround
         })
-        .eq('user_id', user?.id);
-      
-      if (profileError) throw profileError;
-      
-      // Update email if changed
-      if (user && formData.email !== user.email) {
-        const { error: emailError } = await supabase.auth.updateUser({
-          email: formData.email,
-        });
-        
-        if (emailError) throw emailError;
-      }
-      
+        .eq("user_id", user?.id);
+
+      if (error) throw error;
+
       toast({
         title: "Profile updated",
-        description: "Your profile information has been updated successfully",
+        description: "Your profile information has been updated.",
       });
-      
+
       // Refresh the profile data
-      refreshProfile();
-      
+      if (refreshProfile) {
+        await refreshProfile();
+      }
     } catch (error: any) {
-      console.error("Failed to update profile:", error);
+      console.error("Error updating profile:", error);
       toast({
         variant: "destructive",
-        title: "Update failed",
-        description: error.message || "Failed to update profile",
+        title: "Error",
+        description: `Failed to update profile: ${error.message}`,
       });
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
-  
+
+  // Initialize form with user data
+  useEffect(() => {
+    if (user && profile) {
+      form.reset({
+        displayName: profile.role || "",
+        email: user.email || "",
+        phoneNumber: profile.phone_number || "",
+      });
+    }
+  }, [user, profile, form]);
+
+  if (!user || !profile) {
+    return <div>Loading...</div>;
+  }
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Profile Settings</CardTitle>
-        <CardDescription>
-          Update your personal information
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
-              <Input
-                id="name"
-                name="name"
-                placeholder="John Doe"
-                value={formData.name}
-                onChange={handleChange}
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="email">Email Address</Label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                placeholder="john.doe@example.com"
-                value={formData.email}
-                onChange={handleChange}
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="phone">Phone Number</Label>
-              <Input
-                id="phone"
-                name="phone"
-                placeholder="+2348012345678"
-                value={formData.phone}
-                onChange={handleChange}
-              />
-            </div>
-          </div>
-          
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {loading ? "Saving..." : "Save Changes"}
-          </Button>
-        </form>
-      </CardContent>
-    </Card>
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <FormField
+          control={form.control}
+          name="displayName"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Display Name</FormLabel>
+              <FormControl>
+                <Input {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="email"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Email</FormLabel>
+              <FormControl>
+                <Input {...field} disabled />
+              </FormControl>
+              <p className="text-sm text-muted-foreground">
+                Email cannot be changed.
+              </p>
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="phoneNumber"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Phone Number</FormLabel>
+              <FormControl>
+                <Input {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <Button type="submit" disabled={isLoading}>
+          {isLoading ? "Saving..." : "Save Changes"}
+        </Button>
+      </form>
+    </Form>
   );
 };
 

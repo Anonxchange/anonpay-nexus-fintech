@@ -1,76 +1,50 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { getCryptoPrice, convertUsdToNaira } from "./cryptoService";
 
-// Process crypto deposit from wallet address
-export const monitorCryptoDeposits = async (userId: string) => {
-  try {
-    // In a real application, this would connect to a blockchain API
-    // For demo purposes, we'll simulate checking for deposits
-    console.log("Monitoring crypto deposits for user:", userId);
-    
-    // This would be replaced with actual blockchain API calls
-    return { 
-      status: "monitoring",
-      message: "Monitoring wallet for incoming transactions"
-    };
-  } catch (error) {
-    console.error("Error monitoring crypto deposits:", error);
-    throw error;
-  }
-};
-
-// Process a detected crypto deposit
+// Process crypto deposit
 export const processCryptoDeposit = async (
   userId: string,
-  cryptoAmount: number,
-  cryptoCurrency: string,
-  walletAddress: string,
-  transactionHash: string
+  amount: number,
+  currency: string,
+  txHash: string
 ) => {
   try {
-    // Get the price of the cryptocurrency in USD
-    const cryptoPrice = await getCryptoPrice(cryptoCurrency.toLowerCase());
+    // Create transaction record
+    const { data: transaction, error: txError } = await supabase
+      .from('transactions')
+      .insert({
+        user_id: userId,
+        amount: amount,
+        type: "crypto_deposit",
+        reference: txHash,
+        status: "completed"
+      })
+      .select()
+      .single();
     
-    // Calculate USD value
-    const usdValue = cryptoAmount * cryptoPrice;
+    if (txError) {
+      throw new Error(`Failed to create transaction: ${txError.message}`);
+    }
     
-    // Convert to Naira
-    const nairaValue = convertUsdToNaira(usdValue);
-    
-    // Create a transaction record
-    const { data, error } = await supabase.from('transactions').insert({
-      user_id: userId,
-      amount: nairaValue,
-      type: 'crypto_deposit',
-      reference: `${cryptoCurrency}:${transactionHash}:${walletAddress}`,
-      status: 'pending'
-    }).select('id').single();
-    
-    if (error) throw new Error(`Failed to create transaction record: ${error.message}`);
-    
-    // In a real application, we would call the Supabase edge function to process the deposit
-    // For now, we'll update the user's balance directly for demo purposes
-    const { error: walletError } = await supabase.rpc(
+    // Update wallet balance using RPC function
+    const { data, error } = await supabase.rpc(
       "update_wallet_balance",
       {
         user_id: userId,
-        amount: nairaValue,
-        transaction_type: "deposit",
-        reference: `crypto_deposit:${cryptoCurrency}:${transactionHash}`
+        amount: amount,
+        transaction_type: "crypto_deposit",
+        reference: txHash
       }
     );
     
-    if (walletError) throw new Error(`Failed to update wallet balance: ${walletError.message}`);
+    if (error) {
+      throw new Error(`Failed to process crypto deposit: ${error.message}`);
+    }
     
-    return {
-      success: true,
-      transactionId: data?.id,
-      amount: nairaValue,
-      message: `${cryptoAmount} ${cryptoCurrency.toUpperCase()} deposit is being processed`
-    };
-  } catch (error: any) {
-    console.error('Error in processCryptoDeposit:', error);
-    throw new Error(error.message || 'Failed to process crypto deposit');
+    console.log("Crypto deposit processed successfully:", data);
+    return transaction;
+  } catch (error) {
+    console.error('Error processing crypto deposit:', error);
+    throw error;
   }
 };

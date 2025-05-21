@@ -1,164 +1,80 @@
 
 import { supabase } from "@/integrations/supabase/client";
-import { Notification } from "@/types/notification";
 
-export interface Activity {
-  id: string;
-  user_id: string;
-  type: string;
-  details: any;
-  status: string;
-  created_at: string;
-  updated_at: string | null;
-  activity_type: "transaction" | "kyc_submission" | "notification";
-}
-
-// Get user activity log
-export const getUserActivityLog = async (adminId: string, userId: string): Promise<any[]> => {
+// Get user activity data and status
+export const getUserActivity = async (userId: string) => {
   try {
-    // First check if the user is an admin
-    const { data: adminData, error: adminError } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', adminId)
-      .single();
-
-    // Safe access to role property
-    const role = adminData?.role || 'user';
-
-    if (adminError || role !== 'admin') {
-      console.error('Error: Not authorized as admin', adminError);
-      return [];
-    }
+    if (!userId) return null;
     
-    // Get all transactions for the user
+    // Get user transactions
     const { data: transactions, error: transactionsError } = await supabase
       .from('transactions')
       .select('*')
       .eq('user_id', userId)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .limit(5);
     
-    if (transactionsError) {
-      console.error('Error fetching user transactions:', transactionsError);
-      return [];
-    }
-    
-    // Fetch KYC submissions
-    const { data: kycData, error: kycError } = await supabase
-      .from('kyc_submissions')
+    // Get user profile
+    const { data: profile, error: profileError } = await supabase
+      .from('user_profiles')
       .select('*')
       .eq('user_id', userId)
-      .order('created_at', { ascending: false });
-      
-    if (kycError) {
-      console.error('Error fetching KYC submissions:', kycError);
+      .single();
+    
+    if (profileError && profileError.code !== 'PGRST116') {
+      console.error('Error getting user profile:', profileError);
     }
     
-    // Fetch notifications
-    const { data: notificationsData, error: notificationsError } = await supabase
-      .from('notifications')
+    // Get user KYC status
+    const { data: kycRequests, error: kycError } = await supabase
+      .from('kyc_requests')
       .select('*')
       .eq('user_id', userId)
-      .order('created_at', { ascending: false });
-      
-    if (notificationsError) {
-      console.error('Error fetching notifications:', notificationsError);
-    }
+      .order('submitted_at', { ascending: false })
+      .limit(1);
     
-    // Combine all activities with appropriate type markers
-    const allActivities = [
-      ...(transactions || []).map(t => ({ ...t, activity_type: 'transaction' })),
-      ...(kycData || []).map(k => ({ ...k, activity_type: 'kyc_submission' })),
-      ...(notificationsData || []).map((n: Notification) => ({ 
-        ...n, 
-        activity_type: 'notification',
-        type: n.notification_type || "general" 
-      }))
-    ];
+    // Aggregated activity data
+    const activityData = {
+      transactions: transactionsError ? [] : transactions,
+      profile: profileError ? null : profile,
+      kycStatus: profile?.kyc_status || 'not_submitted',
+      kycRequest: kycRequests && kycRequests.length > 0 ? kycRequests[0] : null,
+    };
     
-    // Sort by created_at date - filter out any items that don't have a created_at date
-    return allActivities
-      .filter(a => a && a.created_at) 
-      .sort((a, b) => 
-        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-      );
+    return activityData;
   } catch (error) {
-    console.error('Error in getUserActivityLog:', error);
+    console.error('Error fetching user activity:', error);
+    return null;
+  }
+};
+
+// Get user KYC submissions
+export const getUserKycSubmissions = async (userId: string) => {
+  try {
+    // Use kyc_requests instead of kyc_submissions
+    const { data, error } = await supabase
+      .from('kyc_requests')
+      .select('*')
+      .eq('user_id', userId)
+      .order('submitted_at', { ascending: false });
+    
+    if (error) throw error;
+    
+    return data;
+  } catch (error) {
+    console.error('Error fetching KYC submissions:', error);
     return [];
   }
 };
 
-// Enable realtime activity updates
-export const setupActivitySubscription = (userId: string, callback: (activity: Activity) => void) => {
-  if (!userId) return null;
-
-  // Create a channel for realtime updates
-  const channel = supabase
-    .channel('activity-changes')
-    .on('postgres_changes', 
-      { 
-        event: '*', 
-        schema: 'public', 
-        table: 'transactions',
-        filter: `user_id=eq.${userId}` 
-      }, 
-      (payload) => {
-        console.log('Transaction change:', payload);
-        if (payload.new) {
-          callback({
-            ...payload.new as any,
-            activity_type: 'transaction'
-          });
-        }
-      }
-    )
-    .on('postgres_changes', 
-      { 
-        event: '*', 
-        schema: 'public', 
-        table: 'kyc_submissions',
-        filter: `user_id=eq.${userId}` 
-      }, 
-      (payload) => {
-        console.log('KYC submission change:', payload);
-        if (payload.new) {
-          callback({
-            ...payload.new as any,
-            activity_type: 'kyc_submission'
-          });
-        }
-      }
-    )
-    .subscribe();
-    
-  return channel;
-};
-
-// Create a new function to handle notifications channel separately
-export const setupNotificationSubscription = (userId: string, callback: (activity: Activity) => void) => {
-  if (!userId) return null;
-
-  const channel = supabase
-    .channel('notification-changes')
-    .on('postgres_changes', 
-      { 
-        event: '*', 
-        schema: 'public', 
-        table: 'notifications',
-        filter: `user_id=eq.${userId}` 
-      }, 
-      (payload) => {
-        console.log('Notification change:', payload);
-        if (payload.new) {
-          callback({
-            ...payload.new as any,
-            activity_type: 'notification',
-            type: (payload.new as any).notification_type || "general"
-          });
-        }
-      }
-    )
-    .subscribe();
-    
-  return channel;
+// Get user notifications
+export const getUserNotifications = async (userId: string) => {
+  try {
+    // Since we don't have a notifications table, we'll return empty for now
+    // In a real implementation, we would query the notifications table
+    return [];
+  } catch (error) {
+    console.error('Error fetching notifications:', error);
+    return [];
+  }
 };

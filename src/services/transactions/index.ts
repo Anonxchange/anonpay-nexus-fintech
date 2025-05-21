@@ -1,9 +1,7 @@
 
-// Re-export all transaction related services and types
-export * from './types';
-export * from './cryptoService';
-export * from './paymentMethodsService';
-export * from './depositService';
+// Export all transaction-related services from this index file
+export { processDeposit } from './depositService';
+export { processCryptoDeposit } from './cryptoDepositService';
 export * from './withdrawalService';
 export * from './transactionHistoryService';
-export * from './cryptoDepositService';
+export * from './types';
