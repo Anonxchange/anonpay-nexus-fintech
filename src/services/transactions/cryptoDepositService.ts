@@ -25,6 +25,7 @@ export const processCryptoDeposit = async (
   userId: string,
   cryptoAmount: number,
   cryptoCurrency: string,
+  walletAddress: string,
   transactionHash: string
 ) => {
   try {
@@ -37,23 +38,39 @@ export const processCryptoDeposit = async (
     // Convert to Naira
     const nairaValue = convertUsdToNaira(usdValue);
     
-    // Call the Supabase edge function to process the deposit
-    const { data, error } = await supabase.functions.invoke('process-deposit', {
-      body: {
-        userId,
-        amount: cryptoAmount,
-        cryptoCurrency,
-        transactionHash
+    // Create a transaction record
+    const { data, error } = await supabase.from('transactions').insert({
+      user_id: userId,
+      amount: nairaValue,
+      type: 'crypto_deposit',
+      reference: `${cryptoCurrency}:${transactionHash}:${walletAddress}`,
+      status: 'pending'
+    }).select('id').single();
+    
+    if (error) throw new Error(`Failed to create transaction record: ${error.message}`);
+    
+    // In a real application, we would call the Supabase edge function to process the deposit
+    // For now, we'll update the user's balance directly for demo purposes
+    const { error: walletError } = await supabase.rpc(
+      "update_wallet_balance",
+      {
+        user_id: userId,
+        amount: nairaValue,
+        transaction_type: "deposit",
+        reference: `crypto_deposit:${cryptoCurrency}:${transactionHash}`
       }
-    });
+    );
     
-    if (error) {
-      throw new Error(`Failed to process crypto deposit: ${error.message}`);
-    }
+    if (walletError) throw new Error(`Failed to update wallet balance: ${walletError.message}`);
     
-    return data;
-  } catch (error) {
+    return {
+      success: true,
+      transactionId: data?.id,
+      amount: nairaValue,
+      message: `${cryptoAmount} ${cryptoCurrency.toUpperCase()} deposit is being processed`
+    };
+  } catch (error: any) {
     console.error('Error in processCryptoDeposit:', error);
-    throw error;
+    throw new Error(error.message || 'Failed to process crypto deposit');
   }
 };

@@ -76,9 +76,9 @@ const AdminLogin: React.FC = () => {
           
           // Check if user has admin role
           const { data: profileData, error: profileError } = await supabase
-            .from('profiles')
-            .select('role, name')
-            .eq('id', authData.user.id)
+            .from('user_profiles')
+            .select('role, user_id')
+            .eq('user_id', authData.user.id)
             .single();
             
           if (profileError) {
@@ -95,7 +95,7 @@ const AdminLogin: React.FC = () => {
             const adminData = {
               email: authData.user.email,
               role: "admin",
-              name: profileData?.name || authData.user.email || "Admin User",
+              name: authData.user.email || "Admin User",
               id: authData.user.id,
             };
             

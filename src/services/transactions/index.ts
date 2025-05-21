@@ -6,3 +6,4 @@ export * from './paymentMethodsService';
 export * from './depositService';
 export * from './withdrawalService';
 export * from './transactionHistoryService';
+export * from './cryptoDepositService';

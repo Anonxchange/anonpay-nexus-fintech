@@ -38,11 +38,11 @@ const Admin: React.FC = () => {
           
           if (user) {
             console.log("Found Supabase user:", user);
-            // Check if the user has admin role in profiles
+            // Check if the user has admin role in user_profiles
             const { data: profileData, error } = await supabase
-              .from('profiles')
-              .select('role, name')
-              .eq('id', user.id)
+              .from('user_profiles')
+              .select('role, user_id')
+              .eq('user_id', user.id)
               .single();
               
             if (error) {
@@ -59,7 +59,7 @@ const Admin: React.FC = () => {
               // Create admin data object
               const adminUser = {
                 email: user.email || '',
-                name: profileData?.name || user.email || 'Admin User',
+                name: user.email || 'Admin User',
                 role: role,
                 id: user.id
               };

@@ -42,12 +42,12 @@ const ProfileSettings = () => {
     try {
       // Update profile in Supabase
       const { error: profileError } = await supabase
-        .from('profiles')
+        .from('user_profiles')
         .update({
           name: formData.name,
           phone_number: formData.phone
         })
-        .eq('id', user?.id);
+        .eq('user_id', user?.id);
       
       if (profileError) throw profileError;
       

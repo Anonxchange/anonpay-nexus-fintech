@@ -37,9 +37,9 @@ const AdminProtectedRoute: React.FC<AdminProtectedRouteProps> = ({ children }) =
               if (user && user.id === adminObj.id) {
                 // Verify admin role
                 const { data: profile, error } = await supabase
-                  .from('profiles')
+                  .from('user_profiles')
                   .select('role')
-                  .eq('id', user.id)
+                  .eq('user_id', user.id)
                   .single();
                   
                 if (error) {
@@ -83,9 +83,9 @@ const AdminProtectedRoute: React.FC<AdminProtectedRouteProps> = ({ children }) =
             console.log("Current Supabase user found:", user.id);
             // Check if user has admin role
             const { data: profile, error } = await supabase
-              .from('profiles')
-              .select('role, name')
-              .eq('id', user.id)
+              .from('user_profiles')
+              .select('role')
+              .eq('user_id', user.id)
               .single();
               
             if (error) {
@@ -103,7 +103,7 @@ const AdminProtectedRoute: React.FC<AdminProtectedRouteProps> = ({ children }) =
               const adminData = {
                 email: user.email,
                 role: "admin",
-                name: profile?.name || user.email || "Admin User",
+                name: user.email || "Admin User",
                 id: user.id,
               };
               

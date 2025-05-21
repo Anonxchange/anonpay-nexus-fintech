@@ -1,4 +1,4 @@
-// Only updating the props interface to include onSuccess
+
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -53,7 +53,13 @@ const CryptoDepositForm: React.FC<CryptoDepositFormProps> = ({ onSuccess }) => {
 
     try {
       setIsProcessing(true);
-      await processCryptoDeposit(user.id, values.amount, values.currency, values.walletAddress, values.transactionHash);
+      await processCryptoDeposit(
+        user.id, 
+        values.amount, 
+        values.currency, 
+        values.walletAddress, 
+        values.transactionHash
+      );
 
       toast({
         title: "Deposit Initiated",
