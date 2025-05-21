@@ -16,7 +16,7 @@ export const useAdminSubscriptions = (onDataChange: () => Promise<void>) => {
         { 
           event: '*', 
           schema: 'public', 
-          table: 'profiles'
+          table: 'user_profiles'
         }, 
         (payload) => {
           console.log('Profile change received:', payload);

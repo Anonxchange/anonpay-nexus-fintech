@@ -1,4 +1,5 @@
 
+
 import { supabase } from "@/integrations/supabase/client";
 import { KycSubmission } from "@/types/kyc";
 
@@ -24,7 +25,7 @@ export const fetchKycSubmission = async (userId: string): Promise<KycSubmission 
     
     // Convert database record to KycSubmission type with fallbacks for missing fields
     const submission: KycSubmission = {
-      id: data.id,
+      id: data.id || "",
       user_id: data.user_id || "",
       full_name: data.full_name || "Not provided",
       date_of_birth: "Not provided", // Not in kyc_requests table
@@ -35,9 +36,9 @@ export const fetchKycSubmission = async (userId: string): Promise<KycSubmission 
       document_url: data.id_image_url || "",
       selfie_url: "Not provided", // Not in kyc_requests table
       status: data.status as "pending" | "approved" | "rejected",
-      admin_notes: "Not provided", // Not in kyc_requests table
-      created_at: data.submitted_at,
-      updated_at: data.submitted_at,
+      admin_notes: data.admin_notes || "Not provided",
+      created_at: data.submitted_at || new Date().toISOString(),
+      updated_at: data.submitted_at || new Date().toISOString(),
       document_type: data.id_type // Use id_type as document_type
     };
     

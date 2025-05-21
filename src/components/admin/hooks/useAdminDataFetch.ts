@@ -55,7 +55,7 @@ export const useAdminDataFetch = (
       // Direct fetch from transactions table for admin with extended details
       const { data: transactionsData, error: transactionsError } = await supabase
         .from('transactions')
-        .select('*, user_profiles:user_id(balance, id, role, kyc_status)')
+        .select('*, user_profiles:user_id(balance, user_id, role, kyc_status)')
         .order('created_at', { ascending: false });
       
       if (transactionsError) {
@@ -70,7 +70,7 @@ export const useAdminDataFetch = (
         
         // Create a profile object with all required fields and fallbacks
         const formattedProfile: Profile = {
-          id: profile.user_id as string, // Map user_id to id
+          id: profile.user_id, // Map user_id to id
           name: profile.role || authUser?.email || "Unknown User",
           avatar_url: null, // user_profiles doesn't have avatar_url
           kyc_status: (profile.kyc_status as KycStatus) || 'not_submitted',

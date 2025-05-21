@@ -88,19 +88,16 @@ export const useKycFormSubmission = (onComplete: () => void) => {
       } = supabase.storage.from("kyc_documents").getPublicUrl(selfieFileName);
 
       // Submit KYC data to database
-      const { error: submissionError } = await supabase.from("kyc_submissions").insert({
-        user_id: user.id,
-        full_name: data.full_name,
-        date_of_birth: data.date_of_birth,
-        address: data.address,
-        id_type: data.id_type,
-        id_number: data.id_number,
-        phone: data.phone,
-        document_type: data.id_type,
-        document_url: documentUrl,
-        selfie_url: selfieUrl,
-        status: "pending"
-      });
+      const { error: submissionError } = await supabase
+        .from("kyc_requests")
+        .insert({
+          user_id: user.id,
+          full_name: data.full_name,
+          id_type: data.id_type,
+          id_number: data.id_number,
+          id_image_url: documentUrl,
+          status: "pending"
+        });
 
       if (submissionError) {
         throw new Error(`KYC submission failed: ${submissionError.message}`);
@@ -108,9 +105,9 @@ export const useKycFormSubmission = (onComplete: () => void) => {
 
       // Update user profile status
       const { error: profileError } = await supabase
-        .from("profiles")
+        .from("user_profiles")
         .update({ kyc_status: "pending" })
-        .eq("id", user.id);
+        .eq("user_id", user.id);
 
       if (profileError) {
         throw new Error(`Profile update failed: ${profileError.message}`);
