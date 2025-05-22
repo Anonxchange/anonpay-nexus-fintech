@@ -1,98 +1,94 @@
 
-import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { Notification } from "@/types/notification";
-import { getUserNotifications, markNotificationAsRead, markAllNotificationsAsRead } from "./notificationApi";
+import { useState, useEffect, useCallback } from 'react';
+import { Notification } from '@/types/notification';
+import { 
+  getUserNotifications,
+  markAllAsRead, 
+  markNotificationAsRead 
+} from './notificationApi';
 
-// Create hook for notification panel
 export const useNotificationPanel = (userId: string | undefined) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
   const [unreadCount, setUnreadCount] = useState(0);
-  
-  // Fetch notifications on mount and when userId changes
-  useEffect(() => {
-    const fetchNotifications = async () => {
-      if (!userId) {
-        setNotifications([]);
-        setUnreadCount(0);
-        setLoading(false);
-        return;
-      }
+
+  const fetchNotifications = useCallback(async () => {
+    if (!userId) {
+      setNotifications([]);
+      setLoading(false);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const notificationsData = await getUserNotifications(userId);
+      setNotifications(notificationsData);
       
-      try {
-        setLoading(true);
-        const data = await getUserNotifications(userId);
-        setNotifications(data);
-        setUnreadCount(data.filter(n => !n.read).length);
-      } catch (error) {
-        console.error('Error fetching notifications:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchNotifications();
-    
-    // Subscribe to notification changes
-    const channel = supabase
-      .channel('notification-changes')
-      .on('postgres_changes', 
-        { 
-          event: '*', 
-          schema: 'public', 
-          table: 'notifications',
-          filter: `user_id=eq.${userId}` 
-        }, 
-        () => {
-          // Refresh notifications when any changes occur
-          fetchNotifications();
-        }
-      )
-      .subscribe();
-    
-    return () => {
-      supabase.removeChannel(channel);
-    };
+      // Calculate unread count - handle both is_read and read properties
+      setUnreadCount(notificationsData.filter(n => !(n.is_read || n.read)).length);
+      
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error('Failed to fetch notifications'));
+      console.error('Error fetching notifications:', err);
+    } finally {
+      setLoading(false);
+    }
   }, [userId]);
-  
-  // Handle marking a notification as read
-  const handleMarkAsRead = async (notificationId: string) => {
-    const success = await markNotificationAsRead(notificationId);
-    if (success) {
-      // Update local state
-      setNotifications(prevNotifications => 
-        prevNotifications.map(notification => 
+
+  useEffect(() => {
+    fetchNotifications();
+  }, [fetchNotifications]);
+
+  const handleMarkAsRead = useCallback(async (notificationId: string) => {
+    try {
+      await markNotificationAsRead(notificationId);
+      
+      setNotifications(prev => 
+        prev.map(notification => 
           notification.id === notificationId 
-            ? { ...notification, read: true } 
+            ? { ...notification, is_read: true, read: true } 
             : notification
         )
       );
+      
       // Update unread count
       setUnreadCount(prev => Math.max(0, prev - 1));
+      
+      return true;
+    } catch (err) {
+      console.error('Error marking notification as read:', err);
+      return false;
     }
-  };
-  
-  // Handle marking all notifications as read
-  const handleMarkAllAsRead = async () => {
-    if (!userId) return;
+  }, []);
+
+  const handleMarkAllAsRead = useCallback(async () => {
+    if (!userId) return false;
     
-    const success = await markAllNotificationsAsRead(userId);
-    if (success) {
-      // Update local state
-      setNotifications(prevNotifications => 
-        prevNotifications.map(notification => ({ ...notification, read: true }))
+    try {
+      await markAllAsRead(userId);
+      
+      setNotifications(prev => 
+        prev.map(notification => ({ ...notification, is_read: true, read: true }))
       );
-      // Update unread count
+      
       setUnreadCount(0);
+      
+      return true;
+    } catch (err) {
+      console.error('Error marking all notifications as read:', err);
+      return false;
     }
-  };
-  
+  }, [userId]);
+
   return {
     notifications,
     loading,
+    error,
     unreadCount,
-    handleMarkAsRead,
-    handleMarkAllAsRead
+    refreshNotifications: fetchNotifications,
+    markAsRead: handleMarkAsRead,
+    markAllAsRead: handleMarkAllAsRead,
   };
 };

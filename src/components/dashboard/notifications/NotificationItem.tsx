@@ -25,10 +25,14 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
     }
   };
 
+  // Use the correct property names based on our updated Notification interface
+  const notificationType = notification.type || notification.notification_type || '';
+  const isRead = notification.is_read !== undefined ? notification.is_read : notification.read;
+  
   return (
     <div 
       key={notification.id} 
-      className={`p-4 border-l-4 ${getNotificationStyle(notification.notification_type || '')} ${!notification.read ? 'bg-muted/50' : ''} hover:bg-muted/20 cursor-pointer`}
+      className={`p-4 border-l-4 ${getNotificationStyle(notificationType)} ${!isRead ? 'bg-muted/50' : ''} hover:bg-muted/20 cursor-pointer`}
       onClick={() => onClick(notification)}
     >
       <div className="flex justify-between items-start mb-1">
@@ -38,7 +42,7 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
         </span>
       </div>
       <p className="text-sm text-muted-foreground">
-        {notification.message}
+        {notification.content || notification.message}
       </p>
     </div>
   );

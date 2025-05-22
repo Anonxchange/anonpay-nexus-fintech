@@ -24,7 +24,10 @@ export const getUserNotifications = async (userId: string): Promise<Notification
       content: `${tx.type} transaction of ${tx.amount} - Status: ${tx.status}`,
       created_at: tx.created_at,
       is_read: false,
-      type: 'transaction'
+      type: 'transaction',
+      // For backwards compatibility
+      message: `${tx.type} transaction of ${tx.amount} - Status: ${tx.status}`,
+      read: false
     })) || [];
     
     return notifications;
@@ -57,6 +60,9 @@ export const markAllAsRead = async (userId: string): Promise<boolean> => {
     return false;
   }
 };
+
+// Alias for markAllAsRead for backward compatibility
+export const markAllNotificationsAsRead = markAllAsRead;
 
 // Update notification preferences
 export const updateNotificationPreferences = async (

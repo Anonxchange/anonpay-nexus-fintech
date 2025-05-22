@@ -5,5 +5,5 @@ export * from './profileService';
 export * from './adminService';
 export * from './activityService';
 // Export the notification services differently to avoid name conflicts
-export { getUserNotifications as getNotifications } from './activityService';
+export { getUserNotifications as getActivityNotifications } from './activityService';
 export * from './notifications';

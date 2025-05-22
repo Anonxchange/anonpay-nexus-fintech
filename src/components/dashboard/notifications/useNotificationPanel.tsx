@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { Notification } from "@/types/notification";
-import { getUserNotifications, markNotificationAsRead, markAllNotificationsAsRead } from "@/services/user/notifications";
+import { getUserNotifications, markNotificationAsRead, markAllAsRead } from "@/services/user/notifications";
 
 export const useNotificationPanel = (userId: string | undefined) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -33,7 +33,7 @@ export const useNotificationPanel = (userId: string | undefined) => {
         { 
           event: '*', 
           schema: 'public', 
-          table: 'notifications',
+          table: 'transactions',
           filter: `user_id=eq.${userId}` 
         }, 
         () => {
@@ -52,7 +52,7 @@ export const useNotificationPanel = (userId: string | undefined) => {
       setLoading(true);
       const data = await getUserNotifications(userId);
       setNotifications(data);
-      setUnreadCount(data.filter(n => !n.read).length);
+      setUnreadCount(data.filter(n => !(n.is_read || n.read)).length);
     } catch (error) {
       console.error('Failed to fetch notifications:', error);
       toast({
@@ -74,7 +74,7 @@ export const useNotificationPanel = (userId: string | undefined) => {
       if (success) {
         setNotifications(prevNotifications => 
           prevNotifications.map(n => 
-            n.id === id ? { ...n, read: true } : n
+            n.id === id ? { ...n, is_read: true, read: true } : n
           )
         );
         setUnreadCount(prev => Math.max(0, prev - 1));
@@ -89,10 +89,10 @@ export const useNotificationPanel = (userId: string | undefined) => {
     if (!userId) return;
     
     try {
-      const success = await markAllNotificationsAsRead(userId);
+      const success = await markAllAsRead(userId);
       if (success) {
         setNotifications(prevNotifications => 
-          prevNotifications.map(n => ({ ...n, read: true }))
+          prevNotifications.map(n => ({ ...n, is_read: true, read: true }))
         );
         setUnreadCount(0);
         toast({
@@ -109,8 +109,9 @@ export const useNotificationPanel = (userId: string | undefined) => {
     await handleMarkAsRead(notification.id);
     
     // Navigate to action link if available
-    if (notification.action_link) {
-      window.location.href = notification.action_link;
+    const actionLink = notification.action_link;
+    if (actionLink) {
+      window.location.href = actionLink;
     }
   };
 

@@ -145,7 +145,10 @@ const DepositDialog: React.FC<DepositDialogProps> = ({ open, onOpenChange }) => 
           </TabsContent>
           
           <TabsContent value="crypto" className="pt-4">
-            <CryptoDepositForm onSuccess={() => onOpenChange(false)} />
+            <CryptoDepositForm 
+              user={user} 
+              onSuccess={() => onOpenChange(false)} 
+            />
           </TabsContent>
         </Tabs>
       </DialogContent>

@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import {
   Card,
@@ -12,18 +13,23 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { processCryptoDeposit } from "@/services/transactions";
-import { generateReference } from "@/utils/general";
 
 interface CryptoDepositFormProps {
-  user: any;
+  user?: any;
+  onSuccess?: () => void; // Added onSuccess prop
 }
 
-const CryptoDepositForm: React.FC<CryptoDepositFormProps> = ({ user }) => {
+const CryptoDepositForm: React.FC<CryptoDepositFormProps> = ({ user, onSuccess }) => {
   const [amount, setAmount] = useState<number | null>(null);
   const [selectedCrypto, setSelectedCrypto] = useState<string>("BTC");
   const [reference, setReference] = useState<string>(generateReference("crypto-deposit"));
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+  
+  // Simple function to generate reference IDs
+  const generateReference = (prefix: string) => {
+    return `${prefix}-${Date.now().toString().slice(-8)}`;
+  };
   
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -55,6 +61,11 @@ const CryptoDepositForm: React.FC<CryptoDepositFormProps> = ({ user }) => {
       setAmount(null);
       setSelectedCrypto("BTC");
       setReference(generateReference("crypto-deposit"));
+      
+      // Call onSuccess callback if provided
+      if (onSuccess) {
+        onSuccess();
+      }
     } catch (error: any) {
       console.error("Crypto deposit failed:", error);
       toast({
