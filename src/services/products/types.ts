@@ -1,4 +1,3 @@
-
 export interface GiftCard {
   id: string;
   name: string;
@@ -67,12 +66,20 @@ export interface VtuProviderOption {
 export interface VtuProduct {
   id: string;
   name: string;
+  description: string;
+  imageUrl: string;
+  isActive: boolean;
+  category: string;
+  hasVariants: boolean;
   price: number;
-  description?: string;
-  imageUrl?: string;
-  isActive?: boolean;
-  category?: string;
-  hasVariants?: boolean;
+  providerId: string;
+}
+
+export interface VtuProvider {
+  id: string;
+  name: string;
+  code: string;
+  isActive: boolean;
 }
 
 export interface PaymentResponse {

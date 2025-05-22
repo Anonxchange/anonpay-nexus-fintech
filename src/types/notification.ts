@@ -1,11 +1,12 @@
 
+export type NotificationType = 'transaction' | 'system' | 'kyc' | 'security' | 'account' | 'giftcard';
+
 export interface Notification {
   id: string;
   user_id: string;
   title: string;
-  message: string;
-  read: boolean;
+  content: string;
   created_at: string;
-  action_link?: string | null;
-  notification_type: string;
+  is_read: boolean;
+  type: NotificationType;
 }

@@ -1,7 +1,9 @@
 
-// Re-export all user service functionality
+// Export all user-related service functions
+export * from './accountService';
 export * from './profileService';
 export * from './adminService';
 export * from './activityService';
-export * from './accountService';
-export * from './notificationService';
+// Export the notification services differently to avoid name conflicts
+export { getUserNotifications as getNotifications } from './activityService';
+export * from './notifications';

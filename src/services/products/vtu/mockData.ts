@@ -1,5 +1,5 @@
 
-import { VtuProduct } from "../types";
+import { VtuProduct, VtuProvider } from "../types";
 
 // Mock data for VTU products
 export const mockVtuProducts: VtuProduct[] = [
@@ -11,7 +11,8 @@ export const mockVtuProducts: VtuProduct[] = [
     isActive: true,
     category: "airtime",
     hasVariants: false,
-    price: 0  // Variable price for airtime
+    price: 0,  // Variable price for airtime
+    providerId: "mtn"
   },
   {
     id: "2",
@@ -21,7 +22,8 @@ export const mockVtuProducts: VtuProduct[] = [
     isActive: true,
     category: "airtime",
     hasVariants: false,
-    price: 0  // Variable price for airtime
+    price: 0,  // Variable price for airtime
+    providerId: "airtel"
   },
   {
     id: "3",
@@ -31,7 +33,8 @@ export const mockVtuProducts: VtuProduct[] = [
     isActive: true,
     category: "data",
     hasVariants: false,
-    price: 1000
+    price: 1000,
+    providerId: "mtn"
   },
   {
     id: "4",
@@ -41,7 +44,8 @@ export const mockVtuProducts: VtuProduct[] = [
     isActive: true,
     category: "data",
     hasVariants: false,
-    price: 1000
+    price: 1000,
+    providerId: "airtel"
   },
   {
     id: "5",
@@ -51,6 +55,41 @@ export const mockVtuProducts: VtuProduct[] = [
     isActive: true,
     category: "cable",
     hasVariants: false,
-    price: 7000
+    price: 7000,
+    providerId: "dstv"
+  }
+];
+
+// Mock data for VTU providers
+export const mockVtuProviders: VtuProvider[] = [
+  {
+    id: "mtn",
+    name: "MTN",
+    code: "MTN",
+    isActive: true
+  },
+  {
+    id: "airtel",
+    name: "Airtel",
+    code: "AIRTEL",
+    isActive: true
+  },
+  {
+    id: "glo",
+    name: "Glo",
+    code: "GLO",
+    isActive: true
+  },
+  {
+    id: "9mobile",
+    name: "9Mobile",
+    code: "ETISALAT",
+    isActive: true
+  },
+  {
+    id: "dstv",
+    name: "DSTV",
+    code: "DSTV",
+    isActive: true
   }
 ];

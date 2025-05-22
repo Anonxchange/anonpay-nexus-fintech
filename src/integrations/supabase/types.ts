@@ -462,11 +462,13 @@ export type Database = {
     }
     Functions: {
       create_admin_user: {
-        Args: { email: string; password: string; name: string }
-        Returns: string
+        Args:
+          | { email: string; password: string; name: string }
+          | { username: string; email: string }
+        Returns: undefined
       }
       is_admin: {
-        Args: { uid: string }
+        Args: Record<PropertyKey, never> | { uid: string }
         Returns: boolean
       }
       manage_realtime: {
