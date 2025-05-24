@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { useNavigate, Link } from "react-router-dom";
@@ -17,6 +16,8 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { LogIn } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/auth";
+import { trackUserActivity } from "@/services/user/activityService";
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
@@ -29,6 +30,7 @@ const LoginForm: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const { signIn } = useAuth();
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -43,55 +45,26 @@ const LoginForm: React.FC = () => {
       setIsLoading(true);
       
       console.log("Attempting login with:", data.email);
-      // Direct Supabase authentication
-      const { data: authData, error } = await supabase.auth.signInWithPassword({
-        email: data.email,
-        password: data.password,
-      });
       
-      if (error) {
-        console.error("Supabase auth error:", error);
-        throw error;
-      }
+      // Use the auth context signIn method instead of direct Supabase call
+      const authData = await signIn(data.email, data.password);
       
-      if (!authData.user) {
+      if (!authData || !authData.user) {
         throw new Error("Login failed: No user data returned");
       }
       
       console.log("Login successful, user:", authData.user.id);
       
-      // Make sure we have a user profile record
-      const { data: profileData, error: profileError } = await supabase
-        .from("user_profiles")
-        .select("*")
-        .eq("user_id", authData.user.id)
-        .single();
-        
-      if (profileError && profileError.code === "PGRST116") {
-        // Profile doesn't exist, create one
-        const { error: createError } = await supabase
-          .from("user_profiles")
-          .insert({
-            user_id: authData.user.id,
-            role: "user",
-            kyc_status: "not_submitted",
-            balance: 0
-          });
-          
-        if (createError) {
-          console.error("Error creating user profile:", createError);
-        }
-      }
+      // Track login activity
+      await trackUserActivity(authData.user.id, 'login');
       
       toast({
         title: "Login successful",
         description: "Welcome back to AnonPay!",
       });
       
-      // Force reload to make sure all auth state is properly updated
-      setTimeout(() => {
-        navigate("/dashboard");
-      }, 500);
+      // Navigate to dashboard with replace to prevent going back to login
+      navigate("/dashboard", { replace: true });
       
     } catch (error: any) {
       console.error("Login failed:", error);
