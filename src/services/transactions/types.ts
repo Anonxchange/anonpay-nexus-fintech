@@ -8,6 +8,18 @@ export interface Transaction {
   reference?: string;
   created_at: string;
   updated_at: string;
+  user_name?: string; // Add this field to fix the error in TransactionsTab
+}
+
+export interface PaymentMethod {
+  id: string;
+  name: string;
+  type: string;
+  icon: string;
+  is_active: boolean;
+  method_type: string;
+  currency: string;
+  address?: string;
 }
 
 export type TransactionType = 
