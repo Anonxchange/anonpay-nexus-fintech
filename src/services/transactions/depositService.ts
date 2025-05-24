@@ -1,60 +1,41 @@
 
 import { supabase } from "@/integrations/supabase/client";
+import { Transaction } from './types';
 
-// Process deposit
+// Process a deposit transaction
 export const processDeposit = async (
-  userId: string,
-  amount: number,
-  reference: string
-) => {
+  userId: string, 
+  amount: number, 
+  reference: string = ''
+): Promise<Transaction> => {
   try {
-    // First, create the transaction record
-    const { data: transaction, error: transactionError } = await supabase
-      .from('transactions')
-      .insert({
-        user_id: userId,
-        amount: amount,
-        type: "deposit",
-        reference: reference,
-        status: "completed"
-      })
-      .select()
-      .single();
-    
-    if (transactionError) {
-      throw new Error(`Failed to create transaction: ${transactionError.message}`);
-    }
-    
-    // Then, update the wallet balance using the RPC function
-    const { data, error } = await supabase.rpc(
-      "update_wallet_balance",
-      {
-        user_id: userId,
-        amount: amount,
-        transaction_type: "deposit",
-        reference: reference
-      }
-    );
-    
+    // Call Supabase RPC function to update wallet balance
+    const { data, error } = await supabase.rpc('update_wallet_balance', {
+      user_id: userId,
+      amount: amount,
+      transaction_type: 'deposit',
+      reference: reference
+    });
+
     if (error) {
-      throw new Error(`Failed to process deposit: ${error.message}`);
+      console.error("Error in deposit transaction:", error);
+      throw new Error(error.message || "Failed to process deposit");
     }
     
-    // Get the updated profile with new balance
-    const { data: profileData, error: profileError } = await supabase
-      .from('user_profiles')
-      .select('balance')
-      .eq('user_id', userId)
+    // Get the created transaction
+    const { data: transaction, error: fetchError } = await supabase
+      .from('transactions')
+      .select('*')
+      .eq('id', data)
       .single();
-      
-    if (!profileError) {
-      console.log("Updated wallet balance:", profileData.balance);
+    
+    if (fetchError) {
+      throw new Error(fetchError.message);
     }
     
-    console.log("Deposit processed successfully:", data);
-    return transaction;
-  } catch (error) {
-    console.error('Error in processDeposit:', error);
-    throw error;
+    return transaction as Transaction;
+  } catch (error: any) {
+    console.error("Process deposit error:", error);
+    throw new Error(error.message || "Failed to process deposit");
   }
 };
