@@ -37,7 +37,6 @@ export const getUserNotifications = async (userId: string): Promise<Notification
 export const markNotificationAsRead = async (notificationId: string): Promise<boolean> => {
   try {
     // Since we don't have a real notifications table, we'll simulate success for now
-    // In a real implementation, you would update the notifications table
     console.log('Marking notification as read:', notificationId);
     return true;
   } catch (error) {
@@ -50,7 +49,6 @@ export const markNotificationAsRead = async (notificationId: string): Promise<bo
 export const markAllAsRead = async (userId: string): Promise<boolean> => {
   try {
     // Since we don't have a real notifications table, we'll simulate success for now
-    // In a real implementation, you would update all notifications for this user
     console.log('Marking all notifications as read for user:', userId);
     return true;
   } catch (error) {

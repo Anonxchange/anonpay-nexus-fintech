@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, Navigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -11,11 +12,23 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [authenticated, setAuthenticated] = useState(false);
   const navigate = useNavigate();
+  const { toast } = useToast();
   
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        // Check for an existing session
+        // Set up auth listener first to catch immediate changes
+        const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+          console.log("Auth state changed:", event, session?.user?.id);
+          if (event === 'SIGNED_IN') {
+            setAuthenticated(true);
+          } else if (event === 'SIGNED_OUT') {
+            setAuthenticated(false);
+            navigate("/login", { replace: true });
+          }
+        });
+
+        // Then check for an existing session
         const { data: { session } } = await supabase.auth.getSession();
         
         if (session) {
@@ -23,6 +36,11 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
           setAuthenticated(true);
         } else {
           console.log("No authenticated session found, redirecting to login");
+          toast({
+            title: "Authentication required",
+            description: "Please log in to access this page",
+            variant: "default"
+          });
           navigate("/login", { replace: true });
         }
       } catch (error) {
@@ -34,7 +52,12 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     };
     
     checkAuth();
-  }, [navigate]);
+    
+    // Clean up auth listener
+    return () => {
+      supabase.auth.onAuthStateChange(() => {});
+    };
+  }, [navigate, toast]);
   
   if (loading) {
     return (

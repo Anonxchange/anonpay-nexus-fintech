@@ -1,126 +1,118 @@
 
 import React, { useState } from "react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/auth";
 import { useToast } from "@/hooks/use-toast";
-import { processCryptoDeposit } from "@/services/transactions";
 
-interface CryptoDepositFormProps {
-  user?: any;
-  onSuccess?: () => void;
-}
-
-// Simple function to generate reference IDs
-const generateReference = (prefix: string) => {
-  return `${prefix}-${Date.now().toString().slice(-8)}`;
+// Generate a unique reference for transactions
+const generateReference = () => {
+  return 'CRYPTO_' + Math.random().toString(36).substring(2, 15).toUpperCase();
 };
 
-const CryptoDepositForm: React.FC<CryptoDepositFormProps> = ({ user, onSuccess }) => {
-  const [amount, setAmount] = useState<number | null>(null);
-  const [selectedCrypto, setSelectedCrypto] = useState<string>("BTC");
-  const [reference, setReference] = useState<string>(generateReference("crypto-deposit"));
-  const [isSubmitting, setIsSubmitting] = useState(false);
+const CryptoDepositForm: React.FC = () => {
+  const { user } = useAuth();
   const { toast } = useToast();
-  
-  const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
+  const [amount, setAmount] = useState<string>("");
+  const [crypto, setCrypto] = useState<string>("bitcoin");
+  const [loading, setLoading] = useState<boolean>(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     
-    if (!amount || amount <= 0) {
+    if (!user) {
       toast({
-        variant: "destructive",
-        title: "Invalid Amount",
-        description: "Please enter a valid amount to deposit."
+        title: "Authentication required",
+        description: "Please login to continue",
+        variant: "destructive"
       });
       return;
     }
     
-    setIsSubmitting(true);
-    
-    try {
-      if (!user?.id) {
-        throw new Error("User ID is missing.");
-      }
-      
-      await processCryptoDeposit(user.id, amount, selectedCrypto, reference);
-      
+    if (!amount || isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) {
       toast({
-        title: "Deposit Initiated",
-        description: "Your crypto deposit has been initiated successfully.",
+        title: "Invalid amount",
+        description: "Please enter a valid amount greater than 0",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      const reference = generateReference();
+      
+      // Create transaction record
+      const { error } = await supabase.from("transactions").insert({
+        user_id: user.id,
+        type: "crypto_deposit",
+        amount: parseFloat(amount),
+        status: "pending",
+        reference: reference
       });
       
-      // Reset form fields
-      setAmount(null);
-      setSelectedCrypto("BTC");
-      setReference(generateReference("crypto-deposit"));
+      if (error) throw error;
       
-      // Call onSuccess callback if provided
-      if (onSuccess) {
-        onSuccess();
-      }
-    } catch (error: any) {
-      console.error("Crypto deposit failed:", error);
       toast({
-        variant: "destructive",
-        title: "Deposit Failed",
-        description: error.message || "Failed to initiate crypto deposit. Please try again."
+        title: "Deposit initiated",
+        description: `Your ${crypto} deposit of ${amount} has been initiated. Pending confirmation.`
+      });
+      
+      // Reset form
+      setAmount("");
+      setCrypto("bitcoin");
+      
+    } catch (error: any) {
+      console.error("Error creating crypto deposit:", error);
+      toast({
+        title: "Deposit failed",
+        description: error.message || "Failed to process your deposit request",
+        variant: "destructive"
       });
     } finally {
-      setIsSubmitting(false);
+      setLoading(false);
     }
   };
-  
+
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Crypto Deposit</CardTitle>
-        <CardDescription>Deposit crypto to your account.</CardDescription>
-      </CardHeader>
-      <CardContent className="grid gap-4">
-        <div className="grid gap-2">
-          <Label htmlFor="amount">Amount</Label>
-          <Input
-            id="amount"
-            type="number"
-            placeholder="Enter amount"
-            value={amount !== null ? amount.toString() : ""}
-            onChange={(e) => setAmount(e.target.value ? parseFloat(e.target.value) : null)}
-          />
-        </div>
-        <div>
-          <Label htmlFor="crypto">Select Crypto</Label>
-          <Select value={selectedCrypto} onValueChange={setSelectedCrypto}>
-            <SelectTrigger id="crypto">
-              <SelectValue placeholder="Select" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="BTC">Bitcoin (BTC)</SelectItem>
-              <SelectItem value="ETH">Ethereum (ETH)</SelectItem>
-              <SelectItem value="LTC">Litecoin (LTC)</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="grid gap-2">
-          <Label htmlFor="reference">Reference</Label>
-          <Input
-            id="reference"
-            type="text"
-            placeholder="Reference"
-            value={reference}
-            readOnly
-          />
-        </div>
-        <Button onClick={handleSubmit} disabled={isSubmitting}>
-          {isSubmitting ? "Depositing..." : "Deposit"}
-        </Button>
+      <CardContent className="pt-6">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="crypto">Select Cryptocurrency</Label>
+            <Select value={crypto} onValueChange={setCrypto}>
+              <SelectTrigger id="crypto">
+                <SelectValue placeholder="Select cryptocurrency" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="bitcoin">Bitcoin (BTC)</SelectItem>
+                <SelectItem value="ethereum">Ethereum (ETH)</SelectItem>
+                <SelectItem value="usdt">Tether (USDT)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="amount">Amount (USD)</Label>
+            <Input
+              id="amount"
+              type="number"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              placeholder="0.00"
+              min="10"
+            />
+            <p className="text-xs text-muted-foreground">Minimum deposit: $10</p>
+          </div>
+          
+          <Button type="submit" className="w-full" disabled={loading}>
+            {loading ? "Processing..." : "Continue to Payment"}
+          </Button>
+        </form>
       </CardContent>
     </Card>
   );

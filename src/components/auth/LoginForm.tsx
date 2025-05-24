@@ -60,13 +60,38 @@ const LoginForm: React.FC = () => {
       
       console.log("Login successful, user:", authData.user.id);
       
+      // Make sure we have a user profile record
+      const { data: profileData, error: profileError } = await supabase
+        .from("user_profiles")
+        .select("*")
+        .eq("user_id", authData.user.id)
+        .single();
+        
+      if (profileError && profileError.code === "PGRST116") {
+        // Profile doesn't exist, create one
+        const { error: createError } = await supabase
+          .from("user_profiles")
+          .insert({
+            user_id: authData.user.id,
+            role: "user",
+            kyc_status: "not_submitted",
+            balance: 0
+          });
+          
+        if (createError) {
+          console.error("Error creating user profile:", createError);
+        }
+      }
+      
       toast({
         title: "Login successful",
         description: "Welcome back to AnonPay!",
       });
       
-      // Immediate navigation to dashboard after successful login
-      navigate("/dashboard");
+      // Force reload to make sure all auth state is properly updated
+      setTimeout(() => {
+        navigate("/dashboard");
+      }, 500);
       
     } catch (error: any) {
       console.error("Login failed:", error);

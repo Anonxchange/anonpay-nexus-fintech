@@ -23,7 +23,7 @@ export const useNotificationPanel = (userId: string | undefined) => {
     }).format(date);
   };
 
-  // Set up subscription to notifications
+  // Set up subscription to transactions
   const setupNotificationsSubscription = () => {
     if (!userId) return;
     
