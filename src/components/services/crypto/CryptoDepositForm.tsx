@@ -16,8 +16,13 @@ import { processCryptoDeposit } from "@/services/transactions";
 
 interface CryptoDepositFormProps {
   user?: any;
-  onSuccess?: () => void; // Added onSuccess prop
+  onSuccess?: () => void;
 }
+
+// Simple function to generate reference IDs
+const generateReference = (prefix: string) => {
+  return `${prefix}-${Date.now().toString().slice(-8)}`;
+};
 
 const CryptoDepositForm: React.FC<CryptoDepositFormProps> = ({ user, onSuccess }) => {
   const [amount, setAmount] = useState<number | null>(null);
@@ -25,11 +30,6 @@ const CryptoDepositForm: React.FC<CryptoDepositFormProps> = ({ user, onSuccess }
   const [reference, setReference] = useState<string>(generateReference("crypto-deposit"));
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
-  
-  // Simple function to generate reference IDs
-  const generateReference = (prefix: string) => {
-    return `${prefix}-${Date.now().toString().slice(-8)}`;
-  };
   
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();

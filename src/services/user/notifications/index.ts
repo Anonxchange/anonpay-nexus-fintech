@@ -1,5 +1,5 @@
 
-// Re-export all notification services
-export * from './notificationApi';
+// Export notification functions
+export { getUserNotifications, markNotificationAsRead, markAllAsRead } from './notificationApi';
+export { useNotificationPanel } from './useNotificationPanel';
 export * from './useNotifications';
-export * from './useNotificationPanel';
