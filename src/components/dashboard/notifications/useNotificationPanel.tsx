@@ -28,7 +28,7 @@ export const useNotificationPanel = (userId: string | undefined) => {
     if (!userId) return;
     
     return supabase
-      .channel('notifications-realtime')
+      .channel('transactions-realtime')
       .on('postgres_changes', 
         { 
           event: '*', 
@@ -52,7 +52,7 @@ export const useNotificationPanel = (userId: string | undefined) => {
       setLoading(true);
       const data = await getUserNotifications(userId);
       setNotifications(data);
-      setUnreadCount(data.filter(n => !(n.is_read || n.read)).length);
+      setUnreadCount(data.filter(n => !n.is_read).length);
     } catch (error) {
       console.error('Failed to fetch notifications:', error);
       toast({
@@ -74,7 +74,7 @@ export const useNotificationPanel = (userId: string | undefined) => {
       if (success) {
         setNotifications(prevNotifications => 
           prevNotifications.map(n => 
-            n.id === id ? { ...n, is_read: true, read: true } : n
+            n.id === id ? { ...n, is_read: true } : n
           )
         );
         setUnreadCount(prev => Math.max(0, prev - 1));
@@ -92,7 +92,7 @@ export const useNotificationPanel = (userId: string | undefined) => {
       const success = await markAllAsRead(userId);
       if (success) {
         setNotifications(prevNotifications => 
-          prevNotifications.map(n => ({ ...n, is_read: true, read: true }))
+          prevNotifications.map(n => ({ ...n, is_read: true }))
         );
         setUnreadCount(0);
         toast({
@@ -109,9 +109,8 @@ export const useNotificationPanel = (userId: string | undefined) => {
     await handleMarkAsRead(notification.id);
     
     // Navigate to action link if available
-    const actionLink = notification.action_link;
-    if (actionLink) {
-      window.location.href = actionLink;
+    if (notification.action_link) {
+      window.location.href = notification.action_link;
     }
   };
 
