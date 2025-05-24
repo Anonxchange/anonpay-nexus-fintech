@@ -7,5 +7,5 @@ export * from './adminService';
 // Export the notification service
 export * from './notifications';
 
-// Export the activity service, but not getUserNotifications since it's exported from notifications
-export { default as activityService } from './activityService';
+// Export the activity service functions without default export
+export * from './activityService';

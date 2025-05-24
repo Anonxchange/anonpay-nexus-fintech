@@ -14,12 +14,20 @@ const generateReference = () => {
   return 'CRYPTO_' + Math.random().toString(36).substring(2, 15).toUpperCase();
 };
 
-const CryptoDepositForm: React.FC = () => {
-  const { user } = useAuth();
+interface CryptoDepositFormProps {
+  user?: any;
+  onSuccess?: () => void;
+}
+
+const CryptoDepositForm: React.FC<CryptoDepositFormProps> = ({ user: propUser, onSuccess }) => {
+  const { user: authUser } = useAuth();
   const { toast } = useToast();
   const [amount, setAmount] = useState<string>("");
   const [crypto, setCrypto] = useState<string>("bitcoin");
   const [loading, setLoading] = useState<boolean>(false);
+  
+  // Use the user from props if provided, otherwise use the one from auth context
+  const user = propUser || authUser;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,6 +73,11 @@ const CryptoDepositForm: React.FC = () => {
       // Reset form
       setAmount("");
       setCrypto("bitcoin");
+      
+      // Call onSuccess callback if provided
+      if (onSuccess) {
+        onSuccess();
+      }
       
     } catch (error: any) {
       console.error("Error creating crypto deposit:", error);

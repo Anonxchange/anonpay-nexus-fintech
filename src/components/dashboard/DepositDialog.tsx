@@ -82,6 +82,10 @@ const DepositDialog: React.FC<DepositDialogProps> = ({ open, onOpenChange }) => 
     }
   };
 
+  const handleSuccess = () => {
+    onOpenChange(false);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
@@ -147,7 +151,7 @@ const DepositDialog: React.FC<DepositDialogProps> = ({ open, onOpenChange }) => 
           <TabsContent value="crypto" className="pt-4">
             <CryptoDepositForm 
               user={user} 
-              onSuccess={() => onOpenChange(false)} 
+              onSuccess={handleSuccess} 
             />
           </TabsContent>
         </Tabs>
