@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -25,6 +25,7 @@ type SignupFormData = z.infer<typeof signupSchema>;
 const SignupPage: React.FC = () => {
   const navigate = useNavigate();
   const { signUp, loading } = useAuth();
+  const [submitAttempted, setSubmitAttempted] = useState(false);
   
   const form = useForm<SignupFormData>({
     resolver: zodResolver(signupSchema),
@@ -37,10 +38,19 @@ const SignupPage: React.FC = () => {
 
   const onSubmit = async (data: SignupFormData) => {
     try {
+      setSubmitAttempted(true);
+      console.log('Submitting signup form:', { email: data.email });
+      
       await signUp(data.email, data.password);
-      navigate("/login");
+      
+      // Note: Navigation will be handled by auth state change
+      // If email confirmation is required, user stays on signup page with instructions
+      // If immediate login, they'll be redirected via auth state change
+      
     } catch (error) {
-      // Error is handled in AuthContext
+      console.error('Signup form error:', error);
+      setSubmitAttempted(false);
+      // Error handling is done in AuthContext
     }
   };
 
@@ -64,7 +74,12 @@ const SignupPage: React.FC = () => {
                     <FormItem>
                       <FormLabel>Email</FormLabel>
                       <FormControl>
-                        <Input placeholder="you@example.com" {...field} />
+                        <Input 
+                          placeholder="you@example.com" 
+                          type="email"
+                          disabled={loading}
+                          {...field} 
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -78,7 +93,12 @@ const SignupPage: React.FC = () => {
                     <FormItem>
                       <FormLabel>Password</FormLabel>
                       <FormControl>
-                        <Input type="password" {...field} />
+                        <Input 
+                          type="password" 
+                          placeholder="At least 6 characters"
+                          disabled={loading}
+                          {...field} 
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -92,14 +112,23 @@ const SignupPage: React.FC = () => {
                     <FormItem>
                       <FormLabel>Confirm Password</FormLabel>
                       <FormControl>
-                        <Input type="password" {...field} />
+                        <Input 
+                          type="password" 
+                          placeholder="Repeat your password"
+                          disabled={loading}
+                          {...field} 
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
                 
-                <Button type="submit" className="w-full" disabled={loading}>
+                <Button 
+                  type="submit" 
+                  className="w-full" 
+                  disabled={loading || submitAttempted}
+                >
                   {loading ? "Creating account..." : "Create Account"}
                 </Button>
               </form>

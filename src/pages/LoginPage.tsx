@@ -13,7 +13,7 @@ import Layout from "@/components/layout/Layout";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
+  password: z.string().min(1, "Password is required"),
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
@@ -21,6 +21,7 @@ type LoginFormData = z.infer<typeof loginSchema>;
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const { signIn, loading } = useAuth();
+  const [submitAttempted, setSubmitAttempted] = useState(false);
   
   const form = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -32,10 +33,16 @@ const LoginPage: React.FC = () => {
 
   const onSubmit = async (data: LoginFormData) => {
     try {
+      setSubmitAttempted(true);
+      console.log('Submitting login form:', { email: data.email });
+      
       await signIn(data.email, data.password);
       navigate("/dashboard");
+      
     } catch (error) {
-      // Error is handled in AuthContext
+      console.error('Login form error:', error);
+      setSubmitAttempted(false);
+      // Error handling is done in AuthContext
     }
   };
 
@@ -59,7 +66,12 @@ const LoginPage: React.FC = () => {
                     <FormItem>
                       <FormLabel>Email</FormLabel>
                       <FormControl>
-                        <Input placeholder="you@example.com" {...field} />
+                        <Input 
+                          placeholder="you@example.com" 
+                          type="email"
+                          disabled={loading}
+                          {...field} 
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -73,14 +85,23 @@ const LoginPage: React.FC = () => {
                     <FormItem>
                       <FormLabel>Password</FormLabel>
                       <FormControl>
-                        <Input type="password" {...field} />
+                        <Input 
+                          type="password" 
+                          placeholder="Enter your password"
+                          disabled={loading}
+                          {...field} 
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
                 
-                <Button type="submit" className="w-full" disabled={loading}>
+                <Button 
+                  type="submit" 
+                  className="w-full" 
+                  disabled={loading || submitAttempted}
+                >
                   {loading ? "Signing in..." : "Sign In"}
                 </Button>
               </form>

@@ -32,11 +32,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         console.log('Auth state changed:', event, session?.user?.id);
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
+
+        // Handle successful signup
+        if (event === 'SIGNED_UP' && session?.user) {
+          console.log('User signed up successfully:', session.user.id);
+          toast({
+            title: "Account created successfully!",
+            description: "Welcome to AnonPay! You can now start using the platform.",
+          });
+        }
       }
     );
 
@@ -48,27 +57,42 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [toast]);
 
   const signIn = async (email: string, password: string) => {
     try {
       setLoading(true);
-      const { error } = await supabase.auth.signInWithPassword({
+      console.log('Attempting to sign in:', email);
+      
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
       
-      if (error) throw error;
+      if (error) {
+        console.error('Sign in error:', error);
+        throw error;
+      }
       
+      console.log('Sign in successful:', data.user?.id);
       toast({
-        title: "Success",
-        description: "Welcome back to AnonPay!",
+        title: "Welcome back!",
+        description: "You have successfully signed in to AnonPay.",
       });
     } catch (error: any) {
+      console.error('Sign in failed:', error);
+      let errorMessage = "Failed to sign in. Please try again.";
+      
+      if (error.message?.includes('Invalid login credentials')) {
+        errorMessage = "Invalid email or password. Please check your credentials.";
+      } else if (error.message?.includes('Email not confirmed')) {
+        errorMessage = "Please check your email and click the confirmation link.";
+      }
+      
       toast({
         variant: "destructive",
-        title: "Login failed",
-        description: error.message,
+        title: "Sign in failed",
+        description: errorMessage,
       });
       throw error;
     } finally {
@@ -79,7 +103,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signUp = async (email: string, password: string) => {
     try {
       setLoading(true);
-      const { error } = await supabase.auth.signUp({
+      console.log('Attempting to sign up:', email);
+      
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -87,17 +113,43 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         },
       });
       
-      if (error) throw error;
+      if (error) {
+        console.error('Sign up error:', error);
+        throw error;
+      }
+      
+      console.log('Sign up response:', data);
+      
+      if (data.user && !data.session) {
+        // Email confirmation required
+        toast({
+          title: "Check your email",
+          description: "We've sent you a confirmation link. Please check your email and click the link to activate your account.",
+        });
+      } else if (data.user && data.session) {
+        // User created and signed in immediately
+        toast({
+          title: "Account created!",
+          description: "Welcome to AnonPay! Your account has been created successfully.",
+        });
+      }
+      
+    } catch (error: any) {
+      console.error('Sign up failed:', error);
+      let errorMessage = "Failed to create account. Please try again.";
+      
+      if (error.message?.includes('User already registered')) {
+        errorMessage = "An account with this email already exists. Please sign in instead.";
+      } else if (error.message?.includes('Password should be at least')) {
+        errorMessage = "Password must be at least 6 characters long.";
+      } else if (error.message?.includes('Invalid email')) {
+        errorMessage = "Please enter a valid email address.";
+      }
       
       toast({
-        title: "Success",
-        description: "Account created! Please check your email to verify.",
-      });
-    } catch (error: any) {
-      toast({
-        variant: "destructive", 
-        title: "Signup failed",
-        description: error.message,
+        variant: "destructive",
+        title: "Account creation failed",
+        description: errorMessage,
       });
       throw error;
     } finally {
@@ -107,19 +159,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signOut = async () => {
     try {
+      setLoading(true);
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
       
       toast({
-        title: "Success",
-        description: "You have been signed out.",
+        title: "Signed out",
+        description: "You have been signed out successfully.",
       });
     } catch (error: any) {
+      console.error('Sign out error:', error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: error.message,
+        description: "Failed to sign out. Please try again.",
       });
+    } finally {
+      setLoading(false);
     }
   };
 
