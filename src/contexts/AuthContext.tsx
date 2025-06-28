@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { User, Session } from "@supabase/supabase-js";
+import { User, Session, AuthChangeEvent } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 
@@ -39,7 +39,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setLoading(false);
 
         // Handle successful signup - using proper event comparison
-        if (event === 'SIGNED_UP' && session?.user) {
+        if (event === AuthChangeEvent.SIGNED_UP && session?.user) {
           console.log('User signed up successfully:', session.user.id);
           toast({
             title: "Account created successfully!",
