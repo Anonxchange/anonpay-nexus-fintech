@@ -38,7 +38,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(session?.user ?? null);
         setLoading(false);
 
-        // Handle successful signup
+        // Handle successful signup - using proper event comparison
         if (event === 'SIGNED_UP' && session?.user) {
           console.log('User signed up successfully:', session.user.id);
           toast({
