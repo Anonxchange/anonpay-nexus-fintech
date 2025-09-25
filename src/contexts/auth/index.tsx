@@ -1,10 +1,9 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { Profile, AuthContextType } from '../../types/auth';
-import { useAuthOperations } from './useAuthOperations';
+import { Profile } from '@/types/auth';
 import { useProfileFetch } from './useProfileFetch';
+import { useAuthOperations } from './useAuthOperations';
 
 // Create the AuthContext
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -18,10 +17,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  
+
   const { fetchProfile, refreshProfile: fetchUpdatedProfile } = useProfileFetch();
   const authOperations = useAuthOperations();
-  
+
   // Fetch profile function
   const handleFetchProfile = async (userId: string) => {
     try {
@@ -55,7 +54,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         console.log('Auth state changed:', event, currentSession?.user?.id);
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
-        
+
         if (currentSession?.user) {
           // Use setTimeout to avoid potential Supabase auth deadlock
           setTimeout(() => {
@@ -74,7 +73,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const { data: { session: currentSession } } = await supabase.auth.getSession();
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
-        
+
         if (currentSession?.user) {
           await handleFetchProfile(currentSession.user.id);
         }
