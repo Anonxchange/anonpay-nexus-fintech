@@ -1,7 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "../contexts/auth";
+import { useAuth } from "@/contexts/auth";
 import { 
   ArrowRight, 
   ArrowDown, 
@@ -13,7 +13,9 @@ import {
   BarChart3, 
   CheckCircle, 
   Download, 
-  XCircle 
+  XCircle,
+  Sparkles,
+  Zap
 } from "lucide-react";
 
 const Index: React.FC = () => {
@@ -28,17 +30,8 @@ const Index: React.FC = () => {
             <div className="flex-1 space-y-6">
               {/* Logo and tagline */}
               <div className="flex items-center gap-3 mb-6">
-                <div className="bg-white rounded-xl p-2 shadow-xl">
-                  <img
-                    src="/anonpay-logo.svg"
-                    alt="AnonPay Logo"
-                    className="h-12 w-12"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.onerror = null;
-                      target.src = "/placeholder.svg";
-                    }}
-                  />
+                <div className="bg-white rounded-xl p-3 shadow-xl animate-bounce">
+                  <div className="text-2xl">💳</div>
                 </div>
                 <div className="flex flex-col">
                   <h2 className="text-xl font-bold">AnonPay</h2>
@@ -46,15 +39,15 @@ const Index: React.FC = () => {
                 </div>
               </div>
               
-              <div className="inline-block px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-sm font-medium mb-2">
-                🚀 Most trusted fintech platform in Nigeria
+              <div className="inline-block px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full text-sm font-medium mb-2 animate-pulse">
+                🚀 Most trusted fintech platform in Nigeria ✨
               </div>
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
-                Your All-in-One <span className="text-amber-300">Financial</span> Solution
+                Your All-in-One <span className="text-amber-300 animate-bounce">Financial</span> Solution 💰
               </h1>
               <p className="text-lg md:text-xl text-white/90 max-w-lg">
-                Seamlessly buy and sell crypto, trade gift cards, access VTU services, 
-                and manage your finances all in one secure platform.
+                Seamlessly buy and sell crypto 🪙, trade gift cards 🎁, access VTU services 📱, 
+                and manage your finances all in one secure platform! 🛡️
               </p>
               <div className="pt-6 flex flex-wrap gap-4">
                 {user ? (
@@ -168,20 +161,20 @@ const Index: React.FC = () => {
       <section className="py-8 bg-white">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-8">
-            <div className="p-4 text-center">
-              <div className="text-3xl md:text-4xl font-bold text-purple-600">10K+</div>
+            <div className="p-4 text-center hover:scale-105 transition-transform">
+              <div className="text-3xl md:text-4xl font-bold text-purple-600">10K+ 😊</div>
               <div className="text-sm text-gray-600">Happy Customers</div>
             </div>
-            <div className="p-4 text-center">
-              <div className="text-3xl md:text-4xl font-bold text-purple-600">₦50M+</div>
+            <div className="p-4 text-center hover:scale-105 transition-transform">
+              <div className="text-3xl md:text-4xl font-bold text-purple-600">₦50M+ 📈</div>
               <div className="text-sm text-gray-600">Trading Volume</div>
             </div>
-            <div className="p-4 text-center">
-              <div className="text-3xl md:text-4xl font-bold text-purple-600">99.9%</div>
+            <div className="p-4 text-center hover:scale-105 transition-transform">
+              <div className="text-3xl md:text-4xl font-bold text-purple-600">99.9% ⚡</div>
               <div className="text-sm text-gray-600">Uptime</div>
             </div>
-            <div className="p-4 text-center">
-              <div className="text-3xl md:text-4xl font-bold text-purple-600">24/7</div>
+            <div className="p-4 text-center hover:scale-105 transition-transform">
+              <div className="text-3xl md:text-4xl font-bold text-purple-600">24/7 🎧</div>
               <div className="text-sm text-gray-600">Customer Support</div>
             </div>
           </div>
@@ -192,9 +185,9 @@ const Index: React.FC = () => {
       <section className="py-16 bg-gray-50">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-4">Complete Financial Ecosystem</h2>
+            <h2 className="text-3xl font-bold mb-4">Complete Financial Ecosystem 🌟</h2>
             <p className="text-gray-600 max-w-2xl mx-auto">
-              We've built a comprehensive platform that addresses all your financial needs
+              We've built a comprehensive platform that addresses all your financial needs 💼
             </p>
           </div>
           
@@ -219,23 +212,23 @@ const Index: React.FC = () => {
               </p>
             </div>
             
-            <div className="p-6 rounded-xl bg-white shadow-md hover:shadow-lg transition-shadow border border-gray-100">
+            <div className="p-6 rounded-xl bg-white shadow-md hover:shadow-lg transition-all hover:scale-105 border border-gray-100">
               <div className="w-12 h-12 rounded-lg bg-purple-100 flex items-center justify-center mb-4">
                 <CreditCard className="h-6 w-6 text-purple-600" />
               </div>
-              <h3 className="text-xl font-semibold mb-2">Cryptocurrency</h3>
+              <h3 className="text-xl font-semibold mb-2">Cryptocurrency 💰</h3>
               <p className="text-gray-600">
-                Trade Bitcoin, USDT, Ethereum, and other cryptocurrencies at the best rates in the market with lower fees and faster processing times.
+                Trade Bitcoin, USDT, Ethereum, and other cryptocurrencies at the best rates in the market with lower fees and faster processing times! ⚡
               </p>
             </div>
             
-            <div className="p-6 rounded-xl bg-white shadow-md hover:shadow-lg transition-shadow border border-gray-100">
+            <div className="p-6 rounded-xl bg-white shadow-md hover:shadow-lg transition-all hover:scale-105 border border-gray-100">
               <div className="w-12 h-12 rounded-lg bg-purple-100 flex items-center justify-center mb-4">
                 <Phone className="h-6 w-6 text-purple-600" />
               </div>
-              <h3 className="text-xl font-semibold mb-2">VTU Services</h3>
+              <h3 className="text-xl font-semibold mb-2">VTU Services 📱</h3>
               <p className="text-gray-600">
-                Easily purchase airtime, data bundles, pay for cable TV subscriptions, and electricity bills at discounted rates.
+                Easily purchase airtime, data bundles, pay for cable TV subscriptions, and electricity bills at discounted rates! 💸
               </p>
             </div>
             
@@ -273,27 +266,29 @@ const Index: React.FC = () => {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="text-center">
-              <div className="w-16 h-16 rounded-full bg-purple-600 text-white flex items-center justify-center text-2xl font-bold mx-auto mb-4">1</div>
-              <h3 className="text-xl font-semibold mb-2">Create an Account</h3>
+            <div className="text-center hover:scale-105 transition-transform">
+              <div className="w-16 h-16 rounded-full bg-gradient-to-r from-purple-600 to-pink-500 text-white flex items-center justify-center text-2xl font-bold mx-auto mb-4 shadow-lg animate-bounce">1</div>
+              <h3 className="text-xl font-semibold mb-2">Create an Account 👤</h3>
               <p className="text-gray-600">
-                Sign up in less than 2 minutes with just your email and basic information.
+                Sign up in less than 2 minutes with just your email and basic information! ⚡
               </p>
             </div>
             
-            <div className="text-center">
-              <div className="w-16 h-16 rounded-full bg-purple-600 text-white flex items-center justify-center text-2xl font-bold mx-auto mb-4">2</div>
-              <h3 className="text-xl font-semibold mb-2">Fund Your Wallet</h3>
+            <div className="text-center hover:scale-105 transition-transform">
+              <div className="w-16 h-16 rounded-full bg-gradient-to-r from-blue-600 to-purple-500 text-white flex items-center justify-center text-2xl font-bold mx-auto mb-4 shadow-lg">
+                2
+              </div>
+              <h3 className="text-xl font-semibold mb-2">Fund Your Wallet 💳</h3>
               <p className="text-gray-600">
-                Deposit funds using bank transfer, crypto, or any payment method of your choice.
+                Deposit funds using bank transfer, crypto, or any payment method of your choice! 🏦
               </p>
             </div>
             
-            <div className="text-center">
-              <div className="w-16 h-16 rounded-full bg-purple-600 text-white flex items-center justify-center text-2xl font-bold mx-auto mb-4">3</div>
-              <h3 className="text-xl font-semibold mb-2">Start Transacting</h3>
+            <div className="text-center hover:scale-105 transition-transform">
+              <div className="w-16 h-16 rounded-full bg-gradient-to-r from-green-600 to-blue-500 text-white flex items-center justify-center text-2xl font-bold mx-auto mb-4 shadow-lg animate-pulse">3</div>
+              <h3 className="text-xl font-semibold mb-2">Start Transacting 🚀</h3>
               <p className="text-gray-600">
-                Buy/sell crypto, trade gift cards, purchase airtime, and enjoy our other services.
+                Buy/sell crypto, trade gift cards, purchase airtime, and enjoy our other services! 🎉
               </p>
             </div>
           </div>
@@ -363,11 +358,12 @@ const Index: React.FC = () => {
       </section>
       
       {/* Call to Action */}
-      <section className="py-16 bg-gradient-to-r from-purple-600 to-indigo-600 text-white">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl font-bold mb-4">Ready to Get Started?</h2>
+      <section className="py-16 bg-gradient-to-r from-purple-600 via-pink-500 to-indigo-600 text-white relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 to-pink-500/20 animate-pulse"></div>
+        <div className="container mx-auto px-4 text-center relative z-10">
+          <h2 className="text-3xl font-bold mb-4">Ready to Get Started? 🚀</h2>
           <p className="text-white/90 max-w-2xl mx-auto mb-8">
-            Join thousands of satisfied customers who trust AnonPay for their financial needs
+            Join thousands of satisfied customers who trust AnonPay for their financial needs! 💯✨
           </p>
           {!user && (
             <div className="flex flex-wrap gap-4 justify-center">
